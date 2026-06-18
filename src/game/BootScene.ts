@@ -6,7 +6,7 @@ export class BootScene extends Phaser.Scene {
   }
 
   create(): void {
-    this.createCircleTexture("player", 28, 0x6ee7ff, 0x18304b);
+    this.createHeroTexture();
     this.createCircleTexture("enemy", 32, 0xffffff, 0x2b2036);
     this.createCircleTexture("bolt", 14, 0x9ee7ff, 0xffffff);
     this.createCircleTexture("gem", 12, 0x84f7b2, 0xffffff);
@@ -23,6 +23,20 @@ export class BootScene extends Phaser.Scene {
     graphics.fillCircle(size / 2, size / 2, size / 2 - 3);
     graphics.strokeCircle(size / 2, size / 2, size / 2 - 3);
     graphics.generateTexture(key, size, size);
+    graphics.destroy();
+  }
+
+  private createHeroTexture(): void {
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0xd8e2eb, 1);
+    graphics.lineStyle(3, 0x27415f, 1);
+    graphics.fillCircle(15, 15, 12);
+    graphics.strokeCircle(15, 15, 12);
+    graphics.lineStyle(4, 0xf7efd8, 1);
+    graphics.lineBetween(22, 8, 39, 1);
+    graphics.lineStyle(2, 0x6ee7ff, 1);
+    graphics.lineBetween(24, 6, 42, 1);
+    graphics.generateTexture("player", 44, 34);
     graphics.destroy();
   }
 

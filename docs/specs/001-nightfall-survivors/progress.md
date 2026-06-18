@@ -16,6 +16,9 @@
 - Movement, spawn, weapon, collision, EXP, and upgrade systems.
 - Esc pause/resume, pause-aware timer, weapon HUD, score popups, damage shake.
 - Health pickup drops, scaling spawn pressure, and boss health bar.
+- Smooth player acceleration/deceleration, softened rotation, and camera follow lerp.
+- Wuxia retheme with Linghu Chong as first hero.
+- Martial-skill upgrade system with independent skill levels and persistent stat effects.
 - `npm run serve` for build-and-preview on port 5173.
 - GitHub Pages workflow.
 

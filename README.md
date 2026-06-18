@@ -1,6 +1,8 @@
-# Nightfall Survivors
+# Wandering Sword Survivors
 
-A TypeScript + Phaser 3 survivors-like roguelite prototype based on `ideate.md`.
+A wuxia-themed TypeScript + Phaser 3 survivors-like roguelite prototype based on `ideate.md`.
+
+The first playable hero is Linghu Chong, built around sword forms, footwork, inner-force skills, and martial-art upgrades.
 
 ## Run
 
@@ -33,7 +35,8 @@ npm run serve
 - Phaser 3 + Vite + TypeScript setup
 - Player movement and camera follow
 - Enemy waves with Slime, Bat, Golem, and a 10-minute boss
-- Automatic weapons: Magic Bolt, Orbit Blade, Flame Wave, Thunder Strike
+- Automatic martial forms: Sword Qi, Circling Sword Guard, Breaking Palm Wave, Nine Swords Flash
+- Martial skill upgrades: Dugu Nine Swords, Star Absorption Inner Force, Huashan Cloud Steps, Wine-Tempered Sword Heart
 - Experience gems, level-up choices, HP, score, kills, timer, best score
 - Pause overlay, weapon-level HUD, damage shake, and kill score popups
 - Health pickups, rising wave pressure, and a visible boss health bar

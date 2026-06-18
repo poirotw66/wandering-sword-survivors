@@ -51,7 +51,8 @@ export class GameScene extends Phaser.Scene {
       elapsedSec: 0,
       pausedForUpgrade: false,
       pausedForMenu: false,
-      weaponLevels: new Map()
+      weaponLevels: new Map(),
+      skillLevels: new Map()
     };
 
     this.playerSystem = new PlayerSystem(this, this.player);
@@ -100,7 +101,7 @@ export class GameScene extends Phaser.Scene {
     }
 
     this.state.elapsedSec += delta / 1000;
-    this.playerSystem.update();
+    this.playerSystem.update(delta);
     this.spawnSystem.update(this.state.elapsedSec);
     this.enemySystem.update();
     this.weaponSystem.update();

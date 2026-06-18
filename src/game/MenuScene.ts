@@ -9,20 +9,20 @@ export class MenuScene extends Phaser.Scene {
     const { width, height } = this.scale;
     this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17);
     this.add
-      .text(width / 2, height * 0.33, "Nightfall Survivors", {
+      .text(width / 2, height * 0.31, "Wandering Sword Survivors", {
         fontFamily: "Georgia, serif",
-        fontSize: "54px",
+        fontSize: "50px",
         color: "#f7efd8"
       })
       .setOrigin(0.5);
     this.add
-      .text(width / 2, height * 0.45, "Survive ten minutes. Defeat the Night Tyrant.", {
+      .text(width / 2, height * 0.42, "Linghu Chong enters the jianghu alone.", {
         fontSize: "20px",
         color: "#aac7d8"
       })
       .setOrigin(0.5);
     this.add
-      .text(width / 2, height * 0.58, "WASD / Arrow keys to move\nChoose upgrades with mouse or 1-3", {
+      .text(width / 2, height * 0.56, "WASD / Arrow keys to move\nChoose martial arts with mouse or 1-3", {
         fontSize: "18px",
         color: "#d8e2eb",
         align: "center",

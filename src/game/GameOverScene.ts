@@ -14,13 +14,13 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   create(data: GameOverData): void {
-    const best = Math.max(data.score, Number(localStorage.getItem("nightfall-best") ?? 0));
-    localStorage.setItem("nightfall-best", String(best));
+    const best = Math.max(data.score, Number(localStorage.getItem("sword-survivors-best") ?? 0));
+    localStorage.setItem("sword-survivors-best", String(best));
 
     const { width, height } = this.scale;
     this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17, 0.96);
     this.add
-      .text(width / 2, height * 0.28, data.won ? "Night Breaks" : "You Fell", {
+      .text(width / 2, height * 0.28, data.won ? "Sword Roams Free" : "The Jianghu Prevails", {
         fontFamily: "Georgia, serif",
         fontSize: "58px",
         color: data.won ? "#f7c66b" : "#ff7687"
@@ -30,7 +30,7 @@ export class GameOverScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.45,
-        `Time ${formatClock(data.elapsedSec)}   Kills ${data.kills}\nScore ${data.score}   Best ${best}`,
+        `Linghu Chong survived ${formatClock(data.elapsedSec)}   Defeated ${data.kills}\nRenown ${data.score}   Best ${best}`,
         {
           fontSize: "22px",
           color: "#d8e2eb",
@@ -41,7 +41,7 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     const restart = this.add
-      .text(width / 2, height * 0.68, "Run Again", {
+      .text(width / 2, height * 0.68, "Roam Again", {
         fontSize: "24px",
         color: "#10121f",
         backgroundColor: "#84f7b2",

@@ -1,3 +1,4 @@
+import { SKILL_CONFIGS, type SkillId } from "./skills";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 import type { GameState } from "../game/GameState";
 
@@ -9,18 +10,25 @@ export type UpgradeOption = {
 };
 
 const weaponLabel: Record<WeaponId, string> = {
-  magicBolt: "Magic Bolt",
-  orbitBlade: "Orbit Blade",
-  flameWave: "Flame Wave",
-  thunderStrike: "Thunder Strike"
+  magicBolt: WEAPON_CONFIGS.magicBolt.name,
+  orbitBlade: WEAPON_CONFIGS.orbitBlade.name,
+  flameWave: WEAPON_CONFIGS.flameWave.name,
+  thunderStrike: WEAPON_CONFIGS.thunderStrike.name
+};
+
+const skillLabel: Record<SkillId, string> = {
+  duguNineSwords: SKILL_CONFIGS.duguNineSwords.name,
+  starAbsorption: SKILL_CONFIGS.starAbsorption.name,
+  huashanFootwork: SKILL_CONFIGS.huashanFootwork.name,
+  wineSwordHeart: SKILL_CONFIGS.wineSwordHeart.name
 };
 
 export function buildUpgradePool(state: GameState): UpgradeOption[] {
   const options: UpgradeOption[] = [
     {
       id: "damage",
-      title: "Ritual Edge",
-      description: `Weapon damage ${Math.round(state.player.stats.damageMultiplier * 100)}% -> ${Math.round(
+      title: "Sword Intent",
+      description: `Damage ${Math.round(state.player.stats.damageMultiplier * 100)}% -> ${Math.round(
         (state.player.stats.damageMultiplier + 0.15) * 100
       )}%`,
       apply: ({ player }) => {
@@ -29,15 +37,15 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     },
     {
       id: "cooldown",
-      title: "Quickened Pulse",
-      description: "Weapons fire 10% faster",
+      title: "Flowing Meridian",
+      description: "Martial arts recover 10% faster",
       apply: ({ player }) => {
         player.stats.cooldownMultiplier *= 0.9;
       }
     },
     {
       id: "speed",
-      title: "Fleet Step",
+      title: "Lightness Step",
       description: `Move speed ${state.player.stats.moveSpeed} -> ${state.player.stats.moveSpeed + 18}`,
       apply: ({ player }) => {
         player.stats.moveSpeed += 18;
@@ -45,7 +53,7 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     },
     {
       id: "pickup",
-      title: "Moon Magnet",
+      title: "Qi Sense",
       description: `Pickup range ${state.player.stats.pickupRange} -> ${state.player.stats.pickupRange + 28}`,
       apply: ({ player }) => {
         player.stats.pickupRange += 28;
@@ -53,7 +61,7 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     },
     {
       id: "heal",
-      title: "Warm Blood",
+      title: "Inner Breath",
       description: "Recover 25 HP and gain +10 max HP",
       apply: ({ player }) => {
         player.stats.maxHp += 10;
@@ -77,6 +85,25 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
           : `Current Lv.${level}; improve damage, count, or cooldown`,
       apply: ({ weaponLevels }) => {
         weaponLevels.set(weaponId, level + 1);
+      }
+    });
+  }
+
+  for (const skillId of Object.keys(SKILL_CONFIGS) as SkillId[]) {
+    const config = SKILL_CONFIGS[skillId];
+    const level = state.skillLevels.get(skillId) ?? 0;
+    if (level >= config.maxLevel) {
+      continue;
+    }
+
+    const nextLevel = level + 1;
+    options.push({
+      id: `skill-${skillId}`,
+      title: level === 0 ? `Learn ${skillLabel[skillId]}` : `${skillLabel[skillId]} Lv.${nextLevel}`,
+      description: config.describe(state, nextLevel),
+      apply: (gameState) => {
+        gameState.skillLevels.set(skillId, nextLevel);
+        config.apply(gameState, nextLevel);
       }
     });
   }

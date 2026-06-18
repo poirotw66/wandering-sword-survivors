@@ -1,4 +1,5 @@
 import type { WeaponId } from "../data/weapons";
+import type { SkillId } from "../data/skills";
 import type { Player } from "../entities/Player";
 
 export type GameState = {
@@ -12,4 +13,5 @@ export type GameState = {
   pausedForUpgrade: boolean;
   pausedForMenu: boolean;
   weaponLevels: Map<WeaponId, number>;
+  skillLevels: Map<SkillId, number>;
 };

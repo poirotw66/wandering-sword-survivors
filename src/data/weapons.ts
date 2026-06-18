@@ -14,7 +14,7 @@ export type WeaponConfig = {
 export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   magicBolt: {
     id: "magicBolt",
-    name: "Magic Bolt",
+    name: "Sword Qi",
     baseDamage: 18,
     cooldownMs: 650,
     projectileSpeed: 460,
@@ -23,7 +23,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   },
   orbitBlade: {
     id: "orbitBlade",
-    name: "Orbit Blade",
+    name: "Circling Sword Guard",
     baseDamage: 12,
     cooldownMs: 120,
     projectileSpeed: 0,
@@ -33,7 +33,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   },
   flameWave: {
     id: "flameWave",
-    name: "Flame Wave",
+    name: "Breaking Palm Wave",
     baseDamage: 22,
     cooldownMs: 2600,
     projectileSpeed: 260,
@@ -43,7 +43,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   },
   thunderStrike: {
     id: "thunderStrike",
-    name: "Thunder Strike",
+    name: "Nine Swords Flash",
     baseDamage: 55,
     cooldownMs: 2300,
     projectileSpeed: 0,

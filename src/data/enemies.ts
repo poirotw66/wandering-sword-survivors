@@ -48,7 +48,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   },
   boss: {
     id: "boss",
-    name: "Night Tyrant",
+    name: "Renegade Master",
     hp: 1400,
     damage: 35,
     moveSpeed: 64,

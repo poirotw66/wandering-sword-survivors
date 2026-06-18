@@ -1,4 +1,6 @@
 import Phaser from "phaser";
+import { SKILL_CONFIGS, type SkillId } from "../data/skills";
+import { WEAPON_CONFIGS, type WeaponId } from "../data/weapons";
 import type { UpgradeOption } from "../data/upgrades";
 import type { GameState } from "./GameState";
 import { ExpBar } from "../ui/ExpBar";
@@ -14,6 +16,7 @@ export class UIScene extends Phaser.Scene {
   private levelText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
   private weaponText!: Phaser.GameObjects.Text;
+  private skillText!: Phaser.GameObjects.Text;
   private bossText!: Phaser.GameObjects.Text;
   private bossBar!: Phaser.GameObjects.Container;
   private bossBarFill!: Phaser.GameObjects.Rectangle;
@@ -33,13 +36,16 @@ export class UIScene extends Phaser.Scene {
     this.expBar = new ExpBar(this);
     this.healthBar = new HealthBar(this, 24, 34);
     this.timerText = new TimerText(this, this.scale.width / 2, 18);
-    this.levelText = this.add.text(24, 52, "Lv 1", { fontSize: "18px", color: "#f7efd8" }).setScrollFactor(0);
+    this.levelText = this.add.text(24, 52, "Linghu Chong Lv 1", { fontSize: "18px", color: "#f7efd8" }).setScrollFactor(0);
     this.scoreText = this.add
-      .text(this.scale.width - 24, 26, "Score 0", { fontSize: "18px", color: "#d8e2eb" })
+      .text(this.scale.width - 24, 26, "Renown 0", { fontSize: "18px", color: "#d8e2eb" })
       .setOrigin(1, 0)
       .setScrollFactor(0);
     this.weaponText = this.add
-      .text(24, 78, "", { fontSize: "14px", color: "#aac7d8", lineSpacing: 5 })
+      .text(24, 80, "", { fontSize: "14px", color: "#aac7d8", lineSpacing: 5 })
+      .setScrollFactor(0);
+    this.skillText = this.add
+      .text(24, 166, "", { fontSize: "14px", color: "#f7c66b", lineSpacing: 5 })
       .setScrollFactor(0);
     this.bossText = this.add
       .text(this.scale.width / 2, 62, "", { fontSize: "22px", color: "#ff7687", fontStyle: "700" })
@@ -73,9 +79,10 @@ export class UIScene extends Phaser.Scene {
     this.healthBar.update(this.state.player);
     this.expBar.update(this.state);
     this.timerText.update(this.state);
-    this.levelText.setText(`Lv ${this.state.level}`);
-    this.scoreText.setText(`Score ${this.state.score}  Kills ${this.state.kills}`);
+    this.levelText.setText(`Linghu Chong Lv ${this.state.level}`);
+    this.scoreText.setText(`Renown ${this.state.score}  Defeated ${this.state.kills}`);
     this.weaponText.setText(this.formatWeapons());
+    this.skillText.setText(this.formatSkills());
   }
 
   private resize(): void {
@@ -102,17 +109,22 @@ export class UIScene extends Phaser.Scene {
     const equipped = [...this.state.weaponLevels.entries()]
       .filter(([, level]) => level > 0)
       .map(([weaponId, level]) => `${this.weaponName(weaponId)} Lv.${level}`);
-    return equipped.length > 0 ? equipped.join("\n") : "No weapons";
+    return equipped.length > 0 ? `Forms\n${equipped.join("\n")}` : "Forms\nSword Qi Lv.1";
   }
 
-  private weaponName(weaponId: string): string {
-    const names: Record<string, string> = {
-      magicBolt: "Magic Bolt",
-      orbitBlade: "Orbit Blade",
-      flameWave: "Flame Wave",
-      thunderStrike: "Thunder Strike"
-    };
-    return names[weaponId] ?? weaponId;
+  private formatSkills(): string {
+    const learned = [...this.state.skillLevels.entries()]
+      .filter(([, level]) => level > 0)
+      .map(([skillId, level]) => `${this.skillName(skillId)} Lv.${level}`);
+    return learned.length > 0 ? `Martial Skills\n${learned.join("\n")}` : "Martial Skills\nNone";
+  }
+
+  private weaponName(weaponId: WeaponId): string {
+    return WEAPON_CONFIGS[weaponId].name;
+  }
+
+  private skillName(skillId: SkillId): string {
+    return SKILL_CONFIGS[skillId].name;
   }
 
   private createPauseOverlay(): Phaser.GameObjects.Container {
@@ -127,7 +139,7 @@ export class UIScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     const hint = this.add
-      .text(0, 34, "Press Esc to resume", {
+      .text(0, 34, "Press Esc to return to the jianghu", {
         fontSize: "18px",
         color: "#aac7d8"
       })
@@ -145,7 +157,7 @@ export class UIScene extends Phaser.Scene {
     const bg = this.add.rectangle(0, 0, 420, 18, 0x2a1720).setStrokeStyle(2, 0xff7687);
     this.bossBarFill = this.add.rectangle(-208, 0, 416, 10, 0xff4f64).setOrigin(0, 0.5);
     this.bossBarLabel = this.add
-      .text(0, -28, "Night Tyrant", {
+      .text(0, -28, "Renegade Master", {
         fontSize: "16px",
         color: "#ffb3bf",
         fontStyle: "700"
@@ -159,11 +171,11 @@ export class UIScene extends Phaser.Scene {
     const ratio = Phaser.Math.Clamp(hp / maxHp, 0, 1);
     this.bossBar.setVisible(ratio > 0);
     this.bossBarFill.width = 416 * ratio;
-    this.bossBarLabel.setText(`Night Tyrant  ${Math.ceil(hp)} / ${maxHp}`);
+    this.bossBarLabel.setText(`Renegade Master  ${Math.ceil(hp)} / ${maxHp}`);
   }
 
   private showBossWarning(): void {
-    this.bossText.setText("Boss awakened");
+    this.bossText.setText("A renegade master enters the field");
     this.tweens.add({
       targets: this.bossText,
       alpha: 0,

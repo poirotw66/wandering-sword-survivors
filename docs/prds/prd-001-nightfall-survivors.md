@@ -8,7 +8,7 @@ source: ../../ideate.md
 
 ## Goal
 
-Build a browser-playable Vampire Survivors-like roguelite prototype using TypeScript, Phaser 3, and Vite, deployable to GitHub Pages.
+Build a browser-playable wuxia survivors-like roguelite prototype using TypeScript, Phaser 3, and Vite, deployable to GitHub Pages. The first hero is Linghu Chong.
 
 ## MVP Scope
 
@@ -19,6 +19,7 @@ Build a browser-playable Vampire Survivors-like roguelite prototype using TypeSc
 - Level-up pauses the game and offers three upgrade choices.
 - HP, EXP, level, timer, score, kills, win/loss, and best score are visible.
 - A boss appears at the 10-minute mark.
+- Level-up choices include weapon-form upgrades and martial-skill upgrades.
 
 ## Out Of Scope For This Pass
 

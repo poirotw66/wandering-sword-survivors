@@ -20,7 +20,7 @@ export class UpgradePanel {
     this.container.add(this.scene.add.rectangle(width / 2, height / 2, width, height, 0x070912, 0.72));
     this.container.add(
       this.scene.add
-        .text(width / 2, height * 0.22, "Choose an Upgrade", {
+        .text(width / 2, height * 0.22, "Comprehend a Martial Art", {
           fontFamily: "Georgia, serif",
           fontSize: "36px",
           color: "#f7efd8"
