@@ -1,0 +1,178 @@
+import Phaser from "phaser";
+import type { UpgradeOption } from "../data/upgrades";
+import type { GameState } from "./GameState";
+import { ExpBar } from "../ui/ExpBar";
+import { HealthBar } from "../ui/HealthBar";
+import { TimerText } from "../ui/TimerText";
+import { UpgradePanel } from "../ui/UpgradePanel";
+
+export class UIScene extends Phaser.Scene {
+  private state!: GameState;
+  private healthBar!: HealthBar;
+  private expBar!: ExpBar;
+  private timerText!: TimerText;
+  private levelText!: Phaser.GameObjects.Text;
+  private scoreText!: Phaser.GameObjects.Text;
+  private weaponText!: Phaser.GameObjects.Text;
+  private bossText!: Phaser.GameObjects.Text;
+  private bossBar!: Phaser.GameObjects.Container;
+  private bossBarFill!: Phaser.GameObjects.Rectangle;
+  private bossBarLabel!: Phaser.GameObjects.Text;
+  private pauseOverlay!: Phaser.GameObjects.Container;
+  private upgradePanel!: UpgradePanel;
+
+  constructor() {
+    super("UIScene");
+  }
+
+  create(state: GameState): void {
+    this.state = state;
+    this.events.removeAllListeners("show-upgrades");
+    this.events.removeAllListeners("hide-upgrades");
+    this.events.removeAllListeners("upgrade-picked");
+    this.expBar = new ExpBar(this);
+    this.healthBar = new HealthBar(this, 24, 34);
+    this.timerText = new TimerText(this, this.scale.width / 2, 18);
+    this.levelText = this.add.text(24, 52, "Lv 1", { fontSize: "18px", color: "#f7efd8" }).setScrollFactor(0);
+    this.scoreText = this.add
+      .text(this.scale.width - 24, 26, "Score 0", { fontSize: "18px", color: "#d8e2eb" })
+      .setOrigin(1, 0)
+      .setScrollFactor(0);
+    this.weaponText = this.add
+      .text(24, 78, "", { fontSize: "14px", color: "#aac7d8", lineSpacing: 5 })
+      .setScrollFactor(0);
+    this.bossText = this.add
+      .text(this.scale.width / 2, 62, "", { fontSize: "22px", color: "#ff7687", fontStyle: "700" })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0);
+    this.bossBar = this.createBossBar();
+    this.pauseOverlay = this.createPauseOverlay();
+    this.upgradePanel = new UpgradePanel(this);
+    this.resize();
+
+    this.scale.on("resize", () => this.resize());
+    this.events.on("show-upgrades", (options: UpgradeOption[]) => {
+      this.upgradePanel.show(options, (option) => this.events.emit("upgrade-picked", option));
+    });
+    this.events.on("hide-upgrades", () => this.upgradePanel.hide());
+    this.events.on("pause-changed", (paused: boolean) => this.pauseOverlay.setVisible(paused));
+    this.scene.get("GameScene").events.once("boss-spawned", () => this.showBossWarning());
+    this.scene.get("GameScene").events.on("boss-health-changed", (hp: number, maxHp: number) => {
+      this.updateBossBar(hp, maxHp);
+    });
+
+    this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
+      const index = Number(event.key) - 1;
+      if (index >= 0 && index <= 2) {
+        this.upgradePanel.pickByIndex(index);
+      }
+    });
+  }
+
+  update(): void {
+    this.healthBar.update(this.state.player);
+    this.expBar.update(this.state);
+    this.timerText.update(this.state);
+    this.levelText.setText(`Lv ${this.state.level}`);
+    this.scoreText.setText(`Score ${this.state.score}  Kills ${this.state.kills}`);
+    this.weaponText.setText(this.formatWeapons());
+  }
+
+  private resize(): void {
+    const width = this.scale.width;
+    this.expBar.resize(width);
+    this.timerText.setPosition(width / 2, 18);
+    if (this.scoreText) {
+      this.scoreText.setPosition(width - 24, 26);
+    }
+    if (this.pauseOverlay) {
+      this.pauseOverlay.setPosition(width / 2, this.scale.height / 2);
+      const bg = this.pauseOverlay.getByName("pause-bg") as Phaser.GameObjects.Rectangle | null;
+      bg?.setSize(width, this.scale.height);
+    }
+    if (this.bossBar) {
+      this.bossBar.setPosition(width / 2, this.scale.height - 40);
+    }
+    if (this.bossText) {
+      this.bossText.setPosition(width / 2, 62);
+    }
+  }
+
+  private formatWeapons(): string {
+    const equipped = [...this.state.weaponLevels.entries()]
+      .filter(([, level]) => level > 0)
+      .map(([weaponId, level]) => `${this.weaponName(weaponId)} Lv.${level}`);
+    return equipped.length > 0 ? equipped.join("\n") : "No weapons";
+  }
+
+  private weaponName(weaponId: string): string {
+    const names: Record<string, string> = {
+      magicBolt: "Magic Bolt",
+      orbitBlade: "Orbit Blade",
+      flameWave: "Flame Wave",
+      thunderStrike: "Thunder Strike"
+    };
+    return names[weaponId] ?? weaponId;
+  }
+
+  private createPauseOverlay(): Phaser.GameObjects.Container {
+    const { width, height } = this.scale;
+    const container = this.add.container(width / 2, height / 2).setDepth(900).setScrollFactor(0).setVisible(false);
+    const bg = this.add.rectangle(0, 0, width, height, 0x050711, 0.68).setName("pause-bg");
+    const title = this.add
+      .text(0, -28, "Paused", {
+        fontFamily: "Georgia, serif",
+        fontSize: "46px",
+        color: "#f7efd8"
+      })
+      .setOrigin(0.5);
+    const hint = this.add
+      .text(0, 34, "Press Esc to resume", {
+        fontSize: "18px",
+        color: "#aac7d8"
+      })
+      .setOrigin(0.5);
+    container.add([bg, title, hint]);
+    return container;
+  }
+
+  private createBossBar(): Phaser.GameObjects.Container {
+    const container = this.add
+      .container(this.scale.width / 2, this.scale.height - 40)
+      .setDepth(850)
+      .setScrollFactor(0)
+      .setVisible(false);
+    const bg = this.add.rectangle(0, 0, 420, 18, 0x2a1720).setStrokeStyle(2, 0xff7687);
+    this.bossBarFill = this.add.rectangle(-208, 0, 416, 10, 0xff4f64).setOrigin(0, 0.5);
+    this.bossBarLabel = this.add
+      .text(0, -28, "Night Tyrant", {
+        fontSize: "16px",
+        color: "#ffb3bf",
+        fontStyle: "700"
+      })
+      .setOrigin(0.5);
+    container.add([bg, this.bossBarFill, this.bossBarLabel]);
+    return container;
+  }
+
+  private updateBossBar(hp: number, maxHp: number): void {
+    const ratio = Phaser.Math.Clamp(hp / maxHp, 0, 1);
+    this.bossBar.setVisible(ratio > 0);
+    this.bossBarFill.width = 416 * ratio;
+    this.bossBarLabel.setText(`Night Tyrant  ${Math.ceil(hp)} / ${maxHp}`);
+  }
+
+  private showBossWarning(): void {
+    this.bossText.setText("Boss awakened");
+    this.tweens.add({
+      targets: this.bossText,
+      alpha: 0,
+      delay: 1600,
+      duration: 900,
+      onComplete: () => {
+        this.bossText.setText("");
+        this.bossText.setAlpha(1);
+      }
+    });
+  }
+}
