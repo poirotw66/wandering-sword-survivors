@@ -1,6 +1,6 @@
 ---
 id: 001-nightfall-survivors
-status: in-progress
+status: done
 prd: prd-001-nightfall-survivors
 ---
 
@@ -25,3 +25,14 @@ prd: prd-001-nightfall-survivors
 ## Deployment
 
 GitHub Pages deployment is configured through `.github/workflows/deploy.yml`.
+
+## Acceptance Criteria
+
+- Player can start a run from the menu.
+- Player can move with WASD or arrow keys.
+- Enemies spawn in timed waves and chase the player.
+- Weapons fire automatically and damage enemies.
+- Enemies drop EXP gems; collecting enough EXP opens upgrade choices.
+- HP, EXP, level, timer, score, kills, weapons, pause state, and boss HP are visible where relevant.
+- Run ends on player death or boss defeat.
+- Project builds successfully with `npm run build`.
