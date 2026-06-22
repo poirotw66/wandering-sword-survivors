@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import type { UpgradeOption } from "../data/upgrades";
+import { t } from "../i18n";
 
 export class UpgradePanel {
   private readonly container: Phaser.GameObjects.Container;
@@ -21,7 +22,7 @@ export class UpgradePanel {
     this.container.add(this.scene.add.rectangle(width / 2, height * 0.5, Math.min(980, width - 72), 340, 0x111421, 0.82).setStrokeStyle(1, 0x5f4a2a, 0.9));
     this.container.add(
       this.scene.add
-        .text(width / 2, height * 0.2, "A Secret Manual Opens", {
+        .text(width / 2, height * 0.2, t("manualTitle"), {
           fontFamily: "Georgia, serif",
           fontSize: "38px",
           color: "#f7efd8"
@@ -30,7 +31,7 @@ export class UpgradePanel {
     );
     this.container.add(
       this.scene.add
-        .text(width / 2, height * 0.27, "Choose one insight to deepen Linghu Chong's path", {
+        .text(width / 2, height * 0.27, t("manualHint"), {
           fontSize: "16px",
           color: "#aac7d8"
         })

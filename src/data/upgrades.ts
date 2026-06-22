@@ -1,6 +1,7 @@
 import { SKILL_CONFIGS, type SkillId } from "./skills";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 import type { GameState } from "../game/GameState";
+import { skillName, t, weaponName } from "../i18n";
 
 export type UpgradeOption = {
   id: string;
@@ -9,61 +10,47 @@ export type UpgradeOption = {
   apply: (state: GameState) => void;
 };
 
-const weaponLabel: Record<WeaponId, string> = {
-  magicBolt: WEAPON_CONFIGS.magicBolt.name,
-  orbitBlade: WEAPON_CONFIGS.orbitBlade.name,
-  flameWave: WEAPON_CONFIGS.flameWave.name,
-  thunderStrike: WEAPON_CONFIGS.thunderStrike.name,
-  starVortex: WEAPON_CONFIGS.starVortex.name
-};
-
-const skillLabel: Record<SkillId, string> = {
-  duguNineSwords: SKILL_CONFIGS.duguNineSwords.name,
-  starAbsorption: SKILL_CONFIGS.starAbsorption.name,
-  huashanFootwork: SKILL_CONFIGS.huashanFootwork.name,
-  wineSwordHeart: SKILL_CONFIGS.wineSwordHeart.name
-};
-
 export function buildUpgradePool(state: GameState): UpgradeOption[] {
   const options: UpgradeOption[] = [
     {
       id: "damage",
-      title: "Sword Intent",
-      description: `Damage ${Math.round(state.player.stats.damageMultiplier * 100)}% -> ${Math.round(
-        (state.player.stats.damageMultiplier + 0.15) * 100
-      )}%`,
+      title: t("damageTitle"),
+      description: t("damageDescription", {
+        current: Math.round(state.player.stats.damageMultiplier * 100),
+        next: Math.round((state.player.stats.damageMultiplier + 0.15) * 100)
+      }),
       apply: ({ player }) => {
         player.stats.damageMultiplier += 0.15;
       }
     },
     {
       id: "cooldown",
-      title: "Flowing Meridian",
-      description: "Martial arts recover 10% faster",
+      title: t("cooldownTitle"),
+      description: t("cooldownDescription"),
       apply: ({ player }) => {
         player.stats.cooldownMultiplier *= 0.9;
       }
     },
     {
       id: "speed",
-      title: "Lightness Step",
-      description: `Move speed ${state.player.stats.moveSpeed} -> ${state.player.stats.moveSpeed + 18}`,
+      title: t("speedTitle"),
+      description: t("speedDescription", { current: state.player.stats.moveSpeed, next: state.player.stats.moveSpeed + 18 }),
       apply: ({ player }) => {
         player.stats.moveSpeed += 18;
       }
     },
     {
       id: "pickup",
-      title: "Qi Sense",
-      description: `Pickup range ${state.player.stats.pickupRange} -> ${state.player.stats.pickupRange + 28}`,
+      title: t("pickupTitle"),
+      description: t("pickupDescription", { current: state.player.stats.pickupRange, next: state.player.stats.pickupRange + 28 }),
       apply: ({ player }) => {
         player.stats.pickupRange += 28;
       }
     },
     {
       id: "heal",
-      title: "Inner Breath",
-      description: "Recover 25 HP and gain +10 max HP",
+      title: t("healTitle"),
+      description: t("healDescription"),
       apply: ({ player }) => {
         player.stats.maxHp += 10;
         player.stats.hp = Math.min(player.stats.maxHp, player.stats.hp + 25);
@@ -77,13 +64,11 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       continue;
     }
 
+    const label = weaponName(weaponId);
     options.push({
       id: `weapon-${weaponId}`,
-      title: level === 0 ? `Unlock ${weaponLabel[weaponId]}` : `${weaponLabel[weaponId]} Lv.${level + 1}`,
-      description:
-        level === 0
-          ? `Add ${weaponLabel[weaponId]} to your arsenal`
-          : `Current Lv.${level}; improve damage, count, or cooldown`,
+      title: level === 0 ? t("unlock", { name: label }) : t("weaponLevel", { name: label, level: level + 1 }),
+      description: level === 0 ? t("addWeapon", { name: label }) : t("improveWeapon", { level }),
       apply: ({ weaponLevels }) => {
         weaponLevels.set(weaponId, level + 1);
       }
@@ -98,9 +83,10 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     }
 
     const nextLevel = level + 1;
+    const label = skillName(skillId);
     options.push({
       id: `skill-${skillId}`,
-      title: level === 0 ? `Learn ${skillLabel[skillId]}` : `${skillLabel[skillId]} Lv.${nextLevel}`,
+      title: level === 0 ? t("learn", { name: label }) : t("skillLevel", { name: label, level: nextLevel }),
       description: config.describe(state, nextLevel),
       apply: (gameState) => {
         gameState.skillLevels.set(skillId, nextLevel);

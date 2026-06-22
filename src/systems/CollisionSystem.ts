@@ -9,6 +9,7 @@ import type { EnemySystem } from "./EnemySystem";
 import type { ExpSystem } from "./ExpSystem";
 import type { PickupSystem } from "./PickupSystem";
 import type { WeaponSystem } from "./WeaponSystem";
+import { enemyName } from "../i18n";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
 
@@ -47,7 +48,7 @@ export class CollisionSystem {
     const flashColor = projectile.weaponId === "starVortex" ? 0xb86bff : projectile.weaponId === "flameWave" ? 0x8ff4ff : 0xfff1a1;
     this.flashHit(enemy.x, enemy.y, flashColor);
     if (enemy.config.isBoss) {
-      this.scene.events.emit("boss-health-changed", Math.max(0, enemy.hp), enemy.maxHp, enemy.config.name);
+      this.scene.events.emit("boss-health-changed", Math.max(0, enemy.hp), enemy.maxHp, enemyName(enemy.enemyId));
     }
     projectile.pierceLeft -= 1;
     if (projectile.pierceLeft <= 0 && projectile.weaponId !== "orbitBlade") {

@@ -13,6 +13,7 @@ import { WeaponSystem } from "../systems/WeaponSystem";
 import type { UpgradeOption } from "../data/upgrades";
 import type { GameOverData } from "./GameOverScene";
 import type { GameState } from "./GameState";
+import { t } from "../i18n";
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -186,7 +187,7 @@ export class GameScene extends Phaser.Scene {
     this.state.devMode.enabled = !this.state.devMode.enabled;
     this.state.devMode.timeScale = this.state.devMode.enabled ? 4 : 1;
     this.refreshDevText();
-    this.showScorePop(this.player.x, this.player.y - 52, this.state.devMode.enabled ? "DEV" : "LIVE", "#f7c66b");
+    this.showScorePop(this.player.x, this.player.y - 52, this.state.devMode.enabled ? t("devOn") : t("devOff"), "#f7c66b");
   }
 
   private devGrantLevel(): void {
@@ -221,7 +222,7 @@ export class GameScene extends Phaser.Scene {
 
     this.devText.setVisible(this.state.devMode.enabled);
     this.devText.setText(
-      `DEV  ${Math.floor(this.state.elapsedSec)}s  x${this.state.devMode.timeScale}\nF1 toggle  L level  B boss  N +60s`
+      t("devHud", { seconds: Math.floor(this.state.elapsedSec), scale: this.state.devMode.timeScale })
     );
   }
 

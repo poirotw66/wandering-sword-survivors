@@ -1,12 +1,11 @@
 import Phaser from "phaser";
-import { SKILL_CONFIGS, type SkillId } from "../data/skills";
-import { WEAPON_CONFIGS, type WeaponId } from "../data/weapons";
 import type { UpgradeOption } from "../data/upgrades";
 import type { GameState } from "./GameState";
 import { ExpBar } from "../ui/ExpBar";
 import { HealthBar } from "../ui/HealthBar";
 import { TimerText } from "../ui/TimerText";
 import { UpgradePanel } from "../ui/UpgradePanel";
+import { enemyName, skillName, t, weaponName } from "../i18n";
 
 export class UIScene extends Phaser.Scene {
   private state!: GameState;
@@ -37,9 +36,9 @@ export class UIScene extends Phaser.Scene {
     this.expBar = new ExpBar(this);
     this.healthBar = new HealthBar(this, 24, 34);
     this.timerText = new TimerText(this, this.scale.width / 2, 18);
-    this.levelText = this.add.text(24, 52, "Linghu Chong Lv 1", { fontSize: "18px", color: "#f7efd8" }).setScrollFactor(0);
+    this.levelText = this.add.text(24, 52, "", { fontSize: "18px", color: "#f7efd8" }).setScrollFactor(0);
     this.scoreText = this.add
-      .text(this.scale.width - 24, 26, "Renown 0", { fontSize: "18px", color: "#d8e2eb" })
+      .text(this.scale.width - 24, 26, "", { fontSize: "18px", color: "#d8e2eb" })
       .setOrigin(1, 0)
       .setScrollFactor(0);
     this.weaponText = this.add
@@ -83,8 +82,8 @@ export class UIScene extends Phaser.Scene {
     this.healthBar.update(this.state.player);
     this.expBar.update(this.state);
     this.timerText.update(this.state);
-    this.levelText.setText(`Linghu Chong Lv ${this.state.level}`);
-    this.scoreText.setText(`Renown ${this.state.score}  Defeated ${this.state.kills}`);
+    this.levelText.setText(`${t("playerName")} Lv ${this.state.level}`);
+    this.scoreText.setText(`${t("renown")} ${this.state.score}  ${t("defeated")} ${this.state.kills}`);
     this.weaponText.setText(this.formatWeapons());
     this.skillText.setText(this.formatSkills());
     this.innerForceText.setText(this.formatInnerForce());
@@ -113,15 +112,17 @@ export class UIScene extends Phaser.Scene {
   private formatWeapons(): string {
     const equipped = [...this.state.weaponLevels.entries()]
       .filter(([, level]) => level > 0)
-      .map(([weaponId, level]) => `${this.weaponName(weaponId)} Lv.${level}`);
-    return equipped.length > 0 ? `Forms\n${equipped.join("\n")}` : "Forms\nSword Qi Lv.1";
+      .map(([weaponId, level]) => t("weaponLevel", { name: weaponName(weaponId), level }));
+    return equipped.length > 0
+      ? `${t("forms")}\n${equipped.join("\n")}`
+      : `${t("forms")}\n${t("weaponLevel", { name: weaponName("magicBolt"), level: 1 })}`;
   }
 
   private formatSkills(): string {
     const learned = [...this.state.skillLevels.entries()]
       .filter(([, level]) => level > 0)
-      .map(([skillId, level]) => `${this.skillName(skillId)} Lv.${level}`);
-    return learned.length > 0 ? `Martial Skills\n${learned.join("\n")}` : "Martial Skills\nNone";
+      .map(([skillId, level]) => t("skillLevel", { name: skillName(skillId), level }));
+    return learned.length > 0 ? `${t("martialSkills")}\n${learned.join("\n")}` : `${t("martialSkills")}\n${t("none")}`;
   }
 
   private formatInnerForce(): string {
@@ -132,15 +133,7 @@ export class UIScene extends Phaser.Scene {
         this.state.player.stats.pickupRange * 0.4 +
         (1 / this.state.player.stats.cooldownMultiplier) * 28
     );
-    return `Inner Force ${innerForce}\nMartial Layers ${weaponLayers + skillLayers}`;
-  }
-
-  private weaponName(weaponId: WeaponId): string {
-    return WEAPON_CONFIGS[weaponId].name;
-  }
-
-  private skillName(skillId: SkillId): string {
-    return SKILL_CONFIGS[skillId].name;
+    return `${t("innerForce")} ${innerForce}\n${t("martialLayers")} ${weaponLayers + skillLayers}`;
   }
 
   private createPauseOverlay(): Phaser.GameObjects.Container {
@@ -148,14 +141,14 @@ export class UIScene extends Phaser.Scene {
     const container = this.add.container(width / 2, height / 2).setDepth(900).setScrollFactor(0).setVisible(false);
     const bg = this.add.rectangle(0, 0, width, height, 0x050711, 0.68).setName("pause-bg");
     const title = this.add
-      .text(0, -28, "Paused", {
+      .text(0, -28, t("paused"), {
         fontFamily: "Georgia, serif",
         fontSize: "46px",
         color: "#f7efd8"
       })
       .setOrigin(0.5);
     const hint = this.add
-      .text(0, 34, "Press Esc to return to the jianghu", {
+      .text(0, 34, t("pauseHint"), {
         fontSize: "18px",
         color: "#aac7d8"
       })
@@ -173,7 +166,7 @@ export class UIScene extends Phaser.Scene {
     const bg = this.add.rectangle(0, 0, 420, 18, 0x2a1720).setStrokeStyle(2, 0xff7687);
     this.bossBarFill = this.add.rectangle(-208, 0, 416, 10, 0xff4f64).setOrigin(0, 0.5);
     this.bossBarLabel = this.add
-      .text(0, -28, "Renegade Master", {
+      .text(0, -28, enemyName("midBoss"), {
         fontSize: "16px",
         color: "#ffb3bf",
         fontStyle: "700"
@@ -191,7 +184,7 @@ export class UIScene extends Phaser.Scene {
   }
 
   private showBossWarning(name: string, markSec: number): void {
-    this.bossText.setText(`${Math.floor(markSec / 60)}:00  ${name} enters the field`);
+    this.bossText.setText(t("bossWarning", { minute: Math.floor(markSec / 60), name }));
     this.tweens.add({
       targets: this.bossText,
       alpha: 0,

@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { ENEMY_CONFIGS, type EnemyConfig, type EnemyId } from "../data/enemies";
+import { t } from "../i18n";
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
   enemyId: EnemyId = "slime";
@@ -80,7 +81,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hpBarBg ??= this.scene.add.rectangle(this.x, this.y, 34, 5, 0x160f18, 0.86).setDepth(45);
     this.hpBarFill ??= this.scene.add.rectangle(this.x, this.y, 34, 3, 0xff5f72, 0.95).setOrigin(0, 0.5).setDepth(46);
     this.eliteMarker ??= this.scene.add
-      .text(this.x, this.y, "Elite", {
+      .text(this.x, this.y, t("elite"), {
         fontSize: "11px",
         color: "#ffe09a",
         fontStyle: "700"

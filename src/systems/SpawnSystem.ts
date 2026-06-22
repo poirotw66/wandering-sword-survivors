@@ -3,6 +3,7 @@ import { BOSS_SCHEDULE, SPAWN_WAVES, type BossScheduleEntry } from "../data/wave
 import type { EnemySystem } from "./EnemySystem";
 import type { Player } from "../entities/Player";
 import { clamp } from "../utils/math";
+import { enemyName } from "../i18n";
 
 export class SpawnSystem {
   private readonly lastSpawn = new Map<string, number>();
@@ -65,8 +66,8 @@ export class SpawnSystem {
     this.spawnedBossMarks.add(entry.markSec);
     const point = this.randomSpawnPoint(520);
     const boss = this.enemySystem.spawn(entry.enemyId, point.x, point.y);
-    this.scene.events.emit("boss-health-changed", boss.hp, boss.maxHp, boss.config.name);
-    this.scene.events.emit("boss-spawned", boss.config.name, entry.markSec);
+    this.scene.events.emit("boss-health-changed", boss.hp, boss.maxHp, enemyName(boss.enemyId));
+    this.scene.events.emit("boss-spawned", enemyName(boss.enemyId), entry.markSec);
   }
 
   private randomSpawnPoint(distance = 460): Phaser.Math.Vector2 {
