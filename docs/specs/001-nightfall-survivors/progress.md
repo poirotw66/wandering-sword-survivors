@@ -19,6 +19,8 @@
 - Smooth player acceleration/deceleration, softened rotation, and camera follow lerp.
 - Wuxia retheme with Linghu Chong as first hero.
 - Martial-skill upgrade system with independent skill levels and persistent stat effects.
+- Generated wuxia sprite atlas, chroma-key cutouts, and Phaser image loading.
+- Fixed upgrade card selection event flow and stabilized player movement without sprite spin drift.
 - `npm run serve` for build-and-preview on port 5173.
 - GitHub Pages workflow.
 

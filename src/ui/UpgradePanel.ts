@@ -34,10 +34,14 @@ export class UpgradePanel {
       const x = width / 2 + (index - 1) * (cardWidth + 22);
       const y = height * 0.52;
       const card = this.scene.add.container(x, y);
+      card.setSize(cardWidth, cardHeight);
+      card.setInteractive(
+        new Phaser.Geom.Rectangle(-cardWidth / 2, -cardHeight / 2, cardWidth, cardHeight),
+        Phaser.Geom.Rectangle.Contains
+      );
       const bg = this.scene.add
         .rectangle(0, 0, cardWidth, cardHeight, 0x192033, 0.98)
-        .setStrokeStyle(2, 0xf7c66b)
-        .setInteractive({ useHandCursor: true });
+        .setStrokeStyle(2, 0xf7c66b);
       const title = this.scene.add
         .text(0, -52, `${index + 1}. ${option.title}`, {
           fontSize: "20px",
@@ -55,7 +59,9 @@ export class UpgradePanel {
         })
         .setOrigin(0.5);
 
-      bg.on("pointerdown", () => onPick(option));
+      card.on("pointerover", () => bg.setStrokeStyle(3, 0xffe09a));
+      card.on("pointerout", () => bg.setStrokeStyle(2, 0xf7c66b));
+      card.on("pointerdown", () => onPick(option));
       card.add([bg, title, description]);
       this.container.add(card);
       this.cards.push(card);

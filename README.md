@@ -37,6 +37,7 @@ npm run serve
 - Enemy waves with Slime, Bat, Golem, and a 10-minute boss
 - Automatic martial forms: Sword Qi, Circling Sword Guard, Breaking Palm Wave, Nine Swords Flash
 - Martial skill upgrades: Dugu Nine Swords, Star Absorption Inner Force, Huashan Cloud Steps, Wine-Tempered Sword Heart
+- Generated wuxia sprite art for Linghu Chong, enemies, boss, martial effects, EXP gem, and wine gourd pickup
 - Experience gems, level-up choices, HP, score, kills, timer, best score
 - Pause overlay, weapon-level HUD, damage shake, and kill score popups
 - Health pickups, rising wave pressure, and a visible boss health bar

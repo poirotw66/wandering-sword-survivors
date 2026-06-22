@@ -2,10 +2,8 @@ import Phaser from "phaser";
 import type { Player } from "../entities/Player";
 
 export class PlayerSystem {
-  private static readonly ACCELERATION = 1650;
-  private static readonly DECELERATION = 2200;
-  private static readonly TURN_LERP = 0.24;
-  private static readonly CAMERA_LERP = 0.16;
+  private static readonly ACCELERATION = 2400;
+  private static readonly DECELERATION = 3000;
 
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys: Record<"w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key>;
@@ -36,15 +34,13 @@ export class PlayerSystem {
     const velocity = new Phaser.Math.Vector2(body.velocity.x, body.velocity.y);
 
     if (direction.lengthSq() > 0) {
-      const targetVelocity = direction.scale(this.player.stats.moveSpeed);
+      const targetVelocity = direction.clone().scale(this.player.stats.moveSpeed);
+      const toTarget = targetVelocity.clone().subtract(velocity);
       const maxStep = PlayerSystem.ACCELERATION * deltaSeconds;
-      const nextVelocity = velocity.lerp(targetVelocity, Math.min(1, maxStep / Math.max(1, velocity.distance(targetVelocity))));
+      const nextVelocity =
+        toTarget.length() <= maxStep ? targetVelocity : velocity.add(toTarget.normalize().scale(maxStep));
       this.player.setVelocity(nextVelocity.x, nextVelocity.y);
-      this.player.rotation = Phaser.Math.Angle.RotateTo(
-        this.player.rotation,
-        direction.angle(),
-        PlayerSystem.TURN_LERP
-      );
+      this.player.setFlipX(direction.x < -0.05);
     } else {
       const speed = velocity.length();
       const nextSpeed = Math.max(0, speed - PlayerSystem.DECELERATION * deltaSeconds);
@@ -56,8 +52,7 @@ export class PlayerSystem {
       }
     }
 
-    const camera = this.scene.cameras.main;
-    camera.scrollX = Phaser.Math.Linear(camera.scrollX, this.player.x - camera.width / 2, PlayerSystem.CAMERA_LERP);
-    camera.scrollY = Phaser.Math.Linear(camera.scrollY, this.player.y - camera.height / 2, PlayerSystem.CAMERA_LERP);
+    this.player.setRotation(0);
+    this.scene.cameras.main.centerOn(this.player.x, this.player.y);
   }
 }

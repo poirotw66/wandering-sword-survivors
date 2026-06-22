@@ -67,14 +67,14 @@ export class WeaponSystem {
     const count = 1 + Math.floor(level / 4);
     const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
     for (let i = 0; i < count; i += 1) {
-      this.spawnProjectile("magicBolt", angle + (i - (count - 1) / 2) * 0.18, {
-        damage: 18 + level * 5,
-        speed: 470,
-        pierce: 1 + Math.floor(level / 5),
-        durationMs: 1300,
-        scale: 0.85,
-        tint: 0x89d8ff
-      });
+    this.spawnProjectile("magicBolt", angle + (i - (count - 1) / 2) * 0.18, {
+      damage: 18 + level * 5,
+      speed: 470,
+      pierce: 1 + Math.floor(level / 5),
+      durationMs: 1300,
+      scale: 0.14,
+      tint: 0x89d8ff
+    });
     }
   }
 
@@ -87,8 +87,9 @@ export class WeaponSystem {
         speed: 190 + level * 16,
         pierce: 2 + Math.floor(level / 3),
         durationMs: 820,
-        scale: 1.25,
-        tint: 0xff8750
+        scale: 0.16,
+        tint: 0xffffff,
+        texture: "palm-wave"
       });
     }
   }
@@ -107,7 +108,7 @@ export class WeaponSystem {
         velocityY: 0,
         durationMs: 220,
         texture: "strike",
-        scale: 1.6,
+        scale: 0.22,
         tint: 0xfff27a
       });
     }
@@ -142,7 +143,7 @@ export class WeaponSystem {
         velocityY: 0,
         durationMs: 200,
         texture: "blade",
-        scale: 0.95 + level * 0.04,
+        scale: 0.18 + level * 0.01,
         tint: 0xe7e1ff
       });
     }
@@ -151,7 +152,7 @@ export class WeaponSystem {
   private spawnProjectile(
     weaponId: WeaponId,
     angle: number,
-    options: { damage: number; speed: number; pierce: number; durationMs: number; scale: number; tint: number }
+    options: { damage: number; speed: number; pierce: number; durationMs: number; scale: number; tint: number; texture?: string }
   ): void {
     const direction = angleToVector(angle);
     const projectile = this.acquireProjectile();
@@ -164,6 +165,7 @@ export class WeaponSystem {
       velocityX: direction.x * options.speed * this.player.stats.projectileSpeedMultiplier,
       velocityY: direction.y * options.speed * this.player.stats.projectileSpeedMultiplier,
       durationMs: options.durationMs,
+      texture: options.texture,
       scale: options.scale * this.player.stats.areaMultiplier,
       tint: options.tint
     });

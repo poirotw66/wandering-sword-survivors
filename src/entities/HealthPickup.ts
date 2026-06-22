@@ -15,7 +15,8 @@ export class HealthPickup extends Phaser.Physics.Arcade.Sprite {
     this.setPosition(x, y);
     this.setActive(true);
     this.setVisible(true);
-    this.setCircle(8);
+    this.setScale(0.14);
+    this.setCircle(70, 38, 54);
     this.setDepth(9);
     this.setVelocity(0, 0);
   }

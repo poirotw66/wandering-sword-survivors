@@ -58,7 +58,7 @@ export class UIScene extends Phaser.Scene {
 
     this.scale.on("resize", () => this.resize());
     this.events.on("show-upgrades", (options: UpgradeOption[]) => {
-      this.upgradePanel.show(options, (option) => this.events.emit("upgrade-picked", option));
+      this.upgradePanel.show(options, (option) => this.scene.get("GameScene").events.emit("upgrade-picked", option));
     });
     this.events.on("hide-upgrades", () => this.upgradePanel.hide());
     this.events.on("pause-changed", (paused: boolean) => this.pauseOverlay.setVisible(paused));

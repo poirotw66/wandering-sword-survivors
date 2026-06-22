@@ -36,6 +36,7 @@ export class GameScene extends Phaser.Scene {
     this.events.removeAllListeners("player-damaged");
     this.events.removeAllListeners("enemy-killed");
     this.events.removeAllListeners("player-healed");
+    this.events.removeAllListeners("upgrade-picked");
     this.physics.world.setBounds(-3000, -3000, 6000, 6000);
     this.cameras.main.setBackgroundColor("#111421");
 
@@ -84,9 +85,7 @@ export class GameScene extends Phaser.Scene {
     this.events.on("enemy-killed", (x: number, y: number, score: number) => this.showScorePop(x, y, score));
     this.events.on("player-healed", (amount: number) => this.showScorePop(this.player.x, this.player.y - 12, amount, "#84f7b2"));
     this.input.keyboard?.on("keydown-ESC", () => this.togglePause());
-    const uiEvents = this.scene.get("UIScene").events;
-    uiEvents.removeAllListeners("upgrade-picked");
-    uiEvents.on("upgrade-picked", (option: UpgradeOption) => {
+    this.events.on("upgrade-picked", (option: UpgradeOption) => {
       this.upgradeSystem.apply(option);
     });
   }

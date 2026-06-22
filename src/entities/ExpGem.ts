@@ -15,7 +15,8 @@ export class ExpGem extends Phaser.Physics.Arcade.Sprite {
     this.setPosition(x, y);
     this.setActive(true);
     this.setVisible(true);
-    this.setCircle(6);
+    this.setScale(0.16);
+    this.setCircle(62, 32, 48);
     this.setDepth(8);
   }
 }
