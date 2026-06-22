@@ -45,8 +45,8 @@ export class CollisionSystem {
     const killed = enemy.damage(projectile.damage);
     this.scene.events.emit("projectile-hit", enemy.x, enemy.y);
     this.flashHit(enemy.x, enemy.y, projectile.weaponId === "flameWave" ? 0x8ff4ff : 0xfff1a1);
-    if (enemy.enemyId === "boss") {
-      this.scene.events.emit("boss-health-changed", Math.max(0, enemy.hp), enemy.maxHp);
+    if (enemy.config.isBoss) {
+      this.scene.events.emit("boss-health-changed", Math.max(0, enemy.hp), enemy.maxHp, enemy.config.name);
     }
     projectile.pierceLeft -= 1;
     if (projectile.pierceLeft <= 0 && projectile.weaponId !== "orbitBlade") {
@@ -91,13 +91,13 @@ export class CollisionSystem {
     this.state.score += enemy.config.score;
     this.scene.events.emit("enemy-killed", enemy.x, enemy.y, enemy.config.score);
     this.expSystem.drop(enemy.x, enemy.y, enemy.config.exp);
-    this.pickupSystem.maybeDropHealth(enemy.x, enemy.y, enemy.enemyId === "golem" ? 0.16 : 0.055);
-    const wasBoss = enemy.enemyId === "boss";
+    this.pickupSystem.maybeDropHealth(enemy.x, enemy.y, enemy.config.isBoss || enemy.enemyId === "golem" ? 0.16 : 0.055);
+    const wonRun = Boolean(enemy.config.endsRunOnDefeat);
     enemy.setActive(false);
     enemy.setVisible(false);
     enemy.setVelocity(0, 0);
 
-    if (wasBoss) {
+    if (wonRun) {
       this.scene.events.emit("game-won");
     }
   }

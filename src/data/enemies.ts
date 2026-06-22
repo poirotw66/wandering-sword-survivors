@@ -1,4 +1,4 @@
-export type EnemyId = "slime" | "bat" | "golem" | "boss";
+export type EnemyId = "slime" | "bat" | "golem" | "minorBoss" | "midBoss" | "greatBoss" | "megaBoss" | "finalBoss";
 
 export type EnemyConfig = {
   id: EnemyId;
@@ -10,6 +10,8 @@ export type EnemyConfig = {
   radius: number;
   tint: number;
   score: number;
+  isBoss?: boolean;
+  endsRunOnDefeat?: boolean;
 };
 
 export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
@@ -46,15 +48,65 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     tint: 0xc0a46b,
     score: 40
   },
-  boss: {
-    id: "boss",
+  minorBoss: {
+    id: "minorBoss",
+    name: "Rival Sect Captain",
+    hp: 460,
+    damage: 24,
+    moveSpeed: 72,
+    exp: 26,
+    radius: 34,
+    tint: 0xff8f70,
+    score: 220,
+    isBoss: true
+  },
+  midBoss: {
+    id: "midBoss",
     name: "Renegade Master",
-    hp: 1250,
-    damage: 35,
-    moveSpeed: 64,
+    hp: 1050,
+    damage: 32,
+    moveSpeed: 66,
     exp: 50,
     radius: 42,
     tint: 0xff4f64,
-    score: 600
+    score: 600,
+    isBoss: true
+  },
+  greatBoss: {
+    id: "greatBoss",
+    name: "Grand Sword Elder",
+    hp: 2100,
+    damage: 42,
+    moveSpeed: 58,
+    exp: 95,
+    radius: 50,
+    tint: 0xd9b45f,
+    score: 1200,
+    isBoss: true
+  },
+  megaBoss: {
+    id: "megaBoss",
+    name: "Demonic Sect Overlord",
+    hp: 3600,
+    damage: 54,
+    moveSpeed: 54,
+    exp: 150,
+    radius: 58,
+    tint: 0xb86bff,
+    score: 2200,
+    isBoss: true
+  },
+  finalBoss: {
+    id: "finalBoss",
+    name: "Eastern Invincible",
+    hp: 6200,
+    damage: 68,
+    moveSpeed: 60,
+    exp: 300,
+    radius: 68,
+    tint: 0xff2f86,
+    score: 5000,
+    isBoss: true,
+    endsRunOnDefeat: true
   }
 };

@@ -25,6 +25,7 @@
 - First balance pass for wave density, early EXP pacing, enemy health, player pickup range, and movement speed.
 - WebAudio feedback for sword forms, hit impact, EXP pickup, level up, healing, and damage.
 - Visual polish pass for camera follow lerp, title/game-over character art, hit sparks, and projectile emphasis.
+- 30-minute boss timeline: minor bosses every minute, mid boss at 5:00, great boss at 10:00, mega bosses at 15:00/20:00/25:00, and final boss at 30:00; only final boss defeat wins the run.
 - `npm run serve` for build-and-preview on port 5173.
 - GitHub Pages workflow.
 

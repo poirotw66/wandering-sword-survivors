@@ -134,9 +134,6 @@ export class GameScene extends Phaser.Scene {
     this.pickupSystem.update();
     this.refreshDevText();
 
-    if (this.state.elapsedSec >= GAME_DURATION_SEC && this.enemySystem.activeCount() === 0) {
-      this.finish(true);
-    }
   }
 
   private createFloor(): void {

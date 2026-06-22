@@ -62,9 +62,9 @@ export class UIScene extends Phaser.Scene {
     });
     this.events.on("hide-upgrades", () => this.upgradePanel.hide());
     this.events.on("pause-changed", (paused: boolean) => this.pauseOverlay.setVisible(paused));
-    this.scene.get("GameScene").events.once("boss-spawned", () => this.showBossWarning());
-    this.scene.get("GameScene").events.on("boss-health-changed", (hp: number, maxHp: number) => {
-      this.updateBossBar(hp, maxHp);
+    this.scene.get("GameScene").events.on("boss-spawned", (name: string, markSec: number) => this.showBossWarning(name, markSec));
+    this.scene.get("GameScene").events.on("boss-health-changed", (hp: number, maxHp: number, name: string) => {
+      this.updateBossBar(hp, maxHp, name);
     });
 
     this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
@@ -167,15 +167,15 @@ export class UIScene extends Phaser.Scene {
     return container;
   }
 
-  private updateBossBar(hp: number, maxHp: number): void {
+  private updateBossBar(hp: number, maxHp: number, name: string): void {
     const ratio = Phaser.Math.Clamp(hp / maxHp, 0, 1);
     this.bossBar.setVisible(ratio > 0);
     this.bossBarFill.width = 416 * ratio;
-    this.bossBarLabel.setText(`Renegade Master  ${Math.ceil(hp)} / ${maxHp}`);
+    this.bossBarLabel.setText(`${name}  ${Math.ceil(hp)} / ${maxHp}`);
   }
 
-  private showBossWarning(): void {
-    this.bossText.setText("A renegade master enters the field");
+  private showBossWarning(name: string, markSec: number): void {
+    this.bossText.setText(`${Math.floor(markSec / 60)}:00  ${name} enters the field`);
     this.tweens.add({
       targets: this.bossText,
       alpha: 0,

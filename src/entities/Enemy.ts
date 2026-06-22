@@ -24,11 +24,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.setActive(true);
     this.setVisible(true);
     this.clearTint();
-    const scale = enemyId === "boss" ? 0.28 : this.config.radius / 90;
+    const scale = this.config.isBoss ? this.config.radius / 150 : this.config.radius / 90;
     this.setScale(scale);
-    const bodyRadius = enemyId === "boss" ? 95 : 74;
+    const bodyRadius = this.config.isBoss ? 95 : 74;
     this.setCircle(bodyRadius, this.width / 2 - bodyRadius, this.height / 2 - bodyRadius);
-    this.setDepth(enemyId === "boss" ? 18 : 10);
+    this.setDepth(this.config.isBoss ? 18 : 10);
   }
 
   damage(amount: number): boolean {
@@ -43,7 +43,11 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       slime: "enemy-purple",
       bat: "enemy-green",
       golem: "enemy-red",
-      boss: "boss-master"
+      minorBoss: "boss-master",
+      midBoss: "boss-master",
+      greatBoss: "boss-master",
+      megaBoss: "boss-master",
+      finalBoss: "boss-master"
     };
     return textures[enemyId];
   }
