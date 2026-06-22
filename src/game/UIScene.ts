@@ -17,6 +17,7 @@ export class UIScene extends Phaser.Scene {
   private scoreText!: Phaser.GameObjects.Text;
   private weaponText!: Phaser.GameObjects.Text;
   private skillText!: Phaser.GameObjects.Text;
+  private innerForceText!: Phaser.GameObjects.Text;
   private bossText!: Phaser.GameObjects.Text;
   private bossBar!: Phaser.GameObjects.Container;
   private bossBarFill!: Phaser.GameObjects.Rectangle;
@@ -46,6 +47,9 @@ export class UIScene extends Phaser.Scene {
       .setScrollFactor(0);
     this.skillText = this.add
       .text(24, 166, "", { fontSize: "14px", color: "#f7c66b", lineSpacing: 5 })
+      .setScrollFactor(0);
+    this.innerForceText = this.add
+      .text(24, 264, "", { fontSize: "14px", color: "#84f7b2", lineSpacing: 5 })
       .setScrollFactor(0);
     this.bossText = this.add
       .text(this.scale.width / 2, 62, "", { fontSize: "22px", color: "#ff7687", fontStyle: "700" })
@@ -83,6 +87,7 @@ export class UIScene extends Phaser.Scene {
     this.scoreText.setText(`Renown ${this.state.score}  Defeated ${this.state.kills}`);
     this.weaponText.setText(this.formatWeapons());
     this.skillText.setText(this.formatSkills());
+    this.innerForceText.setText(this.formatInnerForce());
   }
 
   private resize(): void {
@@ -117,6 +122,17 @@ export class UIScene extends Phaser.Scene {
       .filter(([, level]) => level > 0)
       .map(([skillId, level]) => `${this.skillName(skillId)} Lv.${level}`);
     return learned.length > 0 ? `Martial Skills\n${learned.join("\n")}` : "Martial Skills\nNone";
+  }
+
+  private formatInnerForce(): string {
+    const weaponLayers = [...this.state.weaponLevels.values()].reduce((total, level) => total + level, 0);
+    const skillLayers = [...this.state.skillLevels.values()].reduce((total, level) => total + level, 0);
+    const innerForce = Math.round(
+      100 * this.state.player.stats.damageMultiplier +
+        this.state.player.stats.pickupRange * 0.4 +
+        (1 / this.state.player.stats.cooldownMultiplier) * 28
+    );
+    return `Inner Force ${innerForce}\nMartial Layers ${weaponLayers + skillLayers}`;
   }
 
   private weaponName(weaponId: WeaponId): string {

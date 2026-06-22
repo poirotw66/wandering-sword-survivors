@@ -26,6 +26,7 @@
 - WebAudio feedback for sword forms, hit impact, EXP pickup, level up, healing, and damage.
 - Visual polish pass for camera follow lerp, title/game-over character art, hit sparks, and projectile emphasis.
 - 30-minute boss timeline: minor bosses every minute, mid boss at 5:00, great boss at 10:00, mega bosses at 15:00/20:00/25:00, and final boss at 30:00; only final boss defeat wins the run.
+- Wuxia depth pass: Star Absorption Field weapon branch, Qingcheng/Songshan/Demonic Cult enemies, elite enemy markers and health bars, boss dash/fan-strike/summon skills, inner-force HUD, and secret-manual upgrade UI.
 - `npm run serve` for build-and-preview on port 5173.
 - GitHub Pages workflow.
 

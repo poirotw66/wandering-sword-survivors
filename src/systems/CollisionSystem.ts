@@ -44,7 +44,8 @@ export class CollisionSystem {
     projectile.hitIds.add(enemy);
     const killed = enemy.damage(projectile.damage);
     this.scene.events.emit("projectile-hit", enemy.x, enemy.y);
-    this.flashHit(enemy.x, enemy.y, projectile.weaponId === "flameWave" ? 0x8ff4ff : 0xfff1a1);
+    const flashColor = projectile.weaponId === "starVortex" ? 0xb86bff : projectile.weaponId === "flameWave" ? 0x8ff4ff : 0xfff1a1;
+    this.flashHit(enemy.x, enemy.y, flashColor);
     if (enemy.config.isBoss) {
       this.scene.events.emit("boss-health-changed", Math.max(0, enemy.hp), enemy.maxHp, enemy.config.name);
     }
@@ -96,6 +97,7 @@ export class CollisionSystem {
     enemy.setActive(false);
     enemy.setVisible(false);
     enemy.setVelocity(0, 0);
+    enemy.hideStatusUi();
 
     if (wonRun) {
       this.scene.events.emit("game-won");

@@ -59,6 +59,9 @@ export class BootScene extends Phaser.Scene {
     if (!this.textures.exists("palm-wave")) {
       this.createCircleTexture("palm-wave", 42, 0x9ee7ff, 0xffffff);
     }
+    if (!this.textures.exists("star-vortex")) {
+      this.createVortexTexture();
+    }
   }
 
   private createCircleTexture(key: string, size: number, fill: number, stroke: number): void {
@@ -130,6 +133,28 @@ export class BootScene extends Phaser.Scene {
     graphics.strokeCircle(19, 8, 7);
     graphics.strokePath();
     graphics.generateTexture("heart", 28, 30);
+    graphics.destroy();
+  }
+
+  private createVortexTexture(): void {
+    const graphics = this.add.graphics();
+    graphics.lineStyle(5, 0x8ff4ff, 0.8);
+    graphics.strokeCircle(96, 96, 74);
+    graphics.lineStyle(4, 0xb86bff, 0.72);
+    graphics.beginPath();
+    for (let i = 0; i < 42; i += 1) {
+      const angle = i * 0.48;
+      const radius = 12 + i * 1.6;
+      const x = 96 + Math.cos(angle) * radius;
+      const y = 96 + Math.sin(angle) * radius;
+      if (i === 0) {
+        graphics.moveTo(x, y);
+      } else {
+        graphics.lineTo(x, y);
+      }
+    }
+    graphics.strokePath();
+    graphics.generateTexture("star-vortex", 192, 192);
     graphics.destroy();
   }
 }

@@ -57,6 +57,8 @@ export class WeaponSystem {
       this.fireFlameWave(level);
     } else if (weaponId === "thunderStrike") {
       this.fireThunderStrike(level);
+    } else if (weaponId === "starVortex") {
+      this.fireStarVortex(level);
     }
   }
 
@@ -117,6 +119,39 @@ export class WeaponSystem {
       this.flashAt(target.x, target.y, 0xfff27a, 62);
     }
     this.scene.events.emit("weapon-fired", "thunderStrike");
+  }
+
+  private fireStarVortex(level: number): void {
+    const radius = 116 + level * 18;
+    const projectile = this.acquireProjectile();
+    projectile.fire({
+      weaponId: "starVortex",
+      x: this.player.x,
+      y: this.player.y,
+      damage: (12 + level * 6) * this.player.stats.damageMultiplier,
+      pierce: 99,
+      velocityX: 0,
+      velocityY: 0,
+      durationMs: 760,
+      texture: "star-vortex",
+      scale: (radius * 2) / 192,
+      tint: 0xffffff
+    });
+
+    for (const enemy of this.closestEnemies(28)) {
+      const distance = Phaser.Math.Distance.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+      if (distance > radius + 80) {
+        continue;
+      }
+      const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+      const pull = 120 + level * 28;
+      enemy.setVelocity(Math.cos(angle) * pull, Math.sin(angle) * pull);
+    }
+
+    const healAmount = 2 + Math.floor(level / 2);
+    this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
+    this.scene.events.emit("player-healed", healAmount);
+    this.scene.events.emit("weapon-fired", "starVortex");
   }
 
   private updateOrbitBlades(): void {

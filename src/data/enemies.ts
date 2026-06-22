@@ -12,12 +12,15 @@ export type EnemyConfig = {
   score: number;
   isBoss?: boolean;
   endsRunOnDefeat?: boolean;
+  canDash?: boolean;
+  canFanStrike?: boolean;
+  canSummon?: boolean;
 };
 
 export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   slime: {
     id: "slime",
-    name: "Hidden Sect Scout",
+    name: "Qingcheng Disciple",
     hp: 18,
     damage: 10,
     moveSpeed: 72,
@@ -28,7 +31,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   },
   bat: {
     id: "bat",
-    name: "Swift Dagger Rogue",
+    name: "Demonic Cult Assassin",
     hp: 14,
     damage: 8,
     moveSpeed: 118,
@@ -39,7 +42,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   },
   golem: {
     id: "golem",
-    name: "Iron Palm Bruiser",
+    name: "Songshan Expert",
     hp: 72,
     damage: 20,
     moveSpeed: 48,
@@ -58,7 +61,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 34,
     tint: 0xff8f70,
     score: 220,
-    isBoss: true
+    isBoss: true,
+    canDash: true
   },
   midBoss: {
     id: "midBoss",
@@ -70,7 +74,9 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 42,
     tint: 0xff4f64,
     score: 600,
-    isBoss: true
+    isBoss: true,
+    canDash: true,
+    canFanStrike: true
   },
   greatBoss: {
     id: "greatBoss",
@@ -82,7 +88,10 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 50,
     tint: 0xd9b45f,
     score: 1200,
-    isBoss: true
+    isBoss: true,
+    canDash: true,
+    canFanStrike: true,
+    canSummon: true
   },
   megaBoss: {
     id: "megaBoss",
@@ -94,7 +103,10 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 58,
     tint: 0xb86bff,
     score: 2200,
-    isBoss: true
+    isBoss: true,
+    canDash: true,
+    canFanStrike: true,
+    canSummon: true
   },
   finalBoss: {
     id: "finalBoss",
@@ -107,6 +119,9 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     tint: 0xff2f86,
     score: 5000,
     isBoss: true,
+    canDash: true,
+    canFanStrike: true,
+    canSummon: true,
     endsRunOnDefeat: true
   }
 };

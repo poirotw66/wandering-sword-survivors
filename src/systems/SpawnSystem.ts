@@ -33,7 +33,8 @@ export class SpawnSystem {
       const amount = wave.amountPerSpawn + Math.min(6, Math.floor(elapsedSec / 360));
       for (let i = 0; i < amount; i += 1) {
         const point = this.randomSpawnPoint();
-        this.enemySystem.spawn(wave.enemyId, point.x, point.y);
+        const eliteChance = clamp(0.02 + elapsedSec / 1800 * 0.12, 0.02, 0.14);
+        this.enemySystem.spawn(wave.enemyId, point.x, point.y, Math.random() < eliteChance);
       }
     }
 

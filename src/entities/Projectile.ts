@@ -40,7 +40,7 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.setActive(true);
     this.setVisible(true);
     this.setAlpha(0.96);
-    this.setDepth(options.weaponId === "thunderStrike" ? 26 : 16);
+    this.setDepth(options.weaponId === "starVortex" ? 13 : options.weaponId === "thunderStrike" ? 26 : 16);
     if (this.body) {
       this.body.enable = true;
     }

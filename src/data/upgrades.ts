@@ -13,7 +13,8 @@ const weaponLabel: Record<WeaponId, string> = {
   magicBolt: WEAPON_CONFIGS.magicBolt.name,
   orbitBlade: WEAPON_CONFIGS.orbitBlade.name,
   flameWave: WEAPON_CONFIGS.flameWave.name,
-  thunderStrike: WEAPON_CONFIGS.thunderStrike.name
+  thunderStrike: WEAPON_CONFIGS.thunderStrike.name,
+  starVortex: WEAPON_CONFIGS.starVortex.name
 };
 
 const skillLabel: Record<SkillId, string> = {

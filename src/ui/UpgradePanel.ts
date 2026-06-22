@@ -17,22 +17,31 @@ export class UpgradePanel {
     this.currentPick = onPick;
     const { width, height } = this.scene.scale;
     this.container.setVisible(true);
-    this.container.add(this.scene.add.rectangle(width / 2, height / 2, width, height, 0x070912, 0.72));
+    this.container.add(this.scene.add.rectangle(width / 2, height / 2, width, height, 0x070912, 0.78));
+    this.container.add(this.scene.add.rectangle(width / 2, height * 0.5, Math.min(980, width - 72), 340, 0x111421, 0.82).setStrokeStyle(1, 0x5f4a2a, 0.9));
     this.container.add(
       this.scene.add
-        .text(width / 2, height * 0.22, "Comprehend a Martial Art", {
+        .text(width / 2, height * 0.2, "A Secret Manual Opens", {
           fontFamily: "Georgia, serif",
-          fontSize: "36px",
+          fontSize: "38px",
           color: "#f7efd8"
+        })
+        .setOrigin(0.5)
+    );
+    this.container.add(
+      this.scene.add
+        .text(width / 2, height * 0.27, "Choose one insight to deepen Linghu Chong's path", {
+          fontSize: "16px",
+          color: "#aac7d8"
         })
         .setOrigin(0.5)
     );
 
     options.forEach((option, index) => {
       const cardWidth = Math.min(280, width * 0.27);
-      const cardHeight = 178;
+      const cardHeight = 190;
       const x = width / 2 + (index - 1) * (cardWidth + 22);
-      const y = height * 0.52;
+      const y = height * 0.55;
       const card = this.scene.add.container(x, y);
       card.setSize(cardWidth, cardHeight);
       card.setInteractive(
@@ -40,10 +49,19 @@ export class UpgradePanel {
         Phaser.Geom.Rectangle.Contains
       );
       const bg = this.scene.add
-        .rectangle(0, 0, cardWidth, cardHeight, 0x192033, 0.98)
-        .setStrokeStyle(2, 0xf7c66b);
+        .rectangle(0, 0, cardWidth, cardHeight, 0x1b1720, 0.98)
+        .setStrokeStyle(2, 0xd9b45f);
+      const seal = this.scene.add.circle(0, -76, 16, 0x7b2f3a, 0.96).setStrokeStyle(2, 0xffd6b0);
+      const indexText = this.scene.add
+        .text(0, -77, `${index + 1}`, {
+          fontFamily: "Georgia, serif",
+          fontSize: "16px",
+          color: "#f7efd8",
+          fontStyle: "700"
+        })
+        .setOrigin(0.5);
       const title = this.scene.add
-        .text(0, -52, `${index + 1}. ${option.title}`, {
+        .text(0, -42, option.title, {
           fontSize: "20px",
           color: "#f7c66b",
           align: "center",
@@ -51,7 +69,7 @@ export class UpgradePanel {
         })
         .setOrigin(0.5);
       const description = this.scene.add
-        .text(0, 22, option.description, {
+        .text(0, 38, option.description, {
           fontSize: "16px",
           color: "#d8e2eb",
           align: "center",
@@ -60,9 +78,9 @@ export class UpgradePanel {
         .setOrigin(0.5);
 
       card.on("pointerover", () => bg.setStrokeStyle(3, 0xffe09a));
-      card.on("pointerout", () => bg.setStrokeStyle(2, 0xf7c66b));
+      card.on("pointerout", () => bg.setStrokeStyle(2, 0xd9b45f));
       card.on("pointerdown", () => onPick(option));
-      card.add([bg, title, description]);
+      card.add([bg, seal, indexText, title, description]);
       this.container.add(card);
       this.cards.push(card);
     });

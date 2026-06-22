@@ -1,4 +1,4 @@
-export type WeaponId = "magicBolt" | "orbitBlade" | "flameWave" | "thunderStrike";
+export type WeaponId = "magicBolt" | "orbitBlade" | "flameWave" | "thunderStrike" | "starVortex";
 
 export type WeaponConfig = {
   id: WeaponId;
@@ -50,5 +50,15 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
     projectileCount: 1,
     pierce: 1,
     durationMs: 180
+  },
+  starVortex: {
+    id: "starVortex",
+    name: "Star Absorption Field",
+    baseDamage: 14,
+    cooldownMs: 3200,
+    projectileSpeed: 0,
+    projectileCount: 1,
+    pierce: 99,
+    durationMs: 760
   }
 };

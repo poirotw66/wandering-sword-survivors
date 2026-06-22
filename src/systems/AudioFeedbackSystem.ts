@@ -40,7 +40,8 @@ export class AudioFeedbackSystem {
       magicBolt: { frequency: 360, slideTo: 620, durationMs: 70, type: "triangle", gain: 0.035 },
       flameWave: { frequency: 240, slideTo: 190, durationMs: 150, type: "sawtooth", gain: 0.035 },
       thunderStrike: { frequency: 980, slideTo: 420, durationMs: 120, type: "square", gain: 0.04 },
-      orbitBlade: { frequency: 520, slideTo: 560, durationMs: 45, type: "sine", gain: 0.02 }
+      orbitBlade: { frequency: 520, slideTo: 560, durationMs: 45, type: "sine", gain: 0.02 },
+      starVortex: { frequency: 160, slideTo: 310, durationMs: 260, type: "triangle", gain: 0.04 }
     };
     this.play(presets[weaponId] ?? presets.magicBolt);
   }
