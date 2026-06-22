@@ -107,7 +107,7 @@ export class WeaponSystem {
         weaponId: "thunderStrike",
         x: target.x,
         y: target.y,
-        damage: (45 + level * 18) * this.player.stats.damageMultiplier,
+        damage: this.rollDamage(45 + level * 18),
         pierce: 1,
         velocityX: 0,
         velocityY: 0,
@@ -128,7 +128,7 @@ export class WeaponSystem {
       weaponId: "starVortex",
       x: this.player.x,
       y: this.player.y,
-      damage: (12 + level * 6) * this.player.stats.damageMultiplier,
+      damage: this.rollDamage(12 + level * 6),
       pierce: 99,
       velocityX: 0,
       velocityY: 0,
@@ -148,7 +148,7 @@ export class WeaponSystem {
       enemy.setVelocity(Math.cos(angle) * pull, Math.sin(angle) * pull);
     }
 
-    const healAmount = 2 + Math.floor(level / 2);
+    const healAmount = 2 + Math.floor(level / 2) + Math.floor(this.player.stats.areaMultiplier - 1);
     this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
     this.scene.events.emit("player-healed", healAmount);
     this.scene.events.emit("weapon-fired", "starVortex");
@@ -177,7 +177,7 @@ export class WeaponSystem {
         weaponId: "orbitBlade",
         x: this.player.x + Math.cos(angle) * radius,
         y: this.player.y + Math.sin(angle) * radius,
-        damage: 9 + level * 4,
+        damage: this.rollDamage(9 + level * 4),
         pierce: 99,
         velocityX: 0,
         velocityY: 0,
@@ -204,7 +204,7 @@ export class WeaponSystem {
       weaponId,
       x: this.player.x + direction.x * 24,
       y: this.player.y + direction.y * 24,
-      damage: options.damage * this.player.stats.damageMultiplier,
+      damage: this.rollDamage(options.damage),
       pierce: options.pierce,
       velocityX: direction.x * options.speed * this.player.stats.projectileSpeedMultiplier,
       velocityY: direction.y * options.speed * this.player.stats.projectileSpeedMultiplier,
@@ -230,6 +230,19 @@ export class WeaponSystem {
   private acquireProjectile(): Projectile {
     const projectile = this.projectiles.get(this.player.x, this.player.y) as Projectile | null;
     return projectile ?? new Projectile(this.scene, this.player.x, this.player.y);
+  }
+
+  private rollDamage(baseDamage: number): number {
+    let damage = baseDamage * this.player.stats.damageMultiplier * this.player.stats.burstMultiplier;
+    if (Math.random() < this.player.stats.critChance) {
+      damage *= this.player.stats.critMultiplier;
+      this.scene.events.emit("critical-hit");
+    }
+    if (Math.random() < this.player.stats.comboChance) {
+      damage *= 1.35;
+      this.scene.events.emit("combo-hit");
+    }
+    return damage;
   }
 
   private nearestEnemy(): Enemy | undefined {

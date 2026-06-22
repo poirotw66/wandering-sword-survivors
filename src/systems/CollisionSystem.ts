@@ -10,6 +10,7 @@ import type { ExpSystem } from "./ExpSystem";
 import type { PickupSystem } from "./PickupSystem";
 import type { WeaponSystem } from "./WeaponSystem";
 import { enemyName } from "../i18n";
+import type { AchievementSystem } from "./AchievementSystem";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
 
@@ -21,7 +22,8 @@ export class CollisionSystem {
     enemySystem: EnemySystem,
     weaponSystem: WeaponSystem,
     private readonly expSystem: ExpSystem,
-    private readonly pickupSystem: PickupSystem
+    private readonly pickupSystem: PickupSystem,
+    private readonly achievementSystem: AchievementSystem
   ) {
     scene.physics.add.overlap(
       weaponSystem.projectiles,
@@ -95,6 +97,11 @@ export class CollisionSystem {
     this.expSystem.drop(enemy.x, enemy.y, enemy.config.exp);
     this.pickupSystem.maybeDropHealth(enemy.x, enemy.y, enemy.config.isBoss || enemy.enemyId === "golem" ? 0.16 : 0.055);
     const wonRun = Boolean(enemy.config.endsRunOnDefeat);
+    if (enemy.config.isBoss) {
+      for (const message of this.achievementSystem.recordBossDefeat(enemy.enemyId)) {
+        this.scene.events.emit("milestone-unlocked", message);
+      }
+    }
     enemy.setActive(false);
     enemy.setVisible(false);
     enemy.setVelocity(0, 0);

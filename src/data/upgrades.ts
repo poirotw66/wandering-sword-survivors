@@ -1,7 +1,8 @@
 import { SKILL_CONFIGS, type SkillId } from "./skills";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
+import { BUILD_PATH_CONFIGS, type BuildPathId } from "./buildPaths";
 import type { GameState } from "../game/GameState";
-import { skillName, t, weaponName } from "../i18n";
+import { buildPathName, skillName, t, weaponName } from "../i18n";
 
 export type UpgradeOption = {
   id: string;
@@ -75,10 +76,32 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     });
   }
 
+  for (const buildPathId of Object.keys(BUILD_PATH_CONFIGS) as BuildPathId[]) {
+    const config = BUILD_PATH_CONFIGS[buildPathId];
+    const level = state.buildPathLevels.get(buildPathId) ?? 0;
+    if (level >= config.maxLevel) {
+      continue;
+    }
+
+    const nextLevel = level + 1;
+    options.push({
+      id: `build-${buildPathId}`,
+      title:
+        level === 0
+          ? t("buildUnlock", { name: buildPathName(buildPathId) })
+          : t("buildLevel", { name: buildPathName(buildPathId), level: nextLevel }),
+      description: config.describe(state, nextLevel),
+      apply: (gameState) => {
+        gameState.buildPathLevels.set(buildPathId, nextLevel);
+        config.apply(gameState, nextLevel);
+      }
+    });
+  }
+
   for (const skillId of Object.keys(SKILL_CONFIGS) as SkillId[]) {
     const config = SKILL_CONFIGS[skillId];
     const level = state.skillLevels.get(skillId) ?? 0;
-    if (level >= config.maxLevel) {
+    if (level >= config.maxLevel || !state.unlockedSkills.has(skillId)) {
       continue;
     }
 

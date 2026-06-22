@@ -9,6 +9,11 @@ export type PlayerStats = {
   cooldownMultiplier: number;
   projectileSpeedMultiplier: number;
   areaMultiplier: number;
+  critChance: number;
+  critMultiplier: number;
+  dodgeChance: number;
+  comboChance: number;
+  burstMultiplier: number;
 };
 
 export const PLAYER_BASE_STATS: PlayerStats = {
@@ -19,7 +24,12 @@ export const PLAYER_BASE_STATS: PlayerStats = {
   damageMultiplier: 1,
   cooldownMultiplier: 1,
   projectileSpeedMultiplier: 1,
-  areaMultiplier: 1
+  areaMultiplier: 1,
+  critChance: 0.05,
+  critMultiplier: 1.75,
+  dodgeChance: 0,
+  comboChance: 0,
+  burstMultiplier: 1
 };
 
 export class Player extends Phaser.Physics.Arcade.Sprite {
@@ -38,6 +48,19 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
   takeDamage(amount: number, now: number): boolean {
     if (now < this.invulnerableUntil) {
+      return false;
+    }
+
+    if (Math.random() < this.stats.dodgeChance) {
+      this.invulnerableUntil = now + 260;
+      this.scene.tweens.add({
+        targets: this,
+        alpha: 0.55,
+        yoyo: true,
+        duration: 70,
+        repeat: 1,
+        onComplete: () => this.setAlpha(1)
+      });
       return false;
     }
 

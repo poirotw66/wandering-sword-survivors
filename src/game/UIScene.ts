@@ -5,7 +5,7 @@ import { ExpBar } from "../ui/ExpBar";
 import { HealthBar } from "../ui/HealthBar";
 import { TimerText } from "../ui/TimerText";
 import { UpgradePanel } from "../ui/UpgradePanel";
-import { enemyName, skillName, t, weaponName } from "../i18n";
+import { buildPathName, enemyName, skillName, t, weaponName } from "../i18n";
 
 export class UIScene extends Phaser.Scene {
   private state!: GameState;
@@ -17,6 +17,7 @@ export class UIScene extends Phaser.Scene {
   private weaponText!: Phaser.GameObjects.Text;
   private skillText!: Phaser.GameObjects.Text;
   private innerForceText!: Phaser.GameObjects.Text;
+  private buildPathText!: Phaser.GameObjects.Text;
   private bossText!: Phaser.GameObjects.Text;
   private bossBar!: Phaser.GameObjects.Container;
   private bossBarFill!: Phaser.GameObjects.Rectangle;
@@ -49,6 +50,9 @@ export class UIScene extends Phaser.Scene {
       .setScrollFactor(0);
     this.innerForceText = this.add
       .text(24, 264, "", { fontSize: "14px", color: "#84f7b2", lineSpacing: 5 })
+      .setScrollFactor(0);
+    this.buildPathText = this.add
+      .text(24, 328, "", { fontSize: "14px", color: "#ffe09a", lineSpacing: 5 })
       .setScrollFactor(0);
     this.bossText = this.add
       .text(this.scale.width / 2, 62, "", { fontSize: "22px", color: "#ff7687", fontStyle: "700" })
@@ -87,6 +91,7 @@ export class UIScene extends Phaser.Scene {
     this.weaponText.setText(this.formatWeapons());
     this.skillText.setText(this.formatSkills());
     this.innerForceText.setText(this.formatInnerForce());
+    this.buildPathText.setText(this.formatBuildPaths());
   }
 
   private resize(): void {
@@ -134,6 +139,13 @@ export class UIScene extends Phaser.Scene {
         (1 / this.state.player.stats.cooldownMultiplier) * 28
     );
     return `${t("innerForce")} ${innerForce}\n${t("martialLayers")} ${weaponLayers + skillLayers}`;
+  }
+
+  private formatBuildPaths(): string {
+    const paths = [...this.state.buildPathLevels.entries()]
+      .filter(([, level]) => level > 0)
+      .map(([pathId, level]) => t("buildLevel", { name: buildPathName(pathId), level }));
+    return paths.length > 0 ? `${t("buildPaths")}\n${paths.join("\n")}` : `${t("buildPaths")}\n${t("none")}`;
   }
 
   private createPauseOverlay(): Phaser.GameObjects.Container {

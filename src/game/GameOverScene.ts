@@ -1,12 +1,15 @@
 import Phaser from "phaser";
 import { formatClock } from "../utils/math";
 import { t } from "../i18n";
+import { AchievementSystem } from "../systems/AchievementSystem";
 
 export type GameOverData = {
   won: boolean;
   score: number;
   kills: number;
   elapsedSec: number;
+  highestDifficulty: number;
+  achievements: string[];
 };
 
 export class GameOverScene extends Phaser.Scene {
@@ -15,8 +18,15 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   create(data: GameOverData): void {
-    const best = Math.max(data.score, Number(localStorage.getItem("sword-survivors-best") ?? 0));
-    localStorage.setItem("sword-survivors-best", String(best));
+    const record = AchievementSystem.saveRun(
+      {
+        score: data.score,
+        elapsedSec: data.elapsedSec,
+        highestDifficulty: data.highestDifficulty,
+        achievements: data.achievements
+      },
+      data.won
+    );
 
     const { width, height } = this.scale;
     this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17, 0.96);
@@ -32,12 +42,35 @@ export class GameOverScene extends Phaser.Scene {
       .text(
         width / 2,
         height * 0.45,
-        t("resultLine", { time: formatClock(data.elapsedSec), kills: data.kills, score: data.score, best }),
+        t("resultLine", {
+          time: formatClock(data.elapsedSec),
+          kills: data.kills,
+          score: data.score,
+          best: record.bestRenown
+        }),
         {
           fontSize: "22px",
           color: "#d8e2eb",
           align: "center",
           lineSpacing: 10
+        }
+      )
+      .setOrigin(0.5);
+
+    this.add
+      .text(
+        width / 2,
+        height * 0.57,
+        t("recordLine", {
+          difficulty: record.highestDifficulty,
+          fastest: record.fastestClearSec === undefined ? t("none") : formatClock(record.fastestClearSec),
+          achievements: record.achievements.length
+        }),
+        {
+          fontSize: "18px",
+          color: "#f7c66b",
+          align: "center",
+          lineSpacing: 8
         }
       )
       .setOrigin(0.5);

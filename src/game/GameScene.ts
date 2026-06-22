@@ -3,6 +3,7 @@ import { GAME_DURATION_SEC } from "../data/waves";
 import { Player } from "../entities/Player";
 import { CollisionSystem } from "../systems/CollisionSystem";
 import { AudioFeedbackSystem } from "../systems/AudioFeedbackSystem";
+import { AchievementSystem } from "../systems/AchievementSystem";
 import { EnemySystem } from "../systems/EnemySystem";
 import { ExpSystem } from "../systems/ExpSystem";
 import { PlayerSystem } from "../systems/PlayerSystem";
@@ -25,6 +26,7 @@ export class GameScene extends Phaser.Scene {
   private expSystem!: ExpSystem;
   private pickupSystem!: PickupSystem;
   private upgradeSystem!: UpgradeSystem;
+  private achievementSystem!: AchievementSystem;
   private devText?: Phaser.GameObjects.Text;
   private ended = false;
 
@@ -59,6 +61,11 @@ export class GameScene extends Phaser.Scene {
       pausedForMenu: false,
       weaponLevels: new Map(),
       skillLevels: new Map(),
+      buildPathLevels: new Map(),
+      unlockedSkills: new Set(),
+      unlockedAchievements: new Set(),
+      bossDefeats: new Map(),
+      highestDifficulty: 1,
       devMode: {
         enabled: this.isDevModeRequested(),
         timeScale: 1
@@ -72,6 +79,7 @@ export class GameScene extends Phaser.Scene {
     this.expSystem = new ExpSystem(this, this.player, this.state);
     this.pickupSystem = new PickupSystem(this, this.player);
     this.upgradeSystem = new UpgradeSystem(this, this.state);
+    this.achievementSystem = new AchievementSystem(this.state);
     new AudioFeedbackSystem(this);
     new CollisionSystem(
       this,
@@ -80,7 +88,8 @@ export class GameScene extends Phaser.Scene {
       this.enemySystem,
       this.weaponSystem,
       this.expSystem,
-      this.pickupSystem
+      this.pickupSystem,
+      this.achievementSystem
     );
 
     this.scene.launch("UIScene", this.state);
@@ -93,6 +102,7 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.events.on("enemy-killed", (x: number, y: number, score: number) => this.showScorePop(x, y, score));
+    this.events.on("milestone-unlocked", (message: string) => this.showScorePop(this.player.x, this.player.y - 78, message, "#ffe09a"));
     this.events.on("player-healed", (amount: number) => this.showScorePop(this.player.x, this.player.y - 12, amount, "#84f7b2"));
     this.input.keyboard?.on("keydown-ESC", () => this.togglePause());
     this.input.keyboard?.on("keydown-F1", () => this.toggleDevMode());
@@ -158,7 +168,9 @@ export class GameScene extends Phaser.Scene {
       won,
       score: this.state.score,
       kills: this.state.kills,
-      elapsedSec: this.state.elapsedSec
+      elapsedSec: this.state.elapsedSec,
+      highestDifficulty: this.state.highestDifficulty,
+      achievements: [...this.state.unlockedAchievements]
     };
     this.scene.stop("UIScene");
     this.scene.start("GameOverScene", data);
