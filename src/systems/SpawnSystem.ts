@@ -36,12 +36,20 @@ export class SpawnSystem {
     }
 
     if (!this.bossSpawned && elapsedSec >= BOSS_SPAWN_SEC) {
-      this.bossSpawned = true;
-      const point = this.randomSpawnPoint(520);
-      const boss = this.enemySystem.spawn("boss", point.x, point.y);
-      this.scene.events.emit("boss-health-changed", boss.hp, boss.maxHp);
-      this.scene.events.emit("boss-spawned");
+      this.spawnBossNow();
     }
+  }
+
+  spawnBossNow(): void {
+    if (this.bossSpawned) {
+      return;
+    }
+
+    this.bossSpawned = true;
+    const point = this.randomSpawnPoint(520);
+    const boss = this.enemySystem.spawn("boss", point.x, point.y);
+    this.scene.events.emit("boss-health-changed", boss.hp, boss.maxHp);
+    this.scene.events.emit("boss-spawned");
   }
 
   private randomSpawnPoint(distance = 460): Phaser.Math.Vector2 {

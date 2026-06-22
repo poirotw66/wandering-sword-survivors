@@ -14,8 +14,8 @@ export type PlayerStats = {
 export const PLAYER_BASE_STATS: PlayerStats = {
   hp: 100,
   maxHp: 100,
-  moveSpeed: 180,
-  pickupRange: 72,
+  moveSpeed: 188,
+  pickupRange: 86,
   damageMultiplier: 1,
   cooldownMultiplier: 1,
   projectileSpeedMultiplier: 1,
@@ -30,7 +30,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, "player");
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setScale(0.18);
+    this.setScale(0.2);
     this.setCircle(78, 105, 112);
     this.setDepth(20);
     this.setCollideWorldBounds(false);

@@ -21,13 +21,17 @@
 - Martial-skill upgrade system with independent skill levels and persistent stat effects.
 - Generated wuxia sprite atlas, chroma-key cutouts, and Phaser image loading.
 - Fixed upgrade card selection event flow and stabilized player movement without sprite spin drift.
+- Dev/test mode for faster validation: F1 toggles dev mode, L grants a level, B spawns boss, N advances wave time.
+- First balance pass for wave density, early EXP pacing, enemy health, player pickup range, and movement speed.
+- WebAudio feedback for sword forms, hit impact, EXP pickup, level up, healing, and damage.
+- Visual polish pass for camera follow lerp, title/game-over character art, hit sparks, and projectile emphasis.
 - `npm run serve` for build-and-preview on port 5173.
 - GitHub Pages workflow.
 
 ## Pending
 
-- Tune enemy wave density and upgrade balance after playtesting.
-- Add authored image and audio assets.
+- Playtest dev/test mode and tune second-pass enemy wave density, upgrade weights, and boss pacing.
+- Add authored or generated higher-resolution image assets and longer music loops.
 
 ## Verification
 

@@ -43,6 +43,8 @@ export class CollisionSystem {
 
     projectile.hitIds.add(enemy);
     const killed = enemy.damage(projectile.damage);
+    this.scene.events.emit("projectile-hit", enemy.x, enemy.y);
+    this.flashHit(enemy.x, enemy.y, projectile.weaponId === "flameWave" ? 0x8ff4ff : 0xfff1a1);
     if (enemy.enemyId === "boss") {
       this.scene.events.emit("boss-health-changed", Math.max(0, enemy.hp), enemy.maxHp);
     }
@@ -70,6 +72,18 @@ export class CollisionSystem {
 
   private playerCollectsHealth(_playerObject: ArcadeOverlapObject, pickupObject: ArcadeOverlapObject): void {
     this.pickupSystem.collect(pickupObject as HealthPickup);
+  }
+
+  private flashHit(x: number, y: number, color: number): void {
+    const flash = this.scene.add.circle(x, y, 12, color, 0.52).setDepth(35);
+    this.scene.tweens.add({
+      targets: flash,
+      alpha: 0,
+      scale: 2.2,
+      duration: 130,
+      ease: "Sine.easeOut",
+      onComplete: () => flash.destroy()
+    });
   }
 
   private killEnemy(enemy: Enemy): void {

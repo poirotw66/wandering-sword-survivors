@@ -8,6 +8,8 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
     this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17);
+    this.add.image(width / 2, height * 0.58, "player").setScale(0.34).setAlpha(0.78);
+    this.add.image(width / 2 + 86, height * 0.56, "strike").setScale(0.7).setAlpha(0.42).setAngle(22);
     this.add
       .text(width / 2, height * 0.31, "Wandering Sword Survivors", {
         fontFamily: "Georgia, serif",
@@ -22,11 +24,11 @@ export class MenuScene extends Phaser.Scene {
       })
       .setOrigin(0.5);
     this.add
-      .text(width / 2, height * 0.56, "WASD / Arrow keys to move\nChoose martial arts with mouse or 1-3", {
+      .text(width / 2, height * 0.56, "Cut through rival sects, gather jade qi, and master lost sword forms.", {
         fontSize: "18px",
         color: "#d8e2eb",
         align: "center",
-        lineSpacing: 8
+        wordWrap: { width: Math.min(620, width - 80) }
       })
       .setOrigin(0.5);
 

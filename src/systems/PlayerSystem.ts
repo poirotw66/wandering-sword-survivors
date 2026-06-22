@@ -9,7 +9,7 @@ export class PlayerSystem {
   private keys: Record<"w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key>;
 
   constructor(
-    private readonly scene: Phaser.Scene,
+    scene: Phaser.Scene,
     private readonly player: Player
   ) {
     this.cursors = scene.input.keyboard!.createCursorKeys();
@@ -53,6 +53,5 @@ export class PlayerSystem {
     }
 
     this.player.setRotation(0);
-    this.scene.cameras.main.centerOn(this.player.x, this.player.y);
   }
 }

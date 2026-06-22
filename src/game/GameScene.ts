@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { GAME_DURATION_SEC } from "../data/waves";
 import { Player } from "../entities/Player";
 import { CollisionSystem } from "../systems/CollisionSystem";
+import { AudioFeedbackSystem } from "../systems/AudioFeedbackSystem";
 import { EnemySystem } from "../systems/EnemySystem";
 import { ExpSystem } from "../systems/ExpSystem";
 import { PlayerSystem } from "../systems/PlayerSystem";
@@ -23,6 +24,7 @@ export class GameScene extends Phaser.Scene {
   private expSystem!: ExpSystem;
   private pickupSystem!: PickupSystem;
   private upgradeSystem!: UpgradeSystem;
+  private devText?: Phaser.GameObjects.Text;
   private ended = false;
 
   constructor() {
@@ -42,6 +44,8 @@ export class GameScene extends Phaser.Scene {
 
     this.createFloor();
     this.player = new Player(this, 0, 0);
+    this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
+    this.cameras.main.setDeadzone(28, 28);
     this.state = {
       player: this.player,
       level: 1,
@@ -53,7 +57,11 @@ export class GameScene extends Phaser.Scene {
       pausedForUpgrade: false,
       pausedForMenu: false,
       weaponLevels: new Map(),
-      skillLevels: new Map()
+      skillLevels: new Map(),
+      devMode: {
+        enabled: this.isDevModeRequested(),
+        timeScale: 1
+      }
     };
 
     this.playerSystem = new PlayerSystem(this, this.player);
@@ -63,6 +71,7 @@ export class GameScene extends Phaser.Scene {
     this.expSystem = new ExpSystem(this, this.player, this.state);
     this.pickupSystem = new PickupSystem(this, this.player);
     this.upgradeSystem = new UpgradeSystem(this, this.state);
+    new AudioFeedbackSystem(this);
     new CollisionSystem(
       this,
       this.player,
@@ -85,9 +94,26 @@ export class GameScene extends Phaser.Scene {
     this.events.on("enemy-killed", (x: number, y: number, score: number) => this.showScorePop(x, y, score));
     this.events.on("player-healed", (amount: number) => this.showScorePop(this.player.x, this.player.y - 12, amount, "#84f7b2"));
     this.input.keyboard?.on("keydown-ESC", () => this.togglePause());
+    this.input.keyboard?.on("keydown-F1", () => this.toggleDevMode());
+    this.input.keyboard?.on("keydown-L", () => this.devGrantLevel());
+    this.input.keyboard?.on("keydown-B", () => this.devSpawnBoss());
+    this.input.keyboard?.on("keydown-N", () => this.devAdvanceWave());
     this.events.on("upgrade-picked", (option: UpgradeOption) => {
       this.upgradeSystem.apply(option);
     });
+
+    this.devText = this.add
+      .text(18, this.scale.height - 18, "", {
+        fontSize: "13px",
+        color: "#f7c66b",
+        backgroundColor: "#111421bb",
+        padding: { x: 8, y: 5 }
+      })
+      .setOrigin(0, 1)
+      .setScrollFactor(0)
+      .setDepth(950);
+    this.scale.on("resize", () => this.devText?.setPosition(18, this.scale.height - 18));
+    this.refreshDevText();
   }
 
   update(_time: number, delta: number): void {
@@ -99,13 +125,14 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    this.state.elapsedSec += delta / 1000;
+    this.state.elapsedSec += (delta / 1000) * this.state.devMode.timeScale;
     this.playerSystem.update(delta);
     this.spawnSystem.update(this.state.elapsedSec);
     this.enemySystem.update();
     this.weaponSystem.update();
     this.expSystem.update();
     this.pickupSystem.update();
+    this.refreshDevText();
 
     if (this.state.elapsedSec >= GAME_DURATION_SEC && this.enemySystem.activeCount() === 0) {
       this.finish(true);
@@ -153,9 +180,57 @@ export class GameScene extends Phaser.Scene {
     this.scene.get("UIScene").events.emit("pause-changed", this.state.pausedForMenu);
   }
 
-  private showScorePop(x: number, y: number, score: number, color = "#f7c66b"): void {
+  private isDevModeRequested(): boolean {
+    const params = new URLSearchParams(window.location.search);
+    return params.get("dev") === "1" || window.location.hash.includes("dev");
+  }
+
+  private toggleDevMode(): void {
+    this.state.devMode.enabled = !this.state.devMode.enabled;
+    this.state.devMode.timeScale = this.state.devMode.enabled ? 4 : 1;
+    this.refreshDevText();
+    this.showScorePop(this.player.x, this.player.y - 52, this.state.devMode.enabled ? "DEV" : "LIVE", "#f7c66b");
+  }
+
+  private devGrantLevel(): void {
+    if (!this.state.devMode.enabled || this.ended || this.state.pausedForUpgrade) {
+      return;
+    }
+    this.state.exp = this.state.expToNext;
+    this.expSystem.collectDevExp();
+    this.refreshDevText();
+  }
+
+  private devSpawnBoss(): void {
+    if (!this.state.devMode.enabled || this.ended) {
+      return;
+    }
+    this.spawnSystem.spawnBossNow();
+    this.refreshDevText();
+  }
+
+  private devAdvanceWave(): void {
+    if (!this.state.devMode.enabled || this.ended || this.state.pausedForUpgrade) {
+      return;
+    }
+    this.state.elapsedSec = Math.min(GAME_DURATION_SEC - 10, this.state.elapsedSec + 60);
+    this.refreshDevText();
+  }
+
+  private refreshDevText(): void {
+    if (!this.devText) {
+      return;
+    }
+
+    this.devText.setVisible(this.state.devMode.enabled);
+    this.devText.setText(
+      `DEV  ${Math.floor(this.state.elapsedSec)}s  x${this.state.devMode.timeScale}\nF1 toggle  L level  B boss  N +60s`
+    );
+  }
+
+  private showScorePop(x: number, y: number, score: number | string, color = "#f7c66b"): void {
     const text = this.add
-      .text(x, y - 18, `+${score}`, {
+      .text(x, y - 18, typeof score === "number" ? `+${score}` : score, {
         fontSize: "16px",
         color,
         fontStyle: "700"

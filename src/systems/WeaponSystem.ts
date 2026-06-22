@@ -9,6 +9,7 @@ import type { EnemySystem } from "./EnemySystem";
 export class WeaponSystem {
   readonly projectiles: Phaser.Physics.Arcade.Group;
   private readonly cooldowns = new Map<WeaponId, number>();
+  private nextOrbitSoundAt = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -67,15 +68,16 @@ export class WeaponSystem {
     const count = 1 + Math.floor(level / 4);
     const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
     for (let i = 0; i < count; i += 1) {
-    this.spawnProjectile("magicBolt", angle + (i - (count - 1) / 2) * 0.18, {
-      damage: 18 + level * 5,
-      speed: 470,
-      pierce: 1 + Math.floor(level / 5),
-      durationMs: 1300,
-      scale: 0.14,
-      tint: 0x89d8ff
-    });
+      this.spawnProjectile("magicBolt", angle + (i - (count - 1) / 2) * 0.18, {
+        damage: 18 + level * 5,
+        speed: 470,
+        pierce: 1 + Math.floor(level / 5),
+        durationMs: 1300,
+        scale: 0.14,
+        tint: 0x89d8ff
+      });
     }
+    this.scene.events.emit("weapon-fired", "magicBolt");
   }
 
   private fireFlameWave(level: number): void {
@@ -92,6 +94,7 @@ export class WeaponSystem {
         texture: "palm-wave"
       });
     }
+    this.scene.events.emit("weapon-fired", "flameWave");
   }
 
   private fireThunderStrike(level: number): void {
@@ -111,7 +114,9 @@ export class WeaponSystem {
         scale: 0.22,
         tint: 0xfff27a
       });
+      this.flashAt(target.x, target.y, 0xfff27a, 62);
     }
+    this.scene.events.emit("weapon-fired", "thunderStrike");
   }
 
   private updateOrbitBlades(): void {
@@ -147,6 +152,10 @@ export class WeaponSystem {
         tint: 0xe7e1ff
       });
     }
+    if (this.scene.time.now >= this.nextOrbitSoundAt) {
+      this.nextOrbitSoundAt = this.scene.time.now + 520;
+      this.scene.events.emit("weapon-fired", "orbitBlade");
+    }
   }
 
   private spawnProjectile(
@@ -168,6 +177,18 @@ export class WeaponSystem {
       texture: options.texture,
       scale: options.scale * this.player.stats.areaMultiplier,
       tint: options.tint
+    });
+  }
+
+  private flashAt(x: number, y: number, color: number, radius: number): void {
+    const flash = this.scene.add.circle(x, y, radius, color, 0.28).setDepth(13);
+    this.scene.tweens.add({
+      targets: flash,
+      alpha: 0,
+      scale: 1.4,
+      duration: 160,
+      ease: "Sine.easeOut",
+      onComplete: () => flash.destroy()
     });
   }
 

@@ -19,6 +19,7 @@ export class GameOverScene extends Phaser.Scene {
 
     const { width, height } = this.scale;
     this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17, 0.96);
+    this.add.image(width / 2, height * 0.54, data.won ? "strike" : "boss-master").setScale(data.won ? 1.1 : 0.34).setAlpha(0.25);
     this.add
       .text(width / 2, height * 0.28, data.won ? "Sword Roams Free" : "The Jianghu Prevails", {
         fontFamily: "Georgia, serif",

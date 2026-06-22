@@ -40,14 +40,23 @@ export class ExpSystem {
 
   collect(gem: ExpGem): void {
     this.state.exp += gem.value;
+    this.scene.events.emit("exp-collected");
     gem.setActive(false);
     gem.setVisible(false);
     gem.setVelocity(0, 0);
 
+    this.resolveLevelUps();
+  }
+
+  collectDevExp(): void {
+    this.resolveLevelUps();
+  }
+
+  private resolveLevelUps(): void {
     while (this.state.exp >= this.state.expToNext) {
       this.state.exp -= this.state.expToNext;
       this.state.level += 1;
-      this.state.expToNext = Math.floor(8 + this.state.level * 5 + this.state.level ** 1.35);
+      this.state.expToNext = Math.floor(7 + this.state.level * 4.8 + this.state.level ** 1.32);
       this.scene.events.emit("level-up");
     }
   }

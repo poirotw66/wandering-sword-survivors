@@ -14,4 +14,8 @@ export type GameState = {
   pausedForMenu: boolean;
   weaponLevels: Map<WeaponId, number>;
   skillLevels: Map<SkillId, number>;
+  devMode: {
+    enabled: boolean;
+    timeScale: number;
+  };
 };
