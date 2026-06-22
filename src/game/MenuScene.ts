@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { t, toggleLocale } from "../i18n";
+import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 
 export class MenuScene extends Phaser.Scene {
   constructor() {
@@ -13,28 +14,35 @@ export class MenuScene extends Phaser.Scene {
     this.add.image(width / 2 + 86, height * 0.56, "strike").setScale(0.7).setAlpha(0.42).setAngle(22);
     this.add
       .text(width / 2, height * 0.31, t("title"), {
-        fontFamily: "Georgia, serif",
-        fontSize: "50px",
+        fontFamily: TITLE_FONT,
+        fontSize: "46px",
         color: "#f7efd8"
       })
+      .setPadding(0, 10, 0, 10)
       .setOrigin(0.5);
     this.add
       .text(width / 2, height * 0.42, t("menuSubtitle"), {
+        fontFamily: UI_FONT,
         fontSize: "20px",
         color: "#aac7d8"
       })
+      .setPadding(0, 6, 0, 6)
       .setOrigin(0.5);
     this.add
       .text(width / 2, height * 0.56, t("menuPitch"), {
+        fontFamily: UI_FONT,
         fontSize: "18px",
         color: "#d8e2eb",
         align: "center",
+        lineSpacing: 8,
         wordWrap: { width: Math.min(620, width - 80) }
       })
+      .setPadding(0, 6, 0, 6)
       .setOrigin(0.5);
 
     const start = this.add
       .text(width / 2, height * 0.74, t("startRun"), {
+        fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
         backgroundColor: "#f7c66b",
@@ -45,6 +53,7 @@ export class MenuScene extends Phaser.Scene {
 
     const language = this.add
       .text(width - 24, 22, t("languageToggle"), {
+        fontFamily: UI_FONT,
         fontSize: "16px",
         color: "#f7c66b",
         backgroundColor: "#192033",
@@ -55,11 +64,13 @@ export class MenuScene extends Phaser.Scene {
 
     this.add
       .text(width / 2, height * 0.84, t("controls"), {
+        fontFamily: UI_FONT,
         fontSize: "16px",
         color: "#aac7d8",
         align: "center",
         lineSpacing: 6
       })
+      .setPadding(0, 6, 0, 6)
       .setOrigin(0.5);
 
     start.on("pointerdown", () => this.scene.start("GameScene"));

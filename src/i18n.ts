@@ -195,7 +195,9 @@ export function locale(): Locale {
 
 export function setLocale(nextLocale: Locale): void {
   currentLocale = nextLocale;
-  localStorage.setItem(STORAGE_KEY, nextLocale);
+  if (typeof window !== "undefined") {
+    window.localStorage?.setItem(STORAGE_KEY, nextLocale);
+  }
 }
 
 export function toggleLocale(): Locale {
@@ -211,6 +213,12 @@ export function t(key: MessageKey, vars: Vars = {}): string {
     text = text.replaceAll(`{${name}}`, String(value));
   }
   return text;
+}
+
+export function missingLocaleKeys(): string[] {
+  const englishKeys = Object.keys(messages.en);
+  const zhKeys = new Set(Object.keys(messages["zh-TW"]));
+  return englishKeys.filter((key) => !zhKeys.has(key));
 }
 
 export function weaponName(id: WeaponId): string {
@@ -240,13 +248,17 @@ export function achievementName(id: string): string {
 }
 
 function readInitialLocale(): Locale {
+  if (typeof window === "undefined") {
+    return "zh-TW";
+  }
+
   const params = new URLSearchParams(window.location.search);
   const requested = params.get("lang");
   if (requested === "en" || requested === "zh-TW") {
-    localStorage.setItem(STORAGE_KEY, requested);
+    window.localStorage?.setItem(STORAGE_KEY, requested);
     return requested;
   }
 
-  const stored = localStorage.getItem(STORAGE_KEY);
+  const stored = window.localStorage?.getItem(STORAGE_KEY);
   return stored === "en" || stored === "zh-TW" ? stored : "zh-TW";
 }

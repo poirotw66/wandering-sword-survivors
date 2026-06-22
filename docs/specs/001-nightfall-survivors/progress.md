@@ -29,6 +29,8 @@
 - Wuxia depth pass: Star Absorption Field weapon branch, Qingcheng/Songshan/Demonic Cult enemies, elite enemy markers and health bars, boss dash/fan-strike/summon skills, inner-force HUD, and secret-manual upgrade UI.
 - Traditional Chinese localization as the default language, with the original English UI preserved through `?lang=en` and an in-menu language toggle.
 - Build-path and achievement pass: Sword Sect, Qi Sect, Footwork, and Wine Sword upgrade routes; boss-stage skill unlocks; milestone achievements; persistent best renown, highest difficulty, and fastest clear records.
+- Regression safety pass with Vitest: upgrade pool, boss skill unlocks, persistent run records, and locale key parity.
+- Text rendering polish for Traditional Chinese: safer font stack, larger upgrade/result layouts, extra line spacing, and text padding to prevent clipped glyphs.
 - `npm run serve` for build-and-preview on port 5173.
 - GitHub Pages workflow.
 

@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { formatClock } from "../utils/math";
 import { t } from "../i18n";
 import { AchievementSystem } from "../systems/AchievementSystem";
+import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 
 export type GameOverData = {
   won: boolean;
@@ -33,10 +34,11 @@ export class GameOverScene extends Phaser.Scene {
     this.add.image(width / 2, height * 0.54, data.won ? "strike" : "boss-master").setScale(data.won ? 1.1 : 0.34).setAlpha(0.25);
     this.add
       .text(width / 2, height * 0.28, data.won ? t("victoryTitle") : t("defeatTitle"), {
-        fontFamily: "Georgia, serif",
-        fontSize: "58px",
+        fontFamily: TITLE_FONT,
+        fontSize: "52px",
         color: data.won ? "#f7c66b" : "#ff7687"
       })
+      .setPadding(0, 10, 0, 10)
       .setOrigin(0.5);
     this.add
       .text(
@@ -49,12 +51,14 @@ export class GameOverScene extends Phaser.Scene {
           best: record.bestRenown
         }),
         {
-          fontSize: "22px",
+          fontFamily: UI_FONT,
+          fontSize: "21px",
           color: "#d8e2eb",
           align: "center",
-          lineSpacing: 10
+          lineSpacing: 14
         }
       )
+      .setPadding(0, 8, 0, 8)
       .setOrigin(0.5);
 
     this.add
@@ -67,16 +71,19 @@ export class GameOverScene extends Phaser.Scene {
           achievements: record.achievements.length
         }),
         {
+          fontFamily: UI_FONT,
           fontSize: "18px",
           color: "#f7c66b",
           align: "center",
-          lineSpacing: 8
+          lineSpacing: 12
         }
       )
+      .setPadding(0, 8, 0, 8)
       .setOrigin(0.5);
 
     const restart = this.add
       .text(width / 2, height * 0.68, t("restart"), {
+        fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
         backgroundColor: "#84f7b2",

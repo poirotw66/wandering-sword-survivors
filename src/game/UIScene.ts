@@ -6,6 +6,7 @@ import { HealthBar } from "../ui/HealthBar";
 import { TimerText } from "../ui/TimerText";
 import { UpgradePanel } from "../ui/UpgradePanel";
 import { buildPathName, enemyName, skillName, t, weaponName } from "../i18n";
+import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 
 export class UIScene extends Phaser.Scene {
   private state!: GameState;
@@ -37,25 +38,31 @@ export class UIScene extends Phaser.Scene {
     this.expBar = new ExpBar(this);
     this.healthBar = new HealthBar(this, 24, 34);
     this.timerText = new TimerText(this, this.scale.width / 2, 18);
-    this.levelText = this.add.text(24, 52, "", { fontSize: "18px", color: "#f7efd8" }).setScrollFactor(0);
+    this.levelText = this.add.text(24, 52, "", { fontFamily: UI_FONT, fontSize: "18px", color: "#f7efd8" }).setPadding(0, 4, 0, 4).setScrollFactor(0);
     this.scoreText = this.add
-      .text(this.scale.width - 24, 26, "", { fontSize: "18px", color: "#d8e2eb" })
+      .text(this.scale.width - 24, 26, "", { fontFamily: UI_FONT, fontSize: "18px", color: "#d8e2eb" })
+      .setPadding(0, 4, 0, 4)
       .setOrigin(1, 0)
       .setScrollFactor(0);
     this.weaponText = this.add
-      .text(24, 80, "", { fontSize: "14px", color: "#aac7d8", lineSpacing: 5 })
+      .text(24, 82, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#aac7d8", lineSpacing: 8 })
+      .setPadding(0, 4, 0, 4)
       .setScrollFactor(0);
     this.skillText = this.add
-      .text(24, 166, "", { fontSize: "14px", color: "#f7c66b", lineSpacing: 5 })
+      .text(24, 174, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#f7c66b", lineSpacing: 8 })
+      .setPadding(0, 4, 0, 4)
       .setScrollFactor(0);
     this.innerForceText = this.add
-      .text(24, 264, "", { fontSize: "14px", color: "#84f7b2", lineSpacing: 5 })
+      .text(24, 280, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#84f7b2", lineSpacing: 8 })
+      .setPadding(0, 4, 0, 4)
       .setScrollFactor(0);
     this.buildPathText = this.add
-      .text(24, 328, "", { fontSize: "14px", color: "#ffe09a", lineSpacing: 5 })
+      .text(24, 350, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#ffe09a", lineSpacing: 8 })
+      .setPadding(0, 4, 0, 4)
       .setScrollFactor(0);
     this.bossText = this.add
-      .text(this.scale.width / 2, 62, "", { fontSize: "22px", color: "#ff7687", fontStyle: "700" })
+      .text(this.scale.width / 2, 62, "", { fontFamily: UI_FONT, fontSize: "21px", color: "#ff7687", fontStyle: "700" })
+      .setPadding(0, 6, 0, 6)
       .setOrigin(0.5, 0)
       .setScrollFactor(0);
     this.bossBar = this.createBossBar();
@@ -154,13 +161,14 @@ export class UIScene extends Phaser.Scene {
     const bg = this.add.rectangle(0, 0, width, height, 0x050711, 0.68).setName("pause-bg");
     const title = this.add
       .text(0, -28, t("paused"), {
-        fontFamily: "Georgia, serif",
+        fontFamily: TITLE_FONT,
         fontSize: "46px",
         color: "#f7efd8"
       })
       .setOrigin(0.5);
     const hint = this.add
       .text(0, 34, t("pauseHint"), {
+        fontFamily: UI_FONT,
         fontSize: "18px",
         color: "#aac7d8"
       })
@@ -179,6 +187,7 @@ export class UIScene extends Phaser.Scene {
     this.bossBarFill = this.add.rectangle(-208, 0, 416, 10, 0xff4f64).setOrigin(0, 0.5);
     this.bossBarLabel = this.add
       .text(0, -28, enemyName("midBoss"), {
+        fontFamily: UI_FONT,
         fontSize: "16px",
         color: "#ffb3bf",
         fontStyle: "700"

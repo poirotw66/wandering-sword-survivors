@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { UpgradeOption } from "../data/upgrades";
 import { t } from "../i18n";
+import { TITLE_FONT, UI_FONT } from "./textStyle";
 
 export class UpgradePanel {
   private readonly container: Phaser.GameObjects.Container;
@@ -19,28 +20,31 @@ export class UpgradePanel {
     const { width, height } = this.scene.scale;
     this.container.setVisible(true);
     this.container.add(this.scene.add.rectangle(width / 2, height / 2, width, height, 0x070912, 0.78));
-    this.container.add(this.scene.add.rectangle(width / 2, height * 0.5, Math.min(980, width - 72), 340, 0x111421, 0.82).setStrokeStyle(1, 0x5f4a2a, 0.9));
+    this.container.add(this.scene.add.rectangle(width / 2, height * 0.5, Math.min(1040, width - 60), 390, 0x111421, 0.82).setStrokeStyle(1, 0x5f4a2a, 0.9));
     this.container.add(
       this.scene.add
         .text(width / 2, height * 0.2, t("manualTitle"), {
-          fontFamily: "Georgia, serif",
-          fontSize: "38px",
+          fontFamily: TITLE_FONT,
+          fontSize: "36px",
           color: "#f7efd8"
         })
+        .setPadding(0, 8, 0, 8)
         .setOrigin(0.5)
     );
     this.container.add(
       this.scene.add
         .text(width / 2, height * 0.27, t("manualHint"), {
+          fontFamily: UI_FONT,
           fontSize: "16px",
           color: "#aac7d8"
         })
+        .setPadding(0, 6, 0, 6)
         .setOrigin(0.5)
     );
 
     options.forEach((option, index) => {
       const cardWidth = Math.min(280, width * 0.27);
-      const cardHeight = 190;
+      const cardHeight = 220;
       const x = width / 2 + (index - 1) * (cardWidth + 22);
       const y = height * 0.55;
       const card = this.scene.add.container(x, y);
@@ -55,7 +59,7 @@ export class UpgradePanel {
       const seal = this.scene.add.circle(0, -76, 16, 0x7b2f3a, 0.96).setStrokeStyle(2, 0xffd6b0);
       const indexText = this.scene.add
         .text(0, -77, `${index + 1}`, {
-          fontFamily: "Georgia, serif",
+          fontFamily: TITLE_FONT,
           fontSize: "16px",
           color: "#f7efd8",
           fontStyle: "700"
@@ -63,19 +67,25 @@ export class UpgradePanel {
         .setOrigin(0.5);
       const title = this.scene.add
         .text(0, -42, option.title, {
-          fontSize: "20px",
+          fontFamily: UI_FONT,
+          fontSize: "19px",
           color: "#f7c66b",
           align: "center",
-          wordWrap: { width: cardWidth - 32 }
+          lineSpacing: 4,
+          wordWrap: { width: cardWidth - 28 }
         })
+        .setPadding(0, 8, 0, 8)
         .setOrigin(0.5);
       const description = this.scene.add
-        .text(0, 38, option.description, {
-          fontSize: "16px",
+        .text(0, 48, option.description, {
+          fontFamily: UI_FONT,
+          fontSize: "15px",
           color: "#d8e2eb",
           align: "center",
-          wordWrap: { width: cardWidth - 34 }
+          lineSpacing: 6,
+          wordWrap: { width: cardWidth - 30 }
         })
+        .setPadding(0, 6, 0, 6)
         .setOrigin(0.5);
 
       card.on("pointerover", () => bg.setStrokeStyle(3, 0xffe09a));
