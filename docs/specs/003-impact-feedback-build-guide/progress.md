@@ -7,7 +7,7 @@
 - [x] Implementation
 - [x] Verification
 - [x] Review
-- [ ] Close
+- [x] Close
 
 ## Implementation Notes
 
@@ -26,6 +26,12 @@
 
 - `npm test -- --run`
 - `npm run build`
+
+## Close Notes
+
+- Closed on 2026-06-23 after implementation, verification, and preview entry check.
+- Preview confirmed at `http://127.0.0.1:5173/` with HTTP 200.
+- Feature implementation committed as `6f28ac7 feat: add impact feedback and build guidance`.
 
 ## Deferred Scope
 

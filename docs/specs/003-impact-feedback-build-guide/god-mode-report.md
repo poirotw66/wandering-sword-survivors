@@ -2,7 +2,7 @@
 
 ## Status
 
-COMPLETED through implementation, verification, and review. Close remains as the next phase.
+COMPLETED. Implementation, verification, review, and close are finished.
 
 ## Decisions Made
 
@@ -30,8 +30,14 @@ COMPLETED through implementation, verification, and review. Close remains as the
 - `npm test -- --run`
 - `npm run build`
 
+## Close
+
+- Spec status updated to `done`.
+- Progress checklist marked through Close.
+- Specs overview updated to `done`.
+- Preview entry confirmed at `http://127.0.0.1:5173/` with HTTP 200.
+
 ## Remaining Backlog
 
 - Add richer per-ultimate VFX animations beyond MVP color/flash/ring feedback.
 - Add an audio settings menu.
-- Run `/vif-close` when ready to close this spec.
