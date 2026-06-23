@@ -7,3 +7,4 @@
 | `003-impact-feedback-build-guide` | `prd-001-nightfall-survivors` | done | Implemented ultimate-art feedback, build-route guidance, upgrade-card clarity, Boss unlock feedback, and evolution achievements. |
 | `004-codex-upgrade-ux` | `prd-001-nightfall-survivors` | done | Implemented Martial Codex recipe detail, Boss unlock detail, upgrade recommendations, stat banish, and reroll polish. |
 | `005-meta-progression-boss-ritual` | `prd-001-nightfall-survivors` | done | Implemented renown/title progression clarity, difficulty tier polish, Boss legacy ritual, and victory chronicle. |
+| `006-boss-combat-depth` | `prd-001-nightfall-survivors` | draft | Plan data-driven Boss skill profiles, clearer telegraphs, Boss bar technique status, final phase cue, and elite identity tests. |
