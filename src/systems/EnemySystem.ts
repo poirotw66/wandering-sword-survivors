@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { type EnemyId } from "../data/enemies";
+import type { DifficultyConfig } from "../data/metaProgression";
 import { Enemy } from "../entities/Enemy";
 import type { Player } from "../entities/Player";
 
@@ -12,7 +13,8 @@ export class EnemySystem {
 
   constructor(
     private readonly scene: Phaser.Scene,
-    private readonly player: Player
+    private readonly player: Player,
+    private readonly difficulty: DifficultyConfig
   ) {
     this.enemies = scene.physics.add.group({ classType: Enemy, runChildUpdate: false });
   }
@@ -20,14 +22,12 @@ export class EnemySystem {
   spawn(enemyId: EnemyId, x: number, y: number, elite = false): Enemy {
     const enemy = this.enemies.get(x, y, enemyId) as Enemy | null;
     if (enemy) {
-      enemy.spawnAs(enemyId, x, y, elite);
+      enemy.spawnAs(enemyId, x, y, elite, this.difficultyScale());
       return enemy;
     }
 
     const created = new Enemy(this.scene, x, y, enemyId);
-    if (elite) {
-      created.spawnAs(enemyId, x, y, true);
-    }
+    created.spawnAs(enemyId, x, y, elite, this.difficultyScale());
     return created;
   }
 
@@ -189,5 +189,14 @@ export class EnemySystem {
       ease: "Sine.easeOut",
       onComplete: () => text.destroy()
     });
+  }
+
+  private difficultyScale(): { hp: number; damage: number; speed: number; reward: number } {
+    return {
+      hp: this.difficulty.hpMultiplier,
+      damage: this.difficulty.damageMultiplier,
+      speed: this.difficulty.speedMultiplier,
+      reward: this.difficulty.rewardMultiplier
+    };
   }
 }

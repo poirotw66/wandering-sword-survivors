@@ -20,6 +20,8 @@ export type GameOverData = {
   unlockedSkillsThisRun: SkillId[];
   bossDefeatsSeen: EnemyId[];
   favoriteBuildPathId?: BuildPathId;
+  selectedDifficulty: number;
+  difficultyRewardMultiplier: number;
 };
 
 export class GameOverScene extends Phaser.Scene {
@@ -133,7 +135,9 @@ export class GameOverScene extends Phaser.Scene {
       totalRenown: record.totalRenown,
       ultimates: record.evolvedArtsSeen.length,
       bosses: record.bossDefeatsSeen.length,
-      favoriteBuild
+      favoriteBuild,
+      difficulty: data.selectedDifficulty,
+      reward: Math.round(data.difficultyRewardMultiplier * 100)
     });
   }
 }

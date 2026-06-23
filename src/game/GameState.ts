@@ -26,6 +26,10 @@ export type GameState = {
   standaloneSkillsSeen: Set<SkillId>;
   bossDefeats: Map<EnemyId, number>;
   highestDifficulty: number;
+  selectedDifficulty: number;
+  difficultyRewardMultiplier: number;
+  rerolls: number;
+  renownTitle: string;
   devMode: {
     enabled: boolean;
     timeScale: number;

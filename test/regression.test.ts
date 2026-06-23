@@ -63,6 +63,10 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     unlockedAchievements: new Set(),
     bossDefeats: new Map(),
     highestDifficulty: 1,
+    selectedDifficulty: 1,
+    difficultyRewardMultiplier: 1,
+    rerolls: 0,
+    renownTitle: "江湖浪客",
     evolvedArtsSeen: new Set(),
     standaloneSkillsSeen: new Set(),
     devMode: {

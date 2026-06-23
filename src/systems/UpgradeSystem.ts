@@ -18,8 +18,16 @@ export class UpgradeSystem {
     this.state.pausedForUpgrade = true;
     this.scene.physics.world.pause();
     this.scene.scene.get("UIScene").events.emit("pause-changed", false);
-    const options = chooseUpgradeOptions(this.state, buildUpgradePool(this.state), 3);
+    const options = this.rollOptions();
     this.scene.scene.get("UIScene").events.emit("show-upgrades", options);
+  }
+
+  reroll(): void {
+    if (!this.state.pausedForUpgrade || this.state.rerolls <= 0) {
+      return;
+    }
+    this.state.rerolls -= 1;
+    this.scene.scene.get("UIScene").events.emit("show-upgrades", this.rollOptions());
   }
 
   apply(option: UpgradeOption): void {
@@ -27,6 +35,10 @@ export class UpgradeSystem {
     this.state.pausedForUpgrade = false;
     this.scene.physics.world.resume();
     this.scene.scene.get("UIScene").events.emit("hide-upgrades");
+  }
+
+  private rollOptions(): UpgradeOption[] {
+    return chooseUpgradeOptions(this.state, buildUpgradePool(this.state), 3);
   }
 }
 

@@ -10,6 +10,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   isElite = false;
   moveSpeedMultiplier = 1;
   damageMultiplier = 1;
+  rewardMultiplier = 1;
   private hpBarBg?: Phaser.GameObjects.Rectangle;
   private hpBarFill?: Phaser.GameObjects.Rectangle;
   private eliteMarker?: Phaser.GameObjects.Text;
@@ -25,14 +26,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.spawnAs(enemyId, x, y, false);
   }
 
-  spawnAs(enemyId: EnemyId, x: number, y: number, elite: boolean): void {
+  spawnAs(enemyId: EnemyId, x: number, y: number, elite: boolean, difficulty = { hp: 1, damage: 1, speed: 1, reward: 1 }): void {
     this.enemyId = enemyId;
     this.config = ENEMY_CONFIGS[enemyId];
     this.isElite = !this.config.isBoss && elite;
-    this.moveSpeedMultiplier = 1;
-    this.damageMultiplier = 1;
+    this.moveSpeedMultiplier = difficulty.speed;
+    this.damageMultiplier = difficulty.damage;
+    this.rewardMultiplier = difficulty.reward;
     const eliteMultiplier = this.eliteHpMultiplier(enemyId);
-    this.hp = Math.floor(this.config.hp * eliteMultiplier);
+    this.hp = Math.floor(this.config.hp * eliteMultiplier * difficulty.hp);
     this.maxHp = this.hp;
     this.setTexture(this.textureFor(enemyId));
     this.setPosition(x, y);
@@ -109,19 +111,19 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
 
   private applyEliteTrait(enemyId: EnemyId): void {
     if (enemyId === "bat") {
-      this.moveSpeedMultiplier = 1.35;
-      this.damageMultiplier = 1.18;
+      this.moveSpeedMultiplier *= 1.35;
+      this.damageMultiplier *= 1.18;
       this.setTint(0xff73d2);
       return;
     }
     if (enemyId === "golem") {
-      this.moveSpeedMultiplier = 0.88;
-      this.damageMultiplier = 1.35;
+      this.moveSpeedMultiplier *= 0.88;
+      this.damageMultiplier *= 1.35;
       this.setTint(0xffd36a);
       return;
     }
-    this.moveSpeedMultiplier = 1.12;
-    this.damageMultiplier = 1.08;
+    this.moveSpeedMultiplier *= 1.12;
+    this.damageMultiplier *= 1.08;
     this.setTint(0x92f5bd);
   }
 

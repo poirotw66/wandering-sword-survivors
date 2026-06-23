@@ -13,7 +13,7 @@ export class UpgradePanel {
     this.container = scene.add.container(0, 0).setDepth(1000).setScrollFactor(0).setVisible(false);
   }
 
-  show(options: UpgradeOption[], onPick: (option: UpgradeOption) => void): void {
+  show(options: UpgradeOption[], onPick: (option: UpgradeOption) => void, rerolls = 0, onReroll?: () => void): void {
     this.clear();
     this.currentOptions = options;
     this.currentPick = onPick;
@@ -31,6 +31,21 @@ export class UpgradePanel {
         .setPadding(0, 8, 0, 8)
         .setOrigin(0.5)
     );
+
+    if (rerolls > 0 && onReroll) {
+      const reroll = this.scene.add
+        .text(width / 2, height * 0.78, t("rerollUpgrades", { count: rerolls }), {
+          fontFamily: UI_FONT,
+          fontSize: "16px",
+          color: "#10121f",
+          backgroundColor: "#8ff4ff",
+          padding: { left: 18, right: 18, top: 8, bottom: 8 }
+        })
+        .setOrigin(0.5)
+        .setInteractive({ useHandCursor: true });
+      reroll.on("pointerdown", () => onReroll());
+      this.container.add(reroll);
+    }
     this.container.add(
       this.scene.add
         .text(width / 2, height * 0.27, t("manualHint"), {

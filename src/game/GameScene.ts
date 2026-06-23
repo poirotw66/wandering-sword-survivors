@@ -15,6 +15,11 @@ import type { UpgradeOption } from "../data/upgrades";
 import type { GameOverData } from "./GameOverScene";
 import type { GameState } from "./GameState";
 import { t } from "../i18n";
+import { difficultyForLevel, metaBonusesFor, type DifficultyConfig } from "../data/metaProgression";
+
+type GameSceneData = {
+  difficultyLevel?: number;
+};
 
 export class GameScene extends Phaser.Scene {
   private player!: Player;
@@ -34,7 +39,7 @@ export class GameScene extends Phaser.Scene {
     super("GameScene");
   }
 
-  create(): void {
+  create(data: GameSceneData = {}): void {
     this.ended = false;
     this.events.removeAllListeners("level-up");
     this.events.removeAllListeners("game-won");
@@ -42,13 +47,18 @@ export class GameScene extends Phaser.Scene {
     this.events.removeAllListeners("enemy-killed");
     this.events.removeAllListeners("player-healed");
     this.events.removeAllListeners("upgrade-picked");
+    this.events.removeAllListeners("upgrade-reroll");
     this.physics.world.setBounds(-3000, -3000, 6000, 6000);
     this.cameras.main.setBackgroundColor("#111421");
 
     this.createFloor();
     this.player = new Player(this, 0, 0);
+    const difficulty = difficultyForLevel(data.difficultyLevel ?? 1);
+    this.applyMetaBonuses(difficulty);
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.setDeadzone(28, 28);
+    const record = AchievementSystem.readRecord();
+    const metaBonuses = metaBonusesFor(record.totalRenown);
     this.state = {
       player: this.player,
       level: 1,
@@ -70,6 +80,10 @@ export class GameScene extends Phaser.Scene {
       standaloneSkillsSeen: new Set(),
       bossDefeats: new Map(),
       highestDifficulty: 1,
+      selectedDifficulty: difficulty.level,
+      difficultyRewardMultiplier: difficulty.rewardMultiplier,
+      rerolls: metaBonuses.rerolls,
+      renownTitle: t(metaBonuses.titleKey),
       devMode: {
         enabled: this.isDevModeRequested(),
         timeScale: 1
@@ -77,7 +91,7 @@ export class GameScene extends Phaser.Scene {
     };
 
     this.playerSystem = new PlayerSystem(this, this.player);
-    this.enemySystem = new EnemySystem(this, this.player);
+    this.enemySystem = new EnemySystem(this, this.player, difficulty);
     this.spawnSystem = new SpawnSystem(this, this.player, this.enemySystem);
     this.weaponSystem = new WeaponSystem(this, this.player, this.enemySystem, this.state.weaponLevels, this.state.evolvedWeapons);
     this.expSystem = new ExpSystem(this, this.player, this.state);
@@ -128,6 +142,7 @@ export class GameScene extends Phaser.Scene {
         }
       }
     });
+    this.events.on("upgrade-reroll", () => this.upgradeSystem.reroll());
 
     this.devText = this.add
       .text(18, this.scale.height - 18, "", {
@@ -185,13 +200,15 @@ export class GameScene extends Phaser.Scene {
       score: this.state.score,
       kills: this.state.kills,
       elapsedSec: this.state.elapsedSec,
-      highestDifficulty: this.state.highestDifficulty,
+      highestDifficulty: Math.max(this.state.highestDifficulty, this.state.selectedDifficulty),
       achievements: [...this.state.unlockedAchievements],
       evolvedArtsSeen: [...this.state.evolvedArtsSeen],
       standaloneSkillsSeen: [...this.state.standaloneSkillsSeen],
       unlockedSkillsThisRun: [...this.state.unlockedSkillsThisRun],
       bossDefeatsSeen: [...this.state.bossDefeats.keys()],
-      favoriteBuildPathId: this.favoriteBuildPathId()
+      favoriteBuildPathId: this.favoriteBuildPathId(),
+      selectedDifficulty: this.state.selectedDifficulty,
+      difficultyRewardMultiplier: this.state.difficultyRewardMultiplier
     };
     this.scene.stop("UIScene");
     this.scene.start("GameOverScene", data);
@@ -290,6 +307,19 @@ export class GameScene extends Phaser.Scene {
     });
     this.cameras.main.flash(180, 255, 220, 120, false);
     this.showScorePop(this.player.x, this.player.y - 118, title, "#ffe09a");
+  }
+
+  private applyMetaBonuses(difficulty: DifficultyConfig): void {
+    const record = AchievementSystem.readRecord();
+    const bonuses = metaBonusesFor(record.totalRenown);
+    this.player.stats.maxHp += bonuses.maxHp;
+    this.player.stats.hp = this.player.stats.maxHp;
+    this.player.stats.moveSpeed += bonuses.moveSpeed;
+    this.player.stats.pickupRange += bonuses.pickupRange;
+    this.showScorePop(this.player.x, this.player.y - 74, t("runStartBonus", {
+      title: t(bonuses.titleKey),
+      difficulty: difficulty.level
+    }), "#ffe09a");
   }
 
   private favoriteBuildPathId(): GameOverData["favoriteBuildPathId"] {

@@ -108,14 +108,16 @@ export class CollisionSystem {
 
   private killEnemy(enemy: Enemy): void {
     this.state.kills += 1;
-    this.state.score += enemy.config.score;
-    this.scene.events.emit("enemy-killed", enemy.x, enemy.y, enemy.config.score);
-    this.expSystem.drop(enemy.x, enemy.y, enemy.config.exp);
+    const score = Math.round(enemy.config.score * enemy.rewardMultiplier);
+    const exp = Math.round(enemy.config.exp * enemy.rewardMultiplier);
+    this.state.score += score;
+    this.scene.events.emit("enemy-killed", enemy.x, enemy.y, score);
+    this.expSystem.drop(enemy.x, enemy.y, exp);
     this.pickupSystem.maybeDropHealth(enemy.x, enemy.y, enemy.config.isBoss || enemy.enemyId === "golem" ? 0.16 : 0.055);
     const wonRun = Boolean(enemy.config.endsRunOnDefeat);
     if (enemy.config.isBoss) {
       this.scene.events.emit("boss-defeated");
-      this.scene.events.emit("milestone-unlocked", t("bossDefeatedReward", { name: enemyName(enemy.enemyId), exp: enemy.config.exp }));
+      this.scene.events.emit("milestone-unlocked", t("bossDefeatedReward", { name: enemyName(enemy.enemyId), exp }));
       for (const message of this.achievementSystem.recordBossDefeat(enemy.enemyId)) {
         this.scene.events.emit("milestone-unlocked", message);
       }
