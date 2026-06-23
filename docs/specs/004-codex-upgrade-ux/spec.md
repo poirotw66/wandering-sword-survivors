@@ -1,7 +1,7 @@
 ---
 id: 004-codex-upgrade-ux
 title: Martial Codex and Upgrade UX Polish
-status: approved
+status: done
 owner: openab
 created: 2026-06-23
 updated: 2026-06-23

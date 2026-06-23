@@ -7,7 +7,7 @@
 - [x] Implementation
 - [x] Verification
 - [x] Review
-- [ ] Close
+- [x] Close
 
 ## Planned Scope
 
@@ -45,3 +45,10 @@
 - One banish charge per run is enough for MVP.
 - Banish applies only to ordinary stat options.
 - Recommendation markers are capped to keep the upgrade panel readable.
+
+## Close Result
+
+- Spec frontmatter status updated to `done`.
+- Specs overview already marked this spec as `done`.
+- God Mode report, verification report, and review report are present.
+- Close commit prepared with the next spec draft.
