@@ -9,7 +9,7 @@ import type { EnemySystem } from "./EnemySystem";
 import type { ExpSystem } from "./ExpSystem";
 import type { PickupSystem } from "./PickupSystem";
 import type { WeaponSystem } from "./WeaponSystem";
-import { enemyName } from "../i18n";
+import { enemyName, t } from "../i18n";
 import type { AchievementSystem } from "./AchievementSystem";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
@@ -64,7 +64,7 @@ export class CollisionSystem {
 
   private enemyHitsPlayer(_playerObject: ArcadeOverlapObject, enemyObject: ArcadeOverlapObject): void {
     const enemy = enemyObject as Enemy;
-    const tookDamage = this.player.takeDamage(enemy.config.damage, this.scene.time.now);
+    const tookDamage = this.player.takeDamage(Math.round(enemy.config.damage * enemy.damageMultiplier), this.scene.time.now);
     if (tookDamage) {
       this.scene.events.emit("player-damaged");
     }
@@ -115,6 +115,7 @@ export class CollisionSystem {
     const wonRun = Boolean(enemy.config.endsRunOnDefeat);
     if (enemy.config.isBoss) {
       this.scene.events.emit("boss-defeated");
+      this.scene.events.emit("milestone-unlocked", t("bossDefeatedReward", { name: enemyName(enemy.enemyId), exp: enemy.config.exp }));
       for (const message of this.achievementSystem.recordBossDefeat(enemy.enemyId)) {
         this.scene.events.emit("milestone-unlocked", message);
       }

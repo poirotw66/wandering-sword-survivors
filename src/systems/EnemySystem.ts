@@ -40,7 +40,7 @@ export class EnemySystem {
 
       this.updateBossSkills(enemy);
       if ((this.dashUntil.get(enemy) ?? 0) < this.scene.time.now) {
-        this.scene.physics.moveToObject(enemy, this.player, enemy.config.moveSpeed);
+        this.scene.physics.moveToObject(enemy, this.player, enemy.config.moveSpeed * enemy.moveSpeedMultiplier);
       }
       enemy.updateStatusUi();
       return true;
@@ -79,11 +79,14 @@ export class EnemySystem {
       .setDepth(12);
     this.scene.tweens.add({
       targets: warning,
-      alpha: 0,
-      duration: 420,
+      alpha: { from: 0.32, to: 0.08 },
+      scaleX: { from: 0.4, to: 1 },
+      duration: 560,
+      yoyo: true,
       onComplete: () => warning.destroy()
     });
-    this.scene.time.delayedCall(260, () => {
+    this.showCastLabel(enemy, "破空突進", 0xff7687);
+    this.scene.time.delayedCall(560, () => {
       if (!enemy.active) {
         return;
       }
@@ -102,8 +105,16 @@ export class EnemySystem {
         .setRotation(angle)
         .setDepth(12);
       arcs.push(arc);
+      this.scene.tweens.add({
+        targets: arc,
+        alpha: { from: 0.12, to: 0.36 },
+        scale: { from: 0.7, to: 1.18 },
+        duration: 620,
+        yoyo: true
+      });
     }
-    this.scene.time.delayedCall(520, () => {
+    this.showCastLabel(enemy, "劍氣成扇", 0x8ff4ff);
+    this.scene.time.delayedCall(720, () => {
       for (const arc of arcs) {
         arc.destroy();
       }
@@ -123,6 +134,23 @@ export class EnemySystem {
   }
 
   private performSummon(enemy: Enemy): void {
+    this.showCastLabel(enemy, "號令門人", 0xb86bff);
+    const pulse = this.scene.add.circle(enemy.x, enemy.y, 132, 0xb86bff, 0.18).setDepth(11);
+    this.scene.tweens.add({
+      targets: pulse,
+      alpha: { from: 0.28, to: 0.04 },
+      scale: { from: 0.45, to: 1.35 },
+      duration: 760,
+      yoyo: true,
+      onComplete: () => pulse.destroy()
+    });
+    this.scene.time.delayedCall(760, () => this.summonMinions(enemy));
+  }
+
+  private summonMinions(enemy: Enemy): void {
+    if (!enemy.active) {
+      return;
+    }
     const count = enemy.enemyId === "finalBoss" ? 6 : 4;
     for (let i = 0; i < count; i += 1) {
       const angle = (Math.PI * 2 * i) / count;
@@ -131,13 +159,35 @@ export class EnemySystem {
       const summoned = this.spawn(i % 2 === 0 ? "bat" : "slime", x, y, enemy.enemyId === "finalBoss");
       summoned.setTint(0xff9bd2);
     }
-    const pulse = this.scene.add.circle(enemy.x, enemy.y, 132, 0xb86bff, 0.18).setDepth(11);
+    const pulse = this.scene.add.circle(enemy.x, enemy.y, 132, 0xb86bff, 0.22).setDepth(11);
     this.scene.tweens.add({
       targets: pulse,
       alpha: 0,
       scale: 1.5,
       duration: 360,
       onComplete: () => pulse.destroy()
+    });
+  }
+
+  private showCastLabel(enemy: Enemy, label: string, color: number): void {
+    const text = this.scene.add
+      .text(enemy.x, enemy.y - enemy.displayHeight / 2 - 28, label, {
+        fontFamily: "Microsoft JhengHei, Noto Sans TC, Arial, sans-serif",
+        fontSize: "15px",
+        color: Phaser.Display.Color.IntegerToColor(color).rgba,
+        fontStyle: "700",
+        backgroundColor: "#111421cc",
+        padding: { x: 7, y: 4 }
+      })
+      .setOrigin(0.5)
+      .setDepth(50);
+    this.scene.tweens.add({
+      targets: text,
+      y: text.y - 18,
+      alpha: 0,
+      duration: 760,
+      ease: "Sine.easeOut",
+      onComplete: () => text.destroy()
     });
   }
 }

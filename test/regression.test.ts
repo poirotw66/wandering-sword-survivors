@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildUpgradePool } from "../src/data/upgrades";
 import type { GameState } from "../src/game/GameState";
 import { AchievementSystem } from "../src/systems/AchievementSystem";
+import { chooseUpgradeOptions } from "../src/systems/UpgradeSystem";
 import { missingLocaleKeys, setLocale } from "../src/i18n";
 import { EVOLUTION_CONFIGS, isEvolutionRecipeValid } from "../src/data/evolutions";
 import { SKILL_CONFIGS } from "../src/data/skills";
@@ -153,6 +154,21 @@ describe("game regression rules", () => {
     expect(options.some((option) => option.kind === "weapon" && option.badgeText && option.recipeHint)).toBe(true);
     expect(options.some((option) => option.kind === "skill" && option.badgeText && option.recipeHint)).toBe(true);
     expect(options.some((option) => option.kind === "standaloneSkill" && option.badgeText && !option.recipeHint)).toBe(true);
+  });
+
+  it("limits ordinary stat choices and favors near-complete martial routes", () => {
+    const state = createState({
+      weaponLevels: new Map([["magicBolt", 4]]),
+      skillLevels: new Map([["duguNineSwords", 2]]),
+      unlockedSkills: new Set(["duguNineSwords"])
+    });
+
+    const selected = chooseUpgradeOptions(state, buildUpgradePool(state), 3, () => 0);
+
+    expect(selected.filter((option) => option.kind === "stat").length).toBeLessThanOrEqual(1);
+    expect(selected.map((option) => option.id)).toContain("weapon-magicBolt");
+    expect(selected.map((option) => option.id)).toContain("skill-duguNineSwords");
+    expect(selected.map((option) => option.id)).toContain("build-swordSect");
   });
 
   it("keeps standalone heart methods from creating evolution options", () => {
