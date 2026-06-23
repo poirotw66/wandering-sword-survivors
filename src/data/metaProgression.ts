@@ -8,6 +8,25 @@ export type MetaBonuses = {
   titleKey: "renownTitleWanderer" | "renownTitleHero" | "renownTitleMaster" | "renownTitleLegend";
 };
 
+export type TitleProgress = {
+  currentTitleKey: MetaBonuses["titleKey"];
+  nextTitleKey?: MetaBonuses["titleKey"];
+  nextRenownRequired?: number;
+  isMaxTitle: boolean;
+};
+
+export type DifficultyDisplay = DifficultyConfig & {
+  unlocked: boolean;
+  unlockReason: "available" | "renown" | "cleared";
+};
+
+const TITLE_THRESHOLDS: { renown: number; titleKey: MetaBonuses["titleKey"] }[] = [
+  { renown: 0, titleKey: "renownTitleWanderer" },
+  { renown: 2500, titleKey: "renownTitleHero" },
+  { renown: 8000, titleKey: "renownTitleMaster" },
+  { renown: 15000, titleKey: "renownTitleLegend" }
+];
+
 export type DifficultyConfig = {
   level: number;
   renownRequired: number;
@@ -26,28 +45,48 @@ export const DIFFICULTY_CONFIGS: DifficultyConfig[] = [
 ];
 
 export function metaBonusesFor(totalRenown: number): MetaBonuses {
+  const progress = titleProgressFor(totalRenown);
   return {
     maxHp: totalRenown >= 500 ? 10 : 0,
     moveSpeed: totalRenown >= 1500 ? 8 : 0,
     pickupRange: totalRenown >= 3000 ? 12 : 0,
     rerolls: totalRenown >= 5000 ? 1 : 0,
-    titleKey:
-      totalRenown >= 15000
-        ? "renownTitleLegend"
-        : totalRenown >= 8000
-          ? "renownTitleMaster"
-          : totalRenown >= 2500
-            ? "renownTitleHero"
-            : "renownTitleWanderer"
+    titleKey: progress.currentTitleKey
   };
 }
 
 export function unlockedDifficulties(record: RunRecord): DifficultyConfig[] {
-  return DIFFICULTY_CONFIGS.filter(
-    (difficulty) => difficulty.level === 1 || record.totalRenown >= difficulty.renownRequired || record.highestDifficulty >= difficulty.level
-  );
+  return difficultyDisplays(record).filter((difficulty) => difficulty.unlocked);
 }
 
 export function difficultyForLevel(level: number): DifficultyConfig {
   return DIFFICULTY_CONFIGS.find((difficulty) => difficulty.level === level) ?? DIFFICULTY_CONFIGS[0];
+}
+
+export function titleProgressFor(totalRenown: number): TitleProgress {
+  const current = [...TITLE_THRESHOLDS].reverse().find((threshold) => totalRenown >= threshold.renown) ?? TITLE_THRESHOLDS[0];
+  const next = TITLE_THRESHOLDS.find((threshold) => threshold.renown > totalRenown);
+  return {
+    currentTitleKey: current.titleKey,
+    nextTitleKey: next?.titleKey,
+    nextRenownRequired: next?.renown,
+    isMaxTitle: next === undefined
+  };
+}
+
+export function activeBonusSummary(totalRenown: number): MetaBonuses {
+  return metaBonusesFor(totalRenown);
+}
+
+export function difficultyDisplays(record: RunRecord): DifficultyDisplay[] {
+  return DIFFICULTY_CONFIGS.map((difficulty) => {
+    const byLevel = difficulty.level === 1;
+    const byRenown = record.totalRenown >= difficulty.renownRequired;
+    const byCleared = record.highestDifficulty >= difficulty.level;
+    return {
+      ...difficulty,
+      unlocked: byLevel || byRenown || byCleared,
+      unlockReason: byLevel ? "available" : byCleared ? "cleared" : "renown"
+    };
+  });
 }

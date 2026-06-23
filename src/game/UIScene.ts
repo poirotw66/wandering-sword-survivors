@@ -9,6 +9,7 @@ import { buildPathName, enemyName, skillName, t, weaponName } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import { EVOLUTION_CONFIGS } from "../data/evolutions";
 import { trackedEvolutionProgress } from "../data/evolutionProgress";
+import type { BossLegacySummary } from "../data/bossLegacy";
 
 export class UIScene extends Phaser.Scene {
   private state!: GameState;
@@ -26,6 +27,7 @@ export class UIScene extends Phaser.Scene {
   private bossBar!: Phaser.GameObjects.Container;
   private bossBarFill!: Phaser.GameObjects.Rectangle;
   private bossBarLabel!: Phaser.GameObjects.Text;
+  private legacyPanel?: Phaser.GameObjects.Container;
   private pauseOverlay!: Phaser.GameObjects.Container;
   private upgradePanel!: UpgradePanel;
 
@@ -94,6 +96,7 @@ export class UIScene extends Phaser.Scene {
     this.scene.get("GameScene").events.on("boss-health-changed", (hp: number, maxHp: number, name: string) => {
       this.updateBossBar(hp, maxHp, name);
     });
+    this.scene.get("GameScene").events.on("boss-legacy", (summary: BossLegacySummary) => this.showBossLegacy(summary));
 
     this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
       const index = Number(event.key) - 1;
@@ -248,6 +251,49 @@ export class UIScene extends Phaser.Scene {
       onComplete: () => {
         this.bossText.setText("");
         this.bossText.setAlpha(1);
+      }
+    });
+  }
+
+  private showBossLegacy(summary: BossLegacySummary): void {
+    this.legacyPanel?.destroy();
+    const { width } = this.scale;
+    const panelWidth = Math.min(560, width - 52);
+    const container = this.add.container(width / 2, 120).setDepth(920).setScrollFactor(0);
+    const bg = this.add.rectangle(0, 0, panelWidth, 118, 0x16101d, 0.92).setStrokeStyle(2, 0xffd36a, 0.9);
+    const title = this.add
+      .text(0, -46, summary.title, {
+        fontFamily: TITLE_FONT,
+        fontSize: "22px",
+        color: "#ffe09a",
+        align: "center",
+        wordWrap: { width: panelWidth - 32 }
+      })
+      .setOrigin(0.5, 0);
+    const body = this.add
+      .text(0, -10, summary.body, {
+        fontFamily: UI_FONT,
+        fontSize: "14px",
+        color: "#d8e2eb",
+        align: "center",
+        lineSpacing: 6,
+        wordWrap: { width: panelWidth - 38 }
+      })
+      .setOrigin(0.5, 0);
+    container.add([bg, title, body]);
+    this.legacyPanel = container;
+    this.tweens.add({
+      targets: container,
+      y: 96,
+      duration: 180,
+      ease: "Sine.easeOut",
+      yoyo: true,
+      hold: 2600,
+      onComplete: () => {
+        container.destroy();
+        if (this.legacyPanel === container) {
+          this.legacyPanel = undefined;
+        }
       }
     });
   }

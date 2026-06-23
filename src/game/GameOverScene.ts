@@ -3,7 +3,7 @@ import { formatClock } from "../utils/math";
 import { buildPathName, skillName, t } from "../i18n";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
-import type { EvolutionId } from "../data/evolutions";
+import { EVOLUTION_CONFIGS, type EvolutionId } from "../data/evolutions";
 import type { SkillId } from "../data/skills";
 import type { EnemyId } from "../data/enemies";
 import type { BuildPathId } from "../data/buildPaths";
@@ -30,6 +30,7 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   create(data: GameOverData): void {
+    const previousRecord = AchievementSystem.readRecord();
     const record = AchievementSystem.saveRun(
       {
         score: data.score,
@@ -44,12 +45,17 @@ export class GameOverScene extends Phaser.Scene {
       },
       data.won
     );
+    const newHighestDifficulty = record.highestDifficulty > previousRecord.highestDifficulty;
+    const newFastest =
+      data.won &&
+      record.fastestClearSec !== undefined &&
+      (previousRecord.fastestClearSec === undefined || record.fastestClearSec < previousRecord.fastestClearSec);
 
     const { width, height } = this.scale;
     this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17, 0.96);
     this.add.image(width / 2, height * 0.54, data.won ? "strike" : "boss-master").setScale(data.won ? 1.1 : 0.34).setAlpha(0.25);
     this.add
-      .text(width / 2, height * 0.28, data.won ? t("victoryTitle") : t("defeatTitle"), {
+      .text(width / 2, height * 0.25, data.won ? t("victoryTitle") : t("defeatTitle"), {
         fontFamily: TITLE_FONT,
         fontSize: "52px",
         color: data.won ? "#f7c66b" : "#ff7687"
@@ -59,7 +65,7 @@ export class GameOverScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        height * 0.45,
+        height * 0.4,
         t("resultLine", {
           time: formatClock(data.elapsedSec),
           kills: data.kills,
@@ -80,7 +86,7 @@ export class GameOverScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        height * 0.57,
+        height * 0.52,
         t("recordLine", {
           difficulty: record.highestDifficulty,
           fastest: record.fastestClearSec === undefined ? t("none") : formatClock(record.fastestClearSec),
@@ -97,21 +103,42 @@ export class GameOverScene extends Phaser.Scene {
       .setPadding(0, 8, 0, 8)
       .setOrigin(0.5);
 
-    const legacy = this.formatLegacy(data, record);
     this.add
-      .text(width / 2, height * 0.66, legacy, {
+      .text(width / 2, height * 0.63, this.formatLegacy(data, record), {
         fontFamily: UI_FONT,
         fontSize: "16px",
         color: "#d8e2eb",
         align: "center",
         lineSpacing: 8,
-        wordWrap: { width: Math.min(760, width - 72) }
+        wordWrap: { width: Math.min(780, width - 72) }
       })
       .setPadding(0, 8, 0, 8)
       .setOrigin(0.5);
 
+    this.add
+      .text(
+        width / 2,
+        height * 0.75,
+        t("chronicleLine", {
+          totalRenown: record.totalRenown,
+          difficulty: data.selectedDifficulty,
+          reward: Math.round(data.difficultyRewardMultiplier * 100),
+          newDifficulty: newHighestDifficulty ? t("newRecord") : t("none"),
+          newFastest: newFastest ? t("newRecord") : t("none")
+        }),
+        {
+          fontFamily: UI_FONT,
+          fontSize: "14px",
+          color: "#aac7d8",
+          align: "center",
+          lineSpacing: 7,
+          wordWrap: { width: Math.min(760, width - 72) }
+        }
+      )
+      .setOrigin(0.5);
+
     const restart = this.add
-      .text(width / 2, height * 0.82, t("restart"), {
+      .text(width / 2, height * 0.86, t("restart"), {
         fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
@@ -126,12 +153,14 @@ export class GameOverScene extends Phaser.Scene {
   }
 
   private formatLegacy(data: GameOverData, record: ReturnType<typeof AchievementSystem.readRecord>): string {
-    const unlocked = data.unlockedSkillsThisRun.length
-      ? data.unlockedSkillsThisRun.map((skillId) => skillName(skillId)).join("、")
+    const unlocked = data.unlockedSkillsThisRun.length ? data.unlockedSkillsThisRun.map((skillId) => skillName(skillId)).join(" / ") : t("none");
+    const runUltimates = data.evolvedArtsSeen.length
+      ? data.evolvedArtsSeen.map((evolutionId) => t(EVOLUTION_CONFIGS[evolutionId].nameKey as Parameters<typeof t>[0])).join(" / ")
       : t("none");
     const favoriteBuild = record.favoriteBuildPathId ? buildPathName(record.favoriteBuildPathId) : t("none");
     return t("legacyLine", {
       unlocked,
+      runUltimates,
       totalRenown: record.totalRenown,
       ultimates: record.evolvedArtsSeen.length,
       bosses: record.bossDefeatsSeen.length,

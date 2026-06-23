@@ -9,6 +9,8 @@ import { SKILL_CONFIGS } from "../src/data/skills";
 import { WEAPON_CONFIGS } from "../src/data/weapons";
 import { computeEvolutionProgress, trackedEvolutionProgress } from "../src/data/evolutionProgress";
 import { formatBossUnlockDetail, formatEvolutionRecipeDetail } from "../src/data/codexDetails";
+import { buildBossLegacySummary } from "../src/data/bossLegacy";
+import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 
 function createStorage(): Storage {
   const store = new Map<string, string>();
@@ -283,6 +285,43 @@ describe("game regression rules", () => {
     expect(getBossSkillUnlocks("minorBoss")).toEqual(["duguNineSwords", "zixiaDivineSkill"]);
     expect(defeated.body).toContain(skillName("duguNineSwords"));
     expect(hidden.body).toContain(t("hiddenHeartMethod"));
+  });
+
+  it("computes title progression and max title state from total renown", () => {
+    expect(titleProgressFor(0)).toMatchObject({
+      currentTitleKey: "renownTitleWanderer",
+      nextTitleKey: "renownTitleHero",
+      nextRenownRequired: 2500,
+      isMaxTitle: false
+    });
+    expect(titleProgressFor(16000)).toMatchObject({
+      currentTitleKey: "renownTitleLegend",
+      isMaxTitle: true
+    });
+  });
+
+  it("describes difficulty unlock states with multiplier display data", () => {
+    const displays = difficultyDisplays(
+      createRecord({
+        totalRenown: 1200,
+        highestDifficulty: 1
+      })
+    );
+
+    expect(displays.find((difficulty) => difficulty.level === 1)).toMatchObject({ unlocked: true, unlockReason: "available" });
+    expect(displays.find((difficulty) => difficulty.level === 2)).toMatchObject({ unlocked: true, unlockReason: "renown" });
+    expect(displays.find((difficulty) => difficulty.level === 3)).toMatchObject({ unlocked: false, hpMultiplier: 1.34, speedMultiplier: 1.08 });
+  });
+
+  it("builds boss legacy summaries with heart methods and ultimate route clues", () => {
+    setLocale("en");
+    const summary = buildBossLegacySummary("minorBoss", ["duguNineSwords"], 26, 220);
+
+    expect(summary.title).toContain("Rival Sect Captain");
+    expect(summary.body).toContain(skillName("duguNineSwords"));
+    expect(summary.body).toContain(t("evolution_voidDuguSword"));
+    expect(summary.rewardExp).toBe(26);
+    expect(summary.rewardScore).toBe(220);
   });
 
   it("reports potential ultimate arts when boss skills unlock", () => {

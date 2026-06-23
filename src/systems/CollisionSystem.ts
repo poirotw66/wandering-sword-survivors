@@ -11,6 +11,7 @@ import type { PickupSystem } from "./PickupSystem";
 import type { WeaponSystem } from "./WeaponSystem";
 import { enemyName, t } from "../i18n";
 import type { AchievementSystem } from "./AchievementSystem";
+import { buildBossLegacySummary } from "../data/bossLegacy";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
 
@@ -118,9 +119,12 @@ export class CollisionSystem {
     if (enemy.config.isBoss) {
       this.scene.events.emit("boss-defeated");
       this.scene.events.emit("milestone-unlocked", t("bossDefeatedReward", { name: enemyName(enemy.enemyId), exp }));
+      const unlockedBefore = new Set(this.state.unlockedSkills);
       for (const message of this.achievementSystem.recordBossDefeat(enemy.enemyId)) {
         this.scene.events.emit("milestone-unlocked", message);
       }
+      const newlyUnlocked = [...this.state.unlockedSkills].filter((skillId) => !unlockedBefore.has(skillId));
+      this.scene.events.emit("boss-legacy", buildBossLegacySummary(enemy.enemyId, newlyUnlocked, exp, score));
     }
     enemy.setActive(false);
     enemy.setVisible(false);

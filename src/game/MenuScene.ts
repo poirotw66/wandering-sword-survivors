@@ -1,6 +1,13 @@
 import Phaser from "phaser";
 import { t, toggleLocale } from "../i18n";
-import { DIFFICULTY_CONFIGS, difficultyForLevel, metaBonusesFor, unlockedDifficulties } from "../data/metaProgression";
+import {
+  DIFFICULTY_CONFIGS,
+  difficultyDisplays,
+  difficultyForLevel,
+  metaBonusesFor,
+  titleProgressFor,
+  unlockedDifficulties
+} from "../data/metaProgression";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 
@@ -15,6 +22,7 @@ export class MenuScene extends Phaser.Scene {
     const { width, height } = this.scale;
     const record = AchievementSystem.readRecord();
     const bonuses = metaBonusesFor(record.totalRenown);
+    const titleProgress = titleProgressFor(record.totalRenown);
     const unlocked = unlockedDifficulties(record).map((difficulty) => difficulty.level);
     this.selectedDifficulty = Math.min(
       Math.max(Number(window.localStorage?.getItem("sword-survivors-difficulty") ?? "1"), 1),
@@ -51,32 +59,12 @@ export class MenuScene extends Phaser.Scene {
       .setPadding(0, 6, 0, 6)
       .setOrigin(0.5);
 
-    this.add
-      .text(
-        width / 2,
-        height * 0.63,
-        t("metaBonusLine", {
-          title: t(bonuses.titleKey),
-          hp: bonuses.maxHp,
-          speed: bonuses.moveSpeed,
-          pickup: bonuses.pickupRange,
-          rerolls: bonuses.rerolls
-        }),
-        {
-          fontFamily: UI_FONT,
-          fontSize: "15px",
-          color: "#ffe09a",
-          align: "center",
-          lineSpacing: 6
-        }
-      )
-      .setPadding(0, 5, 0, 5)
-      .setOrigin(0.5);
+    this.createMetaPanel(record.totalRenown, bonuses, titleProgress, width, height);
 
     this.createDifficultyButtons(record.totalRenown, unlocked, width, height);
 
     const start = this.add
-      .text(width / 2, height * 0.71, t("startRun"), {
+      .text(width / 2, height * 0.73, t("startRun"), {
         fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
@@ -87,7 +75,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     const collection = this.add
-      .text(width / 2, height * 0.8, t("collectionButton"), {
+      .text(width / 2, height * 0.82, t("collectionButton"), {
         fontFamily: UI_FONT,
         fontSize: "20px",
         color: "#f7c66b",
@@ -109,7 +97,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     this.add
-      .text(width / 2, height * 0.91, t("controls"), {
+      .text(width / 2, height * 0.93, t("controls"), {
         fontFamily: UI_FONT,
         fontSize: "16px",
         color: "#aac7d8",
@@ -130,11 +118,17 @@ export class MenuScene extends Phaser.Scene {
 
   private createDifficultyButtons(totalRenown: number, unlocked: number[], width: number, height: number): void {
     const startX = width / 2 - 176;
-    DIFFICULTY_CONFIGS.forEach((difficulty, index) => {
+    const record = AchievementSystem.readRecord();
+    difficultyDisplays(record).forEach((difficulty, index) => {
       const isUnlocked = unlocked.includes(difficulty.level);
       const selected = this.selectedDifficulty === difficulty.level;
       const label = isUnlocked
-        ? t("difficultyButton", { level: difficulty.level, reward: Math.round(difficulty.rewardMultiplier * 100) })
+        ? t("difficultyButton", {
+            level: difficulty.level,
+            reward: Math.round(difficulty.rewardMultiplier * 100),
+            hp: Math.round(difficulty.hpMultiplier * 100),
+            speed: Math.round(difficulty.speedMultiplier * 100)
+          })
         : t("difficultyLocked", { level: difficulty.level, renown: difficulty.renownRequired });
       const button = this.add
         .text(startX + index * 88, height * 0.675, label, {
@@ -165,6 +159,63 @@ export class MenuScene extends Phaser.Scene {
         })
         .setOrigin(0.5);
     }
+  }
+
+  private createMetaPanel(
+    totalRenown: number,
+    bonuses: ReturnType<typeof metaBonusesFor>,
+    titleProgress: ReturnType<typeof titleProgressFor>,
+    width: number,
+    height: number
+  ): void {
+    const nextText =
+      titleProgress.isMaxTitle || !titleProgress.nextTitleKey || titleProgress.nextRenownRequired === undefined
+        ? t("titleProgressMax")
+        : t("titleProgressNext", {
+            title: t(titleProgress.nextTitleKey),
+            renown: titleProgress.nextRenownRequired
+          });
+    const panelWidth = Math.min(720, width - 72);
+    const panelY = height * 0.625;
+    this.add.rectangle(width / 2, panelY, panelWidth, 78, 0x111421, 0.78).setStrokeStyle(1, 0x5f4a2a, 0.85);
+    this.add
+      .text(
+        width / 2,
+        panelY - 28,
+        t("metaProgressionLine", {
+          title: t(bonuses.titleKey),
+          renown: totalRenown,
+          next: nextText
+        }),
+        {
+          fontFamily: UI_FONT,
+          fontSize: "15px",
+          color: "#ffe09a",
+          align: "center",
+          wordWrap: { width: panelWidth - 32 }
+        }
+      )
+      .setOrigin(0.5, 0);
+    this.add
+      .text(
+        width / 2,
+        panelY + 6,
+        t("metaBonusLine", {
+          title: t(bonuses.titleKey),
+          hp: bonuses.maxHp,
+          speed: bonuses.moveSpeed,
+          pickup: bonuses.pickupRange,
+          rerolls: bonuses.rerolls
+        }),
+        {
+          fontFamily: UI_FONT,
+          fontSize: "13px",
+          color: "#d8e2eb",
+          align: "center",
+          wordWrap: { width: panelWidth - 32 }
+        }
+      )
+      .setOrigin(0.5, 0);
   }
 
   private startRun(): void {

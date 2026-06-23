@@ -1,7 +1,7 @@
 ---
 id: 005-meta-progression-boss-ritual
 title: Meta Progression and Boss Ritual
-status: draft
+status: implemented
 owner: openab
 created: 2026-06-23
 updated: 2026-06-23
