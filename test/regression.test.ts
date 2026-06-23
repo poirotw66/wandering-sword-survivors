@@ -13,6 +13,7 @@ import { buildBossLegacySummary } from "../src/data/bossLegacy";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor } from "../src/data/bossSkills";
 import { eliteTraitFor } from "../src/data/eliteTraits";
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
+import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows, startStyleOptions } from "../src/data/metaChoices";
 
 function createStorage(): Storage {
   const store = new Map<string, string>();
@@ -313,6 +314,69 @@ describe("game regression rules", () => {
     expect(displays.find((difficulty) => difficulty.level === 1)).toMatchObject({ unlocked: true, unlockReason: "available" });
     expect(displays.find((difficulty) => difficulty.level === 2)).toMatchObject({ unlocked: true, unlockReason: "renown" });
     expect(displays.find((difficulty) => difficulty.level === 3)).toMatchObject({ unlocked: false, hpMultiplier: 1.34, speedMultiplier: 1.08 });
+  });
+
+  it("unlocks opening styles through renown or boss defeats", () => {
+    setLocale("en");
+    const fresh = startStyleOptions(createRecord());
+    const byBoss = startStyleOptions(createRecord({ bossDefeatsSeen: ["minorBoss"] }));
+    const byRenown = startStyleOptions(createRecord({ totalRenown: 5200 }));
+
+    expect(fresh.find((option) => option.id === "swordSect")?.unlocked).toBe(true);
+    expect(fresh.find((option) => option.id === "qiSect")?.unlocked).toBe(false);
+    expect(byBoss.find((option) => option.id === "qiSect")?.unlocked).toBe(true);
+    expect(byRenown.every((option) => option.unlocked)).toBe(true);
+    expect(normalizeStartStyle(createRecord(), "wineSwordSect")).toBe("swordSect");
+  });
+
+  it("summarizes earned and upcoming renown shop tiers", () => {
+    setLocale("en");
+    const rows = renownShopRows(1600);
+
+    expect(rows.find((row) => row.id === "hp")).toMatchObject({ earned: true, threshold: 500 });
+    expect(rows.find((row) => row.id === "speed")).toMatchObject({ earned: true, threshold: 1500 });
+    expect(rows.find((row) => row.id === "pickup")).toMatchObject({ earned: false, threshold: 3000 });
+  });
+
+  it("prioritizes next-run goals from unlocks to difficulty to mastery", () => {
+    setLocale("en");
+    expect(nextRunGoal(createRecord())).toContain("Unlock Qi Sect");
+    expect(nextRunGoal(createRecord({ totalRenown: 5200, highestDifficulty: 1 }))).toContain("Difficulty 2");
+    expect(
+      nextRunGoal(
+        createRecord({
+          totalRenown: 5200,
+          highestDifficulty: 5,
+          evolvedArtsSeen: ["voidDuguSword"]
+        })
+      )
+    ).toContain("more ultimate arts");
+    expect(
+      nextRunGoal(
+        createRecord({
+          totalRenown: 5200,
+          highestDifficulty: 5,
+          evolvedArtsSeen: Object.keys(EVOLUTION_CONFIGS) as (keyof typeof EVOLUTION_CONFIGS)[]
+        })
+      )
+    ).toContain("faster clear");
+  });
+
+  it("applies the selected opening style as one build-path level", () => {
+    const state = createState();
+
+    applyStartStyleBonus(state, "footworkSect");
+    const speed = state.player.stats.moveSpeed;
+
+    expect(state.startStyleId).toBe("footworkSect");
+    expect(state.buildPathLevels.get("footworkSect")).toBe(1);
+    expect(state.player.stats.moveSpeed).toBeGreaterThan(188);
+    expect(state.player.stats.pickupRange).toBeGreaterThan(86);
+
+    applyStartStyleBonus(state, "footworkSect");
+
+    expect(state.player.stats.moveSpeed).toBe(speed);
+    expect(state.buildPathLevels.get("footworkSect")).toBe(1);
   });
 
   it("builds boss legacy summaries with heart methods and ultimate route clues", () => {

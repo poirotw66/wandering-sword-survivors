@@ -7,6 +7,7 @@ import { EVOLUTION_CONFIGS, type EvolutionId } from "../data/evolutions";
 import type { SkillId } from "../data/skills";
 import type { EnemyId } from "../data/enemies";
 import type { BuildPathId } from "../data/buildPaths";
+import { formatNextGoalLine, nextRunGoal } from "../data/metaChoices";
 
 export type GameOverData = {
   won: boolean;
@@ -137,8 +138,19 @@ export class GameOverScene extends Phaser.Scene {
       )
       .setOrigin(0.5);
 
+    this.add
+      .text(width / 2, height * 0.812, formatNextGoalLine(nextRunGoal(record)), {
+        fontFamily: UI_FONT,
+        fontSize: "15px",
+        color: "#ffe09a",
+        align: "center",
+        wordWrap: { width: Math.min(760, width - 72) }
+      })
+      .setPadding(0, 6, 0, 6)
+      .setOrigin(0.5);
+
     const restart = this.add
-      .text(width / 2, height * 0.86, t("restart"), {
+      .text(width / 2, height * 0.9, t("restart"), {
         fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
@@ -148,8 +160,8 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
-    restart.on("pointerdown", () => this.scene.start("GameScene"));
-    this.input.keyboard?.once("keydown-SPACE", () => this.scene.start("GameScene"));
+    restart.on("pointerdown", () => this.scene.start("MenuScene"));
+    this.input.keyboard?.once("keydown-SPACE", () => this.scene.start("MenuScene"));
   }
 
   private formatLegacy(data: GameOverData, record: ReturnType<typeof AchievementSystem.readRecord>): string {

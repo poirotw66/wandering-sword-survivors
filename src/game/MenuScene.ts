@@ -8,11 +8,23 @@ import {
   titleProgressFor,
   unlockedDifficulties
 } from "../data/metaProgression";
+import {
+  DEFAULT_START_STYLE,
+  formatNextGoalLine,
+  formatStartStyleButton,
+  nextRunGoal,
+  normalizeStartStyle,
+  renownShopSummary,
+  startStyleLabel,
+  startStyleOptions,
+  type StartStyleId
+} from "../data/metaChoices";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 
 export class MenuScene extends Phaser.Scene {
   private selectedDifficulty = 1;
+  private selectedStartStyle: StartStyleId = DEFAULT_START_STYLE;
 
   constructor() {
     super("MenuScene");
@@ -27,6 +39,10 @@ export class MenuScene extends Phaser.Scene {
     this.selectedDifficulty = Math.min(
       Math.max(Number(window.localStorage?.getItem("sword-survivors-difficulty") ?? "1"), 1),
       Math.max(...unlocked)
+    );
+    this.selectedStartStyle = normalizeStartStyle(
+      record,
+      window.localStorage?.getItem("sword-survivors-start-style")
     );
     this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17);
     this.add.image(width / 2, height * 0.58, "player").setScale(0.34).setAlpha(0.78);
@@ -62,9 +78,10 @@ export class MenuScene extends Phaser.Scene {
     this.createMetaPanel(record.totalRenown, bonuses, titleProgress, width, height);
 
     this.createDifficultyButtons(record.totalRenown, unlocked, width, height);
+    this.createStartStyleButtons(record, width, height);
 
     const start = this.add
-      .text(width / 2, height * 0.73, t("startRun"), {
+      .text(width / 2, height * 0.845, t("startRun"), {
         fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
@@ -75,7 +92,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     const collection = this.add
-      .text(width / 2, height * 0.82, t("collectionButton"), {
+      .text(width / 2, height * 0.91, t("collectionButton"), {
         fontFamily: UI_FONT,
         fontSize: "20px",
         color: "#f7c66b",
@@ -97,7 +114,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     this.add
-      .text(width / 2, height * 0.93, t("controls"), {
+      .text(width / 2, height * 0.968, t("controls"), {
         fontFamily: UI_FONT,
         fontSize: "16px",
         color: "#aac7d8",
@@ -131,7 +148,7 @@ export class MenuScene extends Phaser.Scene {
           })
         : t("difficultyLocked", { level: difficulty.level, renown: difficulty.renownRequired });
       const button = this.add
-        .text(startX + index * 88, height * 0.675, label, {
+        .text(startX + index * 88, height * 0.715, label, {
           fontFamily: UI_FONT,
           fontSize: "12px",
           color: isUnlocked ? (selected ? "#10121f" : "#f7c66b") : "#6f7d91",
@@ -152,7 +169,7 @@ export class MenuScene extends Phaser.Scene {
 
     if (totalRenown < DIFFICULTY_CONFIGS[DIFFICULTY_CONFIGS.length - 1].renownRequired) {
       this.add
-        .text(width / 2, height * 0.642, t("difficultyHint"), {
+        .text(width / 2, height * 0.685, t("difficultyHint"), {
           fontFamily: UI_FONT,
           fontSize: "13px",
           color: "#aac7d8"
@@ -177,11 +194,11 @@ export class MenuScene extends Phaser.Scene {
           });
     const panelWidth = Math.min(720, width - 72);
     const panelY = height * 0.625;
-    this.add.rectangle(width / 2, panelY, panelWidth, 78, 0x111421, 0.78).setStrokeStyle(1, 0x5f4a2a, 0.85);
+    this.add.rectangle(width / 2, panelY, panelWidth, 116, 0x111421, 0.78).setStrokeStyle(1, 0x5f4a2a, 0.85);
     this.add
       .text(
         width / 2,
-        panelY - 28,
+        panelY - 50,
         t("metaProgressionLine", {
           title: t(bonuses.titleKey),
           renown: totalRenown,
@@ -199,7 +216,7 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        panelY + 6,
+        panelY - 14,
         t("metaBonusLine", {
           title: t(bonuses.titleKey),
           hp: bonuses.maxHp,
@@ -216,9 +233,62 @@ export class MenuScene extends Phaser.Scene {
         }
       )
       .setOrigin(0.5, 0);
+    this.add
+      .text(width / 2, panelY + 16, renownShopSummary(totalRenown), {
+        fontFamily: UI_FONT,
+        fontSize: "12px",
+        color: "#aac7d8",
+        align: "center",
+        wordWrap: { width: panelWidth - 32 }
+      })
+      .setOrigin(0.5, 0);
+    this.add
+      .text(width / 2, panelY + 42, formatNextGoalLine(nextRunGoal(AchievementSystem.readRecord())), {
+        fontFamily: UI_FONT,
+        fontSize: "12px",
+        color: "#ffe09a",
+        align: "center",
+        wordWrap: { width: panelWidth - 32 }
+      })
+      .setOrigin(0.5, 0);
+  }
+
+  private createStartStyleButtons(record: ReturnType<typeof AchievementSystem.readRecord>, width: number, height: number): void {
+    this.add
+      .text(width / 2, height * 0.758, startStyleLabel(), {
+        fontFamily: UI_FONT,
+        fontSize: "13px",
+        color: "#aac7d8"
+      })
+      .setOrigin(0.5);
+
+    const startX = width / 2 - 210;
+    startStyleOptions(record).forEach((option, index) => {
+      const selected = this.selectedStartStyle === option.id;
+      const label = formatStartStyleButton(option);
+      const button = this.add
+        .text(startX + index * 140, height * 0.792, label, {
+          fontFamily: UI_FONT,
+          fontSize: "11px",
+          color: option.unlocked ? (selected ? "#10121f" : "#f7c66b") : "#6f7d91",
+          backgroundColor: selected ? "#f7c66b" : "#192033",
+          align: "center",
+          padding: { left: 8, right: 8, top: 6, bottom: 6 },
+          wordWrap: { width: 118 }
+        })
+        .setOrigin(0.5)
+        .setInteractive(option.unlocked ? { useHandCursor: true } : undefined);
+      if (option.unlocked) {
+        button.on("pointerdown", () => {
+          this.selectedStartStyle = option.id;
+          window.localStorage?.setItem("sword-survivors-start-style", option.id);
+          this.scene.restart();
+        });
+      }
+    });
   }
 
   private startRun(): void {
-    this.scene.start("GameScene", { difficultyLevel: this.selectedDifficulty });
+    this.scene.start("GameScene", { difficultyLevel: this.selectedDifficulty, startStyleId: this.selectedStartStyle });
   }
 }

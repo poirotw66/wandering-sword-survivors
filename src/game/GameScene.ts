@@ -14,11 +14,13 @@ import { WeaponSystem } from "../systems/WeaponSystem";
 import type { UpgradeOption } from "../data/upgrades";
 import type { GameOverData } from "./GameOverScene";
 import type { GameState } from "./GameState";
-import { t } from "../i18n";
+import { buildPathName, t } from "../i18n";
 import { difficultyForLevel, metaBonusesFor, type DifficultyConfig } from "../data/metaProgression";
+import { applyStartStyleBonus, formatStartStyleToast, normalizeStartStyle, type StartStyleId } from "../data/metaChoices";
 
 type GameSceneData = {
   difficultyLevel?: number;
+  startStyleId?: StartStyleId;
 };
 
 export class GameScene extends Phaser.Scene {
@@ -60,6 +62,10 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.setDeadzone(28, 28);
     const record = AchievementSystem.readRecord();
     const metaBonuses = metaBonusesFor(record.totalRenown);
+    const startStyleId = normalizeStartStyle(
+      record,
+      data.startStyleId ?? window.localStorage?.getItem("sword-survivors-start-style")
+    );
     this.state = {
       player: this.player,
       level: 1,
@@ -74,6 +80,7 @@ export class GameScene extends Phaser.Scene {
       evolvedWeapons: new Map(),
       skillLevels: new Map(),
       buildPathLevels: new Map(),
+      startStyleId,
       unlockedSkills: new Set(),
       unlockedSkillsThisRun: new Set(),
       unlockedAchievements: new Set(),
@@ -92,6 +99,8 @@ export class GameScene extends Phaser.Scene {
         timeScale: 1
       }
     };
+    applyStartStyleBonus(this.state, startStyleId);
+    this.showScorePop(this.player.x, this.player.y - 100, formatStartStyleToast(buildPathName(startStyleId)), "#b8f7ff");
 
     this.playerSystem = new PlayerSystem(this, this.player);
     this.enemySystem = new EnemySystem(this, this.player, difficulty);
