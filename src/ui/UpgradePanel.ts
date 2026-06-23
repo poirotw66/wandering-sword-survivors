@@ -54,22 +54,25 @@ export class UpgradePanel {
         Phaser.Geom.Rectangle.Contains
       );
       const bg = this.scene.add
-        .rectangle(0, 0, cardWidth, cardHeight, 0x1b1720, 0.98)
-        .setStrokeStyle(2, 0xd9b45f);
-      const seal = this.scene.add.circle(0, -76, 16, 0x7b2f3a, 0.96).setStrokeStyle(2, 0xffd6b0);
+        .rectangle(0, 0, cardWidth, cardHeight, this.cardFill(option.kind), 0.98)
+        .setStrokeStyle(option.kind === "evolution" ? 3 : 2, this.cardStroke(option.kind));
+      const seal = this.scene.add.circle(-cardWidth / 2 + 25, -cardHeight / 2 + 24, 15, 0x7b2f3a, 0.96).setStrokeStyle(2, 0xffd6b0);
       const indexText = this.scene.add
-        .text(0, -77, `${index + 1}`, {
+        .text(-cardWidth / 2 + 25, -cardHeight / 2 + 23, `${index + 1}`, {
           fontFamily: TITLE_FONT,
           fontSize: "16px",
           color: "#f7efd8",
           fontStyle: "700"
         })
         .setOrigin(0.5);
+      const iconKey = this.scene.textures.exists(option.iconKey) ? option.iconKey : "icon-upgrade-default";
+      const iconHalo = this.scene.add.circle(0, -65, 34, 0x2a2333, 0.96).setStrokeStyle(2, this.cardStroke(option.kind), 0.9);
+      const icon = this.scene.add.image(0, -65, iconKey).setDisplaySize(54, 54);
       const title = this.scene.add
-        .text(0, -42, option.title, {
+        .text(0, -17, option.title, {
           fontFamily: UI_FONT,
-          fontSize: "19px",
-          color: "#f7c66b",
+          fontSize: "18px",
+          color: option.kind === "evolution" ? "#ffe09a" : option.kind === "standaloneSkill" ? "#b8f7ff" : "#f7c66b",
           align: "center",
           lineSpacing: 4,
           wordWrap: { width: cardWidth - 28 }
@@ -77,7 +80,7 @@ export class UpgradePanel {
         .setPadding(0, 8, 0, 8)
         .setOrigin(0.5);
       const description = this.scene.add
-        .text(0, 48, option.description, {
+        .text(0, 62, option.description, {
           fontFamily: UI_FONT,
           fontSize: "15px",
           color: "#d8e2eb",
@@ -89,9 +92,9 @@ export class UpgradePanel {
         .setOrigin(0.5);
 
       card.on("pointerover", () => bg.setStrokeStyle(3, 0xffe09a));
-      card.on("pointerout", () => bg.setStrokeStyle(2, 0xd9b45f));
+      card.on("pointerout", () => bg.setStrokeStyle(option.kind === "evolution" ? 3 : 2, this.cardStroke(option.kind)));
       card.on("pointerdown", () => onPick(option));
-      card.add([bg, seal, indexText, title, description]);
+      card.add([bg, iconHalo, icon, seal, indexText, title, description]);
       this.container.add(card);
       this.cards.push(card);
     });
@@ -113,5 +116,25 @@ export class UpgradePanel {
     this.cards.length = 0;
     this.currentOptions = [];
     this.container.removeAll(true);
+  }
+
+  private cardFill(kind: UpgradeOption["kind"]): number {
+    if (kind === "evolution") {
+      return 0x241a12;
+    }
+    if (kind === "standaloneSkill") {
+      return 0x14242a;
+    }
+    return 0x1b1720;
+  }
+
+  private cardStroke(kind: UpgradeOption["kind"]): number {
+    if (kind === "evolution") {
+      return 0xffd36a;
+    }
+    if (kind === "standaloneSkill") {
+      return 0x8ff4ff;
+    }
+    return 0xd9b45f;
   }
 }

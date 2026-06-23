@@ -19,11 +19,11 @@ export type RunSummary = {
 
 const RECORD_KEY = "sword-survivors-record";
 
-const BOSS_SKILL_UNLOCKS: Partial<Record<EnemyId, SkillId>> = {
-  minorBoss: "duguNineSwords",
-  midBoss: "huashanFootwork",
-  greatBoss: "starAbsorption",
-  megaBoss: "wineSwordHeart"
+const BOSS_SKILL_UNLOCKS: Partial<Record<EnemyId, SkillId[]>> = {
+  minorBoss: ["duguNineSwords", "zixiaDivineSkill"],
+  midBoss: ["huashanFootwork", "windChasingStep"],
+  greatBoss: ["starAbsorption", "hunyuanQi"],
+  megaBoss: ["wineSwordHeart", "iceHeart", "vajraDemonSubduing"]
 };
 
 const BOSS_ACHIEVEMENTS: Partial<Record<EnemyId, string>> = {
@@ -66,10 +66,12 @@ export class AchievementSystem {
     this.state.bossDefeats.set(enemyId, (this.state.bossDefeats.get(enemyId) ?? 0) + 1);
     this.state.highestDifficulty = Math.max(this.state.highestDifficulty, this.difficultyFor(enemyId));
 
-    const skillId = BOSS_SKILL_UNLOCKS[enemyId];
-    if (skillId && !this.state.unlockedSkills.has(skillId)) {
-      this.state.unlockedSkills.add(skillId);
-      messages.push(t("skillUnlockedToast", { name: skillName(skillId) }));
+    const skillIds = BOSS_SKILL_UNLOCKS[enemyId] ?? [];
+    for (const skillId of skillIds) {
+      if (!this.state.unlockedSkills.has(skillId)) {
+        this.state.unlockedSkills.add(skillId);
+        messages.push(t("skillUnlockedToast", { name: skillName(skillId) }));
+      }
     }
 
     const achievementId = BOSS_ACHIEVEMENTS[enemyId];

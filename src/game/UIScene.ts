@@ -7,6 +7,7 @@ import { TimerText } from "../ui/TimerText";
 import { UpgradePanel } from "../ui/UpgradePanel";
 import { buildPathName, enemyName, skillName, t, weaponName } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
+import { EVOLUTION_CONFIGS } from "../data/evolutions";
 
 export class UIScene extends Phaser.Scene {
   private state!: GameState;
@@ -124,7 +125,11 @@ export class UIScene extends Phaser.Scene {
   private formatWeapons(): string {
     const equipped = [...this.state.weaponLevels.entries()]
       .filter(([, level]) => level > 0)
-      .map(([weaponId, level]) => t("weaponLevel", { name: weaponName(weaponId), level }));
+      .map(([weaponId, level]) => {
+        const evolutionId = this.state.evolvedWeapons.get(weaponId);
+        const name = evolutionId ? t(EVOLUTION_CONFIGS[evolutionId].nameKey as Parameters<typeof t>[0]) : weaponName(weaponId);
+        return t("weaponLevel", { name, level });
+      });
     return equipped.length > 0
       ? `${t("forms")}\n${equipped.join("\n")}`
       : `${t("forms")}\n${t("weaponLevel", { name: weaponName("magicBolt"), level: 1 })}`;

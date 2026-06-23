@@ -26,6 +26,8 @@ export class BootScene extends Phaser.Scene {
   }
 
   private createFallbackTextures(): void {
+    this.createUpgradeIcons();
+
     if (!this.textures.exists("player")) {
       this.createHeroTexture();
     }
@@ -62,6 +64,52 @@ export class BootScene extends Phaser.Scene {
     if (!this.textures.exists("star-vortex")) {
       this.createVortexTexture();
     }
+  }
+
+  private createUpgradeIcons(): void {
+    this.createSwordGlyph("icon-damage", 0xf7c66b, 0x5a2330);
+    this.createSwirlGlyph("icon-cooldown", 0x8ff4ff, 0x26354f);
+    this.createStepGlyph("icon-speed", 0x92f5bd, 0x1d4d42);
+    this.createGemGlyph("icon-pickup", 0x84f7b2, 0x203f45);
+    this.createHeartGlyph("icon-heal", 0xff8fa3, 0x5a2330);
+
+    this.createSwordGlyph("icon-dugu-sword", 0xfff1a1, 0x4d3144);
+    this.createSwirlGlyph("icon-star-absorption", 0xb86bff, 0x1e243d);
+    this.createStepGlyph("icon-huashan-footwork", 0xb8f7ff, 0x23415a);
+    this.createGourdGlyph("icon-wine-heart", 0xf7a55f, 0x4d2634);
+    this.createSwordGlyph("icon-zixia-skill", 0xd5a3ff, 0x332449);
+    this.createStepGlyph("icon-wind-step", 0xa8f4d0, 0x1f4238);
+    this.createSwirlGlyph("icon-hunyuan-qi", 0xf7c66b, 0x3f3520);
+    this.createSwirlGlyph("icon-ice-heart", 0xb8f7ff, 0x20384a);
+    this.createHeartGlyph("icon-vajra-skill", 0xffd36a, 0x4a2f20);
+    this.createSwordGlyph("icon-blossom-blade", 0xffb7d5, 0x432238);
+    this.createSwordGlyph("icon-gale-sword", 0xb8ffd8, 0x1f4238);
+    this.createSwordGlyph("icon-taiyue-peak", 0xffd36a, 0x403421);
+    this.createSwordGlyph("icon-cold-pond-sword", 0xb8f7ff, 0x1f384a);
+    this.createHeartGlyph("icon-vajra-fist", 0xffd36a, 0x4a2f20);
+
+    this.createHeartGlyph("icon-yijin-manual", 0xffd36a, 0x402b24);
+    this.createSwirlGlyph("icon-cosmos-breathing", 0x8ff4ff, 0x1e3142);
+    this.createSwirlGlyph("icon-formless-sutra", 0xd8e2eb, 0x2b2f3d);
+    this.createHeartGlyph("icon-marrow-cleansing", 0xff8fa3, 0x3f2532);
+    this.createStepGlyph("icon-freewind-method", 0xb8ffd8, 0x1f4238);
+
+    this.createSwordGlyph("icon-evolution-dugu", 0xffe09a, 0x4a2d18);
+    this.createSwordGlyph("icon-evolution-wind-array", 0xffe09a, 0x3d321d);
+    this.createHeartGlyph("icon-evolution-star-palm", 0xffe09a, 0x3d2234);
+    this.createSwordGlyph("icon-evolution-drunken-sword", 0xffe09a, 0x4d2634);
+    this.createSwirlGlyph("icon-evolution-star-field", 0xffe09a, 0x332449);
+    this.createSwordGlyph("icon-evolution-violet-blossom", 0xffe09a, 0x432238);
+    this.createSwordGlyph("icon-evolution-gale", 0xffe09a, 0x243d34);
+    this.createSwordGlyph("icon-evolution-taiyue", 0xffe09a, 0x403421);
+    this.createSwordGlyph("icon-evolution-cold-pond", 0xffe09a, 0x20384a);
+    this.createHeartGlyph("icon-evolution-vajra", 0xffe09a, 0x4a2f20);
+
+    this.createSectGlyph("icon-build-sword", 0xf7c66b, 0x2f2636, "劍");
+    this.createSectGlyph("icon-build-qi", 0x8ff4ff, 0x22384b, "氣");
+    this.createSectGlyph("icon-build-footwork", 0x92f5bd, 0x203d35, "身");
+    this.createSectGlyph("icon-build-wine", 0xf7a55f, 0x4d2634, "酒");
+    this.createSectGlyph("icon-upgrade-default", 0xd8e2eb, 0x2b2036, "武");
   }
 
   private createCircleTexture(key: string, size: number, fill: number, stroke: number): void {
@@ -134,6 +182,145 @@ export class BootScene extends Phaser.Scene {
     graphics.strokePath();
     graphics.generateTexture("heart", 28, 30);
     graphics.destroy();
+  }
+
+  private createIconBase(key: string, accent: number, base: number): Phaser.GameObjects.Graphics {
+    if (this.textures.exists(key)) {
+      return this.add.graphics().setVisible(false);
+    }
+
+    const graphics = this.add.graphics();
+    graphics.fillStyle(base, 1);
+    graphics.fillRoundedRect(0, 0, 64, 64, 12);
+    graphics.lineStyle(3, accent, 0.95);
+    graphics.strokeRoundedRect(4, 4, 56, 56, 10);
+    graphics.fillStyle(0xffffff, 0.08);
+    graphics.fillCircle(50, 14, 16);
+    return graphics;
+  }
+
+  private finishIcon(key: string, graphics: Phaser.GameObjects.Graphics): void {
+    if (!this.textures.exists(key)) {
+      graphics.generateTexture(key, 64, 64);
+    }
+    graphics.destroy();
+  }
+
+  private createSwordGlyph(key: string, accent: number, base: number): void {
+    const graphics = this.createIconBase(key, accent, base);
+    graphics.lineStyle(5, accent, 1);
+    graphics.lineBetween(18, 48, 46, 16);
+    graphics.lineStyle(2, 0xffffff, 0.9);
+    graphics.lineBetween(21, 45, 43, 19);
+    graphics.fillStyle(0xf7efd8, 1);
+    graphics.fillTriangle(44, 14, 51, 9, 49, 19);
+    graphics.lineStyle(4, 0xf7efd8, 1);
+    graphics.lineBetween(14, 50, 24, 40);
+    this.finishIcon(key, graphics);
+  }
+
+  private createSwirlGlyph(key: string, accent: number, base: number): void {
+    const graphics = this.createIconBase(key, accent, base);
+    graphics.lineStyle(5, accent, 0.9);
+    graphics.strokeCircle(32, 32, 18);
+    graphics.lineStyle(4, 0xffffff, 0.72);
+    graphics.beginPath();
+    for (let i = 0; i < 22; i += 1) {
+      const angle = i * 0.54;
+      const radius = 4 + i * 0.78;
+      const x = 32 + Math.cos(angle) * radius;
+      const y = 32 + Math.sin(angle) * radius;
+      if (i === 0) {
+        graphics.moveTo(x, y);
+      } else {
+        graphics.lineTo(x, y);
+      }
+    }
+    graphics.strokePath();
+    this.finishIcon(key, graphics);
+  }
+
+  private createStepGlyph(key: string, accent: number, base: number): void {
+    const graphics = this.createIconBase(key, accent, base);
+    graphics.lineStyle(5, accent, 0.95);
+    graphics.beginPath();
+    graphics.moveTo(12, 42);
+    graphics.lineTo(20, 35);
+    graphics.lineTo(29, 33);
+    graphics.lineTo(38, 39);
+    graphics.lineTo(47, 34);
+    graphics.lineTo(54, 26);
+    graphics.strokePath();
+    graphics.fillStyle(0xffffff, 0.86);
+    graphics.fillCircle(22, 43, 4);
+    graphics.fillCircle(38, 36, 4);
+    graphics.fillCircle(50, 25, 4);
+    this.finishIcon(key, graphics);
+  }
+
+  private createGemGlyph(key: string, accent: number, base: number): void {
+    const graphics = this.createIconBase(key, accent, base);
+    graphics.fillStyle(accent, 0.95);
+    graphics.lineStyle(3, 0xffffff, 0.72);
+    graphics.beginPath();
+    graphics.moveTo(32, 12);
+    graphics.lineTo(48, 29);
+    graphics.lineTo(32, 52);
+    graphics.lineTo(16, 29);
+    graphics.closePath();
+    graphics.fillPath();
+    graphics.strokePath();
+    this.finishIcon(key, graphics);
+  }
+
+  private createHeartGlyph(key: string, accent: number, base: number): void {
+    const graphics = this.createIconBase(key, accent, base);
+    graphics.fillStyle(accent, 0.95);
+    graphics.fillCircle(25, 25, 10);
+    graphics.fillCircle(39, 25, 10);
+    graphics.beginPath();
+    graphics.moveTo(16, 31);
+    graphics.lineTo(32, 50);
+    graphics.lineTo(48, 31);
+    graphics.closePath();
+    graphics.fillPath();
+    this.finishIcon(key, graphics);
+  }
+
+  private createGourdGlyph(key: string, accent: number, base: number): void {
+    const graphics = this.createIconBase(key, accent, base);
+    graphics.fillStyle(accent, 0.96);
+    graphics.lineStyle(3, 0xf7efd8, 0.88);
+    graphics.fillEllipse(32, 24, 19, 22);
+    graphics.fillEllipse(32, 42, 25, 27);
+    graphics.strokeEllipse(32, 24, 19, 22);
+    graphics.strokeEllipse(32, 42, 25, 27);
+    graphics.lineStyle(4, 0x3a1e24, 1);
+    graphics.lineBetween(25, 13, 39, 13);
+    this.finishIcon(key, graphics);
+  }
+
+  private createSectGlyph(key: string, accent: number, base: number, glyph: string): void {
+    const graphics = this.createIconBase(key, accent, base);
+    graphics.fillStyle(accent, 0.15);
+    graphics.fillCircle(32, 32, 19);
+    this.finishIcon(key, graphics);
+
+    const text = this.add
+      .text(32, 31, glyph, {
+        fontFamily: "Microsoft JhengHei, Noto Sans TC, Arial, sans-serif",
+        fontSize: "26px",
+        color: Phaser.Display.Color.IntegerToColor(accent).rgba,
+        fontStyle: "700"
+      })
+      .setOrigin(0.5);
+    const renderTexture = this.add.renderTexture(0, 0, 64, 64);
+    renderTexture.draw(key, 0, 0);
+    renderTexture.draw(text);
+    this.textures.remove(key);
+    renderTexture.saveTexture(key);
+    text.destroy();
+    renderTexture.destroy();
   }
 
   private createVortexTexture(): void {

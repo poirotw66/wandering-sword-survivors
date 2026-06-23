@@ -60,6 +60,7 @@ export class GameScene extends Phaser.Scene {
       pausedForUpgrade: false,
       pausedForMenu: false,
       weaponLevels: new Map(),
+      evolvedWeapons: new Map(),
       skillLevels: new Map(),
       buildPathLevels: new Map(),
       unlockedSkills: new Set(),
@@ -75,7 +76,7 @@ export class GameScene extends Phaser.Scene {
     this.playerSystem = new PlayerSystem(this, this.player);
     this.enemySystem = new EnemySystem(this, this.player);
     this.spawnSystem = new SpawnSystem(this, this.player, this.enemySystem);
-    this.weaponSystem = new WeaponSystem(this, this.player, this.enemySystem, this.state.weaponLevels);
+    this.weaponSystem = new WeaponSystem(this, this.player, this.enemySystem, this.state.weaponLevels, this.state.evolvedWeapons);
     this.expSystem = new ExpSystem(this, this.player, this.state);
     this.pickupSystem = new PickupSystem(this, this.player);
     this.upgradeSystem = new UpgradeSystem(this, this.state);

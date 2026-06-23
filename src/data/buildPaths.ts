@@ -5,6 +5,7 @@ export type BuildPathId = "swordSect" | "qiSect" | "footworkSect" | "wineSwordSe
 
 export type BuildPathConfig = {
   id: BuildPathId;
+  iconKey: string;
   maxLevel: number;
   title: () => string;
   describe: (state: GameState, nextLevel: number) => string;
@@ -14,6 +15,7 @@ export type BuildPathConfig = {
 export const BUILD_PATH_CONFIGS: Record<BuildPathId, BuildPathConfig> = {
   swordSect: {
     id: "swordSect",
+    iconKey: "icon-build-sword",
     maxLevel: 8,
     title: () => t("buildSwordTitle"),
     describe: (_state, nextLevel) => t("buildSwordDescription", { crit: 6, damage: 10, level: nextLevel }),
@@ -25,6 +27,7 @@ export const BUILD_PATH_CONFIGS: Record<BuildPathId, BuildPathConfig> = {
   },
   qiSect: {
     id: "qiSect",
+    iconKey: "icon-build-qi",
     maxLevel: 8,
     title: () => t("buildQiTitle"),
     describe: (_state, nextLevel) => t("buildQiDescription", { area: 8, leech: 1 + Math.floor(nextLevel / 2) }),
@@ -36,6 +39,7 @@ export const BUILD_PATH_CONFIGS: Record<BuildPathId, BuildPathConfig> = {
   },
   footworkSect: {
     id: "footworkSect",
+    iconKey: "icon-build-footwork",
     maxLevel: 8,
     title: () => t("buildFootworkTitle"),
     describe: (_state, nextLevel) => t("buildFootworkDescription", { speed: 12, dodge: 3, pickup: 14 + nextLevel }),
@@ -47,6 +51,7 @@ export const BUILD_PATH_CONFIGS: Record<BuildPathId, BuildPathConfig> = {
   },
   wineSwordSect: {
     id: "wineSwordSect",
+    iconKey: "icon-build-wine",
     maxLevel: 8,
     title: () => t("buildWineTitle"),
     describe: (_state, nextLevel) => t("buildWineDescription", { cooldown: 6, combo: 4, burst: 8 + nextLevel }),

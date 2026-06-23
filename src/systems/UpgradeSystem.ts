@@ -16,7 +16,10 @@ export class UpgradeSystem {
     this.state.pausedForUpgrade = true;
     this.scene.physics.world.pause();
     this.scene.scene.get("UIScene").events.emit("pause-changed", false);
-    const options = shuffle(buildUpgradePool(this.state)).slice(0, 3);
+    const pool = buildUpgradePool(this.state);
+    const evolution = shuffle(pool.filter((option) => option.kind === "evolution")).slice(0, 1);
+    const remaining = shuffle(pool.filter((option) => option.kind !== "evolution")).slice(0, 3 - evolution.length);
+    const options = [...evolution, ...remaining];
     this.scene.scene.get("UIScene").events.emit("show-upgrades", options);
   }
 
