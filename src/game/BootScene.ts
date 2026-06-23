@@ -7,6 +7,7 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     const basePath = "assets/sprites/wuxia";
+    this.loadGeneratedUpgradeIcons();
     this.load.image("player", `${basePath}/hero-linghu.png`);
     this.load.image("enemy-purple", `${basePath}/enemy-purple.png`);
     this.load.image("enemy-red", `${basePath}/enemy-red.png`);
@@ -18,6 +19,54 @@ export class BootScene extends Phaser.Scene {
     this.load.image("strike", `${basePath}/sword-flash.png`);
     this.load.image("gem", `${basePath}/jade-gem.png`);
     this.load.image("heart", `${basePath}/wine-gourd.png`);
+  }
+
+  private loadGeneratedUpgradeIcons(): void {
+    const iconPath = "assets/icons/wuxia";
+    const iconKeys = [
+      "icon-weapon-bolt",
+      "icon-weapon-blade",
+      "icon-weapon-palm-wave",
+      "icon-weapon-strike",
+      "icon-weapon-star-vortex",
+      "icon-blossom-blade",
+      "icon-gale-sword",
+      "icon-taiyue-peak",
+      "icon-cold-pond-sword",
+      "icon-vajra-fist",
+      "icon-dugu-sword",
+      "icon-star-absorption",
+      "icon-huashan-footwork",
+      "icon-wine-heart",
+      "icon-zixia-skill",
+      "icon-wind-step",
+      "icon-hunyuan-qi",
+      "icon-ice-heart",
+      "icon-vajra-skill",
+      "icon-yijin-manual",
+      "icon-cosmos-breathing",
+      "icon-formless-sutra",
+      "icon-marrow-cleansing",
+      "icon-freewind-method",
+      "icon-evolution-dugu",
+      "icon-evolution-wind-array",
+      "icon-evolution-star-palm",
+      "icon-evolution-drunken-sword",
+      "icon-evolution-star-field",
+      "icon-evolution-violet-blossom",
+      "icon-evolution-gale",
+      "icon-evolution-taiyue",
+      "icon-evolution-cold-pond",
+      "icon-evolution-vajra",
+      "icon-build-sword",
+      "icon-build-qi",
+      "icon-build-footwork",
+      "icon-build-wine"
+    ];
+
+    for (const key of iconKeys) {
+      this.load.image(key, `${iconPath}/${key}.png`);
+    }
   }
 
   create(): void {

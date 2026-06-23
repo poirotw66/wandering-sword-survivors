@@ -27,7 +27,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   magicBolt: {
     id: "magicBolt",
     name: "Sword Qi",
-    iconKey: "bolt",
+    iconKey: "icon-weapon-bolt",
     availableInUpgradePool: true,
     baseDamage: 18,
     cooldownMs: 650,
@@ -38,7 +38,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   orbitBlade: {
     id: "orbitBlade",
     name: "Circling Sword Guard",
-    iconKey: "blade",
+    iconKey: "icon-weapon-blade",
     availableInUpgradePool: true,
     baseDamage: 12,
     cooldownMs: 120,
@@ -50,7 +50,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   flameWave: {
     id: "flameWave",
     name: "Breaking Palm Wave",
-    iconKey: "palm-wave",
+    iconKey: "icon-weapon-palm-wave",
     availableInUpgradePool: true,
     baseDamage: 22,
     cooldownMs: 2600,
@@ -62,7 +62,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   thunderStrike: {
     id: "thunderStrike",
     name: "Nine Swords Flash",
-    iconKey: "strike",
+    iconKey: "icon-weapon-strike",
     availableInUpgradePool: true,
     baseDamage: 55,
     cooldownMs: 2300,
@@ -74,7 +74,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
   starVortex: {
     id: "starVortex",
     name: "Star Absorption Field",
-    iconKey: "star-vortex",
+    iconKey: "icon-weapon-star-vortex",
     availableInUpgradePool: true,
     baseDamage: 14,
     cooldownMs: 3200,
