@@ -1,7 +1,7 @@
 ---
 id: 006-boss-combat-depth
 title: Boss Combat Depth
-status: draft
+status: implemented
 owner: openab
 created: 2026-06-23
 updated: 2026-06-23

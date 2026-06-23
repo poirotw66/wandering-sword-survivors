@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { ENEMY_CONFIGS, type EnemyConfig, type EnemyId } from "../data/enemies";
+import { eliteTraitFor } from "../data/eliteTraits";
 import { t } from "../i18n";
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
@@ -33,7 +34,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.moveSpeedMultiplier = difficulty.speed;
     this.damageMultiplier = difficulty.damage;
     this.rewardMultiplier = difficulty.reward;
-    const eliteMultiplier = this.eliteHpMultiplier(enemyId);
+    const eliteMultiplier = this.isElite ? eliteTraitFor(enemyId).hpMultiplier : 1;
     this.hp = Math.floor(this.config.hp * eliteMultiplier * difficulty.hp);
     this.maxHp = this.hp;
     this.setTexture(this.textureFor(enemyId));
@@ -97,46 +98,18 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.eliteMarker.setText(this.eliteLabel());
   }
 
-  private eliteHpMultiplier(enemyId: EnemyId): number {
-    if (!this.isElite) {
-      return 1;
-    }
-    const multipliers: Partial<Record<EnemyId, number>> = {
-      slime: 2,
-      bat: 1.8,
-      golem: 2.9
-    };
-    return multipliers[enemyId] ?? 2.4;
-  }
-
   private applyEliteTrait(enemyId: EnemyId): void {
-    if (enemyId === "bat") {
-      this.moveSpeedMultiplier *= 1.35;
-      this.damageMultiplier *= 1.18;
-      this.setTint(0xff73d2);
-      return;
-    }
-    if (enemyId === "golem") {
-      this.moveSpeedMultiplier *= 0.88;
-      this.damageMultiplier *= 1.35;
-      this.setTint(0xffd36a);
-      return;
-    }
-    this.moveSpeedMultiplier *= 1.12;
-    this.damageMultiplier *= 1.08;
-    this.setTint(0x92f5bd);
+    const trait = eliteTraitFor(enemyId);
+    this.moveSpeedMultiplier *= trait.moveSpeedMultiplier;
+    this.damageMultiplier *= trait.damageMultiplier;
+    this.setTint(trait.tint);
   }
 
   private eliteLabel(): string {
     if (!this.isElite) {
       return t("elite");
     }
-    const keys: Partial<Record<EnemyId, Parameters<typeof t>[0]>> = {
-      slime: "eliteQingcheng",
-      bat: "eliteDemonic",
-      golem: "eliteSongshan"
-    };
-    return t(keys[this.enemyId] ?? "elite");
+    return t(eliteTraitFor(this.enemyId).labelKey);
   }
 
   private textureFor(enemyId: EnemyId): string {

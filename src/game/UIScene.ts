@@ -27,6 +27,7 @@ export class UIScene extends Phaser.Scene {
   private bossBar!: Phaser.GameObjects.Container;
   private bossBarFill!: Phaser.GameObjects.Rectangle;
   private bossBarLabel!: Phaser.GameObjects.Text;
+  private bossTechniqueLabel!: Phaser.GameObjects.Text;
   private legacyPanel?: Phaser.GameObjects.Container;
   private pauseOverlay!: Phaser.GameObjects.Container;
   private upgradePanel!: UpgradePanel;
@@ -97,6 +98,8 @@ export class UIScene extends Phaser.Scene {
       this.updateBossBar(hp, maxHp, name);
     });
     this.scene.get("GameScene").events.on("boss-legacy", (summary: BossLegacySummary) => this.showBossLegacy(summary));
+    this.scene.get("GameScene").events.on("boss-technique-started", (name: string, color?: number) => this.showBossTechnique(name, color));
+    this.scene.get("GameScene").events.on("boss-technique-ended", () => this.clearBossTechnique());
 
     this.input.keyboard?.on("keydown", (event: KeyboardEvent) => {
       const index = Number(event.key) - 1;
@@ -230,7 +233,15 @@ export class UIScene extends Phaser.Scene {
         fontStyle: "700"
       })
       .setOrigin(0.5);
-    container.add([bg, this.bossBarFill, this.bossBarLabel]);
+    this.bossTechniqueLabel = this.add
+      .text(0, 18, "", {
+        fontFamily: UI_FONT,
+        fontSize: "13px",
+        color: "#ffe09a",
+        fontStyle: "700"
+      })
+      .setOrigin(0.5);
+    container.add([bg, this.bossBarFill, this.bossBarLabel, this.bossTechniqueLabel]);
     return container;
   }
 
@@ -239,6 +250,19 @@ export class UIScene extends Phaser.Scene {
     this.bossBar.setVisible(ratio > 0);
     this.bossBarFill.width = 416 * ratio;
     this.bossBarLabel.setText(`${name}  ${Math.ceil(hp)} / ${maxHp}`);
+    if (ratio <= 0) {
+      this.clearBossTechnique();
+    }
+  }
+
+  private showBossTechnique(name: string, color = 0xffe09a): void {
+    this.bossBar.setVisible(true);
+    this.bossTechniqueLabel.setText(t("bossTechniqueStatus", { name }));
+    this.bossTechniqueLabel.setColor(Phaser.Display.Color.IntegerToColor(color).rgba);
+  }
+
+  private clearBossTechnique(): void {
+    this.bossTechniqueLabel?.setText("");
   }
 
   private showBossWarning(name: string, markSec: number): void {

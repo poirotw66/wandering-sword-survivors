@@ -10,6 +10,8 @@ import { WEAPON_CONFIGS } from "../src/data/weapons";
 import { computeEvolutionProgress, trackedEvolutionProgress } from "../src/data/evolutionProgress";
 import { formatBossUnlockDetail, formatEvolutionRecipeDetail } from "../src/data/codexDetails";
 import { buildBossLegacySummary } from "../src/data/bossLegacy";
+import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor } from "../src/data/bossSkills";
+import { eliteTraitFor } from "../src/data/eliteTraits";
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 
 function createStorage(): Storage {
@@ -322,6 +324,43 @@ describe("game regression rules", () => {
     expect(summary.body).toContain(t("evolution_voidDuguSword"));
     expect(summary.rewardExp).toBe(26);
     expect(summary.rewardScore).toBe(220);
+  });
+
+  it("defines data-driven boss skill profiles by boss tier", () => {
+    expect(bossSkillProfileFor("minorBoss")?.skillIds).toEqual(["dash"]);
+    expect(bossSkillProfileFor("midBoss")?.skillIds).toEqual(["dash", "fanStrike"]);
+    expect(bossSkillProfileFor("greatBoss")?.skillIds).toEqual(["dash", "fanStrike", "summon"]);
+    expect(bossSkillProfileFor("finalBoss")?.skillIds).toEqual(["dash", "fanStrike", "summon"]);
+  });
+
+  it("keeps boss skill timing and damage config valid", () => {
+    for (const skillId of ["dash", "fanStrike", "summon"] as const) {
+      const config = bossSkillConfig(skillId);
+      expect(config.cooldownMs).toBeGreaterThan(0);
+      expect(config.windupMs).toBeGreaterThan(0);
+      expect(config.range).toBeGreaterThan(0);
+      expect(config.labelKey).toMatch(/^bossTechnique/);
+    }
+    expect(bossSkillConfig("fanStrike").damageMultiplier).toBeGreaterThan(1);
+  });
+
+  it("gives the final boss a phase cue that speeds up techniques", () => {
+    const phase = finalPhaseFor("finalBoss");
+
+    expect(phase).toMatchObject({ hpRatio: 0.45, labelKey: "bossTechniqueFinalPhase" });
+    expect(bossSkillCooldown("dash", true, "finalBoss")).toBeLessThan(bossSkillCooldown("dash", false, "finalBoss"));
+    expect(finalPhaseFor("minorBoss")).toBeUndefined();
+  });
+
+  it("keeps elite family traits distinct", () => {
+    const qingcheng = eliteTraitFor("slime");
+    const demonic = eliteTraitFor("bat");
+    const songshan = eliteTraitFor("golem");
+
+    expect(qingcheng.labelKey).toBe("eliteQingcheng");
+    expect(demonic.moveSpeedMultiplier).toBeGreaterThan(qingcheng.moveSpeedMultiplier);
+    expect(songshan.hpMultiplier).toBeGreaterThan(qingcheng.hpMultiplier);
+    expect(songshan.damageMultiplier).toBeGreaterThan(demonic.damageMultiplier);
   });
 
   it("reports potential ultimate arts when boss skills unlock", () => {

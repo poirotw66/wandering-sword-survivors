@@ -3,10 +3,10 @@
 ## Phase
 
 - [x] Planning draft
-- [ ] Human review
-- [ ] Implementation
-- [ ] Verification
-- [ ] Review
+- [x] Human review
+- [x] Implementation
+- [x] Verification
+- [x] Review
 - [ ] Close
 
 ## Planned Scope
@@ -19,12 +19,12 @@
 
 ## Implementation Tasks
 
-- [ ] Task 1: Boss skill config helpers.
-- [ ] Task 2: Refactor `EnemySystem` Boss skill usage.
-- [ ] Task 3: Improve telegraph visuals.
-- [ ] Task 4: Boss bar status UI.
-- [ ] Task 5: Elite trait helper.
-- [ ] Task 6: Tests and verification.
+- [x] Task 1: Boss skill config helpers.
+- [x] Task 2: Refactor `EnemySystem` Boss skill usage.
+- [x] Task 3: Improve telegraph visuals.
+- [x] Task 4: Boss bar status UI.
+- [x] Task 5: Elite trait helper.
+- [x] Task 6: Tests and verification.
 
 ## Verification Plan
 
@@ -32,8 +32,15 @@
 - `npm run build`
 - Preview dev mode Boss spawn, Boss technique status, and telegraphs.
 
+## Verification Result
+
+- `npm test -- --run`: passed, 26 tests.
+- `npm run build`: passed.
+- Local Vite entry check: `http://127.0.0.1:5173/` returned HTTP 200.
+
 ## Decisions
 
 - Keep 006 focused on Boss combat depth and clarity.
 - Do not add new martial arts, new Bosses, or generated art assets.
 - Preserve current Boss skill concepts while making them data-driven and clearer.
+- God Mode implemented Phase 1-4; Phase 5 Close remains separate.
