@@ -7,7 +7,7 @@
 - [x] Implementation
 - [x] Verification
 - [x] Review
-- [ ] Close
+- [x] Close
 
 ## Planned Scope
 
@@ -44,3 +44,10 @@
 - Boss ritual should not pause combat except final victory.
 - No new martial arts, Bosses, or generated assets in this spec.
 - God Mode implemented Phase 1-4; Phase 5 Close remains separate.
+
+## Close Result
+
+- Spec frontmatter status updated to `done`.
+- Specs overview marked this spec as `done`.
+- God Mode report, verification report, and review report are present.
+- Close commit prepared.
