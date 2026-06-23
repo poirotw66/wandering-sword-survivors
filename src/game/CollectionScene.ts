@@ -4,6 +4,7 @@ import { ENEMY_CONFIGS, type EnemyId } from "../data/enemies";
 import { EVOLUTION_CONFIGS, type EvolutionId } from "../data/evolutions";
 import { SKILL_CONFIGS, type SkillId } from "../data/skills";
 import { WEAPON_CONFIGS } from "../data/weapons";
+import { formatBossUnlockDetail, formatEvolutionRecipeDetail, type CodexDetail } from "../data/codexDetails";
 import { AchievementSystem, type RunRecord } from "../systems/AchievementSystem";
 import { buildPathName, enemyName, skillName, t, weaponName } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
@@ -13,6 +14,9 @@ const BOSS_IDS: EnemyId[] = ["minorBoss", "midBoss", "greatBoss", "megaBoss", "f
 
 export class CollectionScene extends Phaser.Scene {
   private content?: Phaser.GameObjects.Container;
+  private detailTitle?: Phaser.GameObjects.Text;
+  private detailBody?: Phaser.GameObjects.Text;
+  private contentTop = 92;
   private scrollY = 0;
   private maxScroll = 0;
 
@@ -43,13 +47,16 @@ export class CollectionScene extends Phaser.Scene {
       })
       .setInteractive({ useHandCursor: true });
     back.on("pointerdown", () => this.scene.start("MenuScene"));
+    this.createDetailPanel(record, width);
 
-    this.content = this.add.container(0, 92);
+    const listWidth = width >= 980 ? width - 470 : width;
+    this.contentTop = width >= 980 ? 92 : 270;
+    this.content = this.add.container(0, this.contentTop);
     let y = 0;
-    y = this.addRecords(record, width, y);
-    y = this.addMartialSection(record, width, y);
-    y = this.addBossSection(record, width, y);
-    this.maxScroll = Math.max(0, y - (height - 118));
+    y = this.addRecords(record, listWidth, y);
+    y = this.addMartialSection(record, listWidth, y);
+    y = this.addBossSection(record, listWidth, y);
+    this.maxScroll = Math.max(0, y - (height - this.contentTop - 26));
 
     this.input.on("wheel", (_pointer: Phaser.Input.Pointer, _objects: unknown, _dx: number, dy: number) => this.scrollBy(dy));
     this.input.keyboard?.on("keydown-UP", () => this.scrollBy(-48));
@@ -111,7 +118,8 @@ export class CollectionScene extends Phaser.Scene {
         return {
           iconKey: config.iconKey,
           label: t(config.nameKey as Parameters<typeof t>[0]),
-          unlocked: record.evolvedArtsSeen.includes(evolutionId as EvolutionId)
+          unlocked: record.evolvedArtsSeen.includes(evolutionId as EvolutionId),
+          onSelect: () => this.showDetail(formatEvolutionRecipeDetail(record, evolutionId as EvolutionId))
         };
       }),
       width,
@@ -143,7 +151,8 @@ export class CollectionScene extends Phaser.Scene {
       BOSS_IDS.map((enemyId) => ({
         iconKey: "boss-master",
         label: `${enemyName(enemyId)} · ${ENEMY_CONFIGS[enemyId].score}`,
-        unlocked: record.bossDefeatsSeen.includes(enemyId)
+        unlocked: record.bossDefeatsSeen.includes(enemyId),
+        onSelect: () => this.showDetail(formatBossUnlockDetail(record, enemyId))
       })),
       width,
       y
@@ -152,7 +161,7 @@ export class CollectionScene extends Phaser.Scene {
 
   private addIconRows(
     title: string,
-    items: { iconKey: string; label: string; unlocked: boolean }[],
+    items: { iconKey: string; label: string; unlocked: boolean; onSelect?: () => void }[],
     width: number,
     y: number
   ): number {
@@ -167,8 +176,21 @@ export class CollectionScene extends Phaser.Scene {
       const x = startX + col * cellWidth;
       const itemY = y + row * 74;
       const alpha = item.unlocked ? 1 : 0.32;
-      this.content?.add(this.add.image(x, itemY + 24, item.iconKey).setDisplaySize(46, 46).setAlpha(alpha).setOrigin(0, 0.5));
-      this.addTextBlock(x + 56, itemY + 10, item.unlocked ? item.label : t("lockedCodexItem"), item.unlocked ? "#d8e2eb" : "#6f7d91", 14, cellWidth - 64, 0);
+      const image = this.add.image(x, itemY + 24, item.iconKey).setDisplaySize(46, 46).setAlpha(alpha).setOrigin(0, 0.5);
+      this.content?.add(image);
+      const label = this.addTextBlock(
+        x + 56,
+        itemY + 10,
+        item.unlocked ? item.label : t("lockedCodexItem"),
+        item.unlocked ? "#d8e2eb" : "#6f7d91",
+        14,
+        cellWidth - 64,
+        0
+      );
+      if (item.onSelect) {
+        image.setInteractive({ useHandCursor: true }).on("pointerdown", item.onSelect);
+        label.setInteractive({ useHandCursor: true }).on("pointerdown", item.onSelect);
+      }
     });
     return y + Math.ceil(items.length / columns) * 74 + 8;
   }
@@ -177,7 +199,7 @@ export class CollectionScene extends Phaser.Scene {
     this.addTextBlock(width / 2, y, text, "#ffe09a", 22, width - 72, 0.5);
   }
 
-  private addTextBlock(x: number, y: number, text: string, color: string, fontSize: number, wrapWidth: number, originX = 0.5): void {
+  private addTextBlock(x: number, y: number, text: string, color: string, fontSize: number, wrapWidth: number, originX = 0.5): Phaser.GameObjects.Text {
     const block = this.add
       .text(x, y, text, {
         fontFamily: UI_FONT,
@@ -189,10 +211,52 @@ export class CollectionScene extends Phaser.Scene {
       .setPadding(0, 5, 0, 5)
       .setOrigin(originX, 0);
     this.content?.add(block);
+    return block;
+  }
+
+  private createDetailPanel(record: RunRecord, width: number): void {
+    const panelWidth = Math.min(430, width - 64);
+    const x = width >= 980 ? width - panelWidth / 2 - 24 : width / 2;
+    const y = 92;
+    this.add.rectangle(x, y + 78, panelWidth, 156, 0x111421, 0.88).setStrokeStyle(1, 0x5f4a2a, 0.9).setScrollFactor(0);
+    this.detailTitle = this.add
+      .text(x, y + 14, t("codexDetailHint"), {
+        fontFamily: UI_FONT,
+        fontSize: "17px",
+        color: "#ffe09a",
+        wordWrap: { width: panelWidth - 32 }
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(20);
+    this.detailBody = this.add
+      .text(x, y + 50, t("codexDetailEmpty"), {
+        fontFamily: UI_FONT,
+        fontSize: "13px",
+        color: "#d8e2eb",
+        lineSpacing: 6,
+        align: "center",
+        wordWrap: { width: panelWidth - 34 }
+      })
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(20);
+
+    const firstUndiscovered = (Object.keys(EVOLUTION_CONFIGS) as EvolutionId[]).find(
+      (evolutionId) => !record.evolvedArtsSeen.includes(evolutionId)
+    );
+    if (firstUndiscovered) {
+      this.showDetail(formatEvolutionRecipeDetail(record, firstUndiscovered));
+    }
+  }
+
+  private showDetail(detail: CodexDetail): void {
+    this.detailTitle?.setText(detail.title);
+    this.detailBody?.setText(detail.body);
   }
 
   private scrollBy(delta: number): void {
     this.scrollY = Phaser.Math.Clamp(this.scrollY + delta, 0, this.maxScroll);
-    this.content?.setY(92 - this.scrollY);
+    this.content?.setY(this.contentTop - this.scrollY);
   }
 }

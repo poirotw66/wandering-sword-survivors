@@ -13,7 +13,14 @@ export class UpgradePanel {
     this.container = scene.add.container(0, 0).setDepth(1000).setScrollFactor(0).setVisible(false);
   }
 
-  show(options: UpgradeOption[], onPick: (option: UpgradeOption) => void, rerolls = 0, onReroll?: () => void): void {
+  show(
+    options: UpgradeOption[],
+    onPick: (option: UpgradeOption) => void,
+    rerolls = 0,
+    onReroll?: () => void,
+    banishCharges = 0,
+    onBanish?: (option: UpgradeOption) => void
+  ): void {
     this.clear();
     this.currentOptions = options;
     this.currentPick = onPick;
@@ -46,6 +53,15 @@ export class UpgradePanel {
       reroll.on("pointerdown", () => onReroll());
       this.container.add(reroll);
     }
+    this.container.add(
+      this.scene.add
+        .text(width / 2, height * 0.815, t("banishRemaining", { count: banishCharges }), {
+          fontFamily: UI_FONT,
+          fontSize: "13px",
+          color: banishCharges > 0 ? "#ffcf9f" : "#6f7d91"
+        })
+        .setOrigin(0.5)
+    );
     this.container.add(
       this.scene.add
         .text(width / 2, height * 0.27, t("manualHint"), {
@@ -94,6 +110,17 @@ export class UpgradePanel {
             })
             .setOrigin(1, 0)
         : undefined;
+      const recommended = option.recommendedText
+        ? this.scene.add
+            .text(-cardWidth / 2 + 12, -cardHeight / 2 + 54, option.recommendedText, {
+              fontFamily: UI_FONT,
+              fontSize: "12px",
+              color: "#111421",
+              backgroundColor: "#84f7b2",
+              padding: { left: 7, right: 7, top: 3, bottom: 3 }
+            })
+            .setOrigin(0, 0)
+        : undefined;
       const title = this.scene.add
         .text(0, -18, option.title, {
           fontFamily: UI_FONT,
@@ -116,7 +143,7 @@ export class UpgradePanel {
         })
         .setPadding(0, 6, 0, 6)
         .setOrigin(0.5);
-      const recipe = option.recipeHint ?? option.progressText ?? "";
+      const recipe = option.recommendationReason ?? option.recipeHint ?? option.progressText ?? "";
       const recipeText = this.scene.add
         .text(0, 94, recipe, {
           fontFamily: UI_FONT,
@@ -128,6 +155,27 @@ export class UpgradePanel {
         })
         .setPadding(0, 4, 0, 4)
         .setOrigin(0.5);
+      const banishButton =
+        option.banishable && banishCharges > 0 && onBanish
+          ? this.scene.add
+              .text(0, cardHeight / 2 - 20, t("sealUpgrade"), {
+                fontFamily: UI_FONT,
+                fontSize: "12px",
+                color: "#ffe09a",
+                backgroundColor: "#472331",
+                padding: { left: 9, right: 9, top: 4, bottom: 4 }
+              })
+              .setOrigin(0.5)
+              .setInteractive({ useHandCursor: true })
+          : undefined;
+
+      banishButton?.on(
+        "pointerdown",
+        (_pointer: Phaser.Input.Pointer, _localX: number, _localY: number, event?: Phaser.Types.Input.EventData) => {
+          event?.stopPropagation();
+          onBanish?.(option);
+        }
+      );
 
       card.on("pointerover", () => bg.setStrokeStyle(3, 0xffe09a));
       card.on("pointerout", () => bg.setStrokeStyle(option.kind === "evolution" ? 3 : 2, this.cardStroke(option.kind)));
@@ -135,6 +183,12 @@ export class UpgradePanel {
       card.add([bg, iconHalo, icon, seal, indexText, title, description, recipeText]);
       if (badge) {
         card.add(badge);
+      }
+      if (recommended) {
+        card.add(recommended);
+      }
+      if (banishButton) {
+        card.add(banishButton);
       }
       this.container.add(card);
       this.cards.push(card);

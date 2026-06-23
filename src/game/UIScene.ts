@@ -83,7 +83,9 @@ export class UIScene extends Phaser.Scene {
         options,
         (option) => this.scene.get("GameScene").events.emit("upgrade-picked", option),
         this.state.rerolls,
-        () => this.scene.get("GameScene").events.emit("upgrade-reroll")
+        () => this.scene.get("GameScene").events.emit("upgrade-reroll"),
+        this.state.banishCharges,
+        (option) => this.scene.get("GameScene").events.emit("upgrade-banish", option)
       );
     });
     this.events.on("hide-upgrades", () => this.upgradePanel.hide());

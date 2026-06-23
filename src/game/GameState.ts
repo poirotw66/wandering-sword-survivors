@@ -29,6 +29,8 @@ export type GameState = {
   selectedDifficulty: number;
   difficultyRewardMultiplier: number;
   rerolls: number;
+  banishedUpgradeIds: Set<string>;
+  banishCharges: number;
   renownTitle: string;
   devMode: {
     enabled: boolean;

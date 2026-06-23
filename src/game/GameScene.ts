@@ -48,6 +48,7 @@ export class GameScene extends Phaser.Scene {
     this.events.removeAllListeners("player-healed");
     this.events.removeAllListeners("upgrade-picked");
     this.events.removeAllListeners("upgrade-reroll");
+    this.events.removeAllListeners("upgrade-banish");
     this.physics.world.setBounds(-3000, -3000, 6000, 6000);
     this.cameras.main.setBackgroundColor("#111421");
 
@@ -83,6 +84,8 @@ export class GameScene extends Phaser.Scene {
       selectedDifficulty: difficulty.level,
       difficultyRewardMultiplier: difficulty.rewardMultiplier,
       rerolls: metaBonuses.rerolls,
+      banishedUpgradeIds: new Set(),
+      banishCharges: 1,
       renownTitle: t(metaBonuses.titleKey),
       devMode: {
         enabled: this.isDevModeRequested(),
@@ -143,6 +146,7 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.events.on("upgrade-reroll", () => this.upgradeSystem.reroll());
+    this.events.on("upgrade-banish", (option: UpgradeOption) => this.upgradeSystem.banish(option));
 
     this.devText = this.add
       .text(18, this.scale.height - 18, "", {

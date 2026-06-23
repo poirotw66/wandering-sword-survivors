@@ -40,6 +40,10 @@ const BOSS_SKILL_UNLOCKS: Partial<Record<EnemyId, SkillId[]>> = {
   megaBoss: ["wineSwordHeart", "iceHeart", "vajraDemonSubduing"]
 };
 
+export function getBossSkillUnlocks(enemyId: EnemyId): SkillId[] {
+  return BOSS_SKILL_UNLOCKS[enemyId] ?? [];
+}
+
 const BOSS_ACHIEVEMENTS: Partial<Record<EnemyId, string>> = {
   minorBoss: "firstRival",
   midBoss: "midBoss",

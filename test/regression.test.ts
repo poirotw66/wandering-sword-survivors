@@ -1,13 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildUpgradePool } from "../src/data/upgrades";
 import type { GameState } from "../src/game/GameState";
-import { AchievementSystem } from "../src/systems/AchievementSystem";
+import { AchievementSystem, getBossSkillUnlocks, type RunRecord } from "../src/systems/AchievementSystem";
 import { chooseUpgradeOptions } from "../src/systems/UpgradeSystem";
-import { missingLocaleKeys, setLocale } from "../src/i18n";
+import { missingLocaleKeys, setLocale, skillName, t } from "../src/i18n";
 import { EVOLUTION_CONFIGS, isEvolutionRecipeValid } from "../src/data/evolutions";
 import { SKILL_CONFIGS } from "../src/data/skills";
 import { WEAPON_CONFIGS } from "../src/data/weapons";
 import { computeEvolutionProgress, trackedEvolutionProgress } from "../src/data/evolutionProgress";
+import { formatBossUnlockDetail, formatEvolutionRecipeDetail } from "../src/data/codexDetails";
 
 function createStorage(): Storage {
   const store = new Map<string, string>();
@@ -66,6 +67,8 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     selectedDifficulty: 1,
     difficultyRewardMultiplier: 1,
     rerolls: 0,
+    banishedUpgradeIds: new Set(),
+    banishCharges: 1,
     renownTitle: "江湖浪客",
     evolvedArtsSeen: new Set(),
     standaloneSkillsSeen: new Set(),
@@ -73,6 +76,21 @@ function createState(overrides: Partial<GameState> = {}): GameState {
       enabled: false,
       timeScale: 1
     },
+    ...overrides
+  };
+}
+
+function createRecord(overrides: Partial<RunRecord> = {}): RunRecord {
+  return {
+    bestRenown: 0,
+    totalRenown: 0,
+    highestDifficulty: 1,
+    achievements: [],
+    evolvedArtsSeen: [],
+    standaloneSkillsSeen: [],
+    skillsSeen: [],
+    bossDefeatsSeen: [],
+    buildPathCounts: {},
     ...overrides
   };
 }
@@ -161,6 +179,34 @@ describe("game regression rules", () => {
     expect(options.some((option) => option.kind === "standaloneSkill" && option.badgeText && !option.recipeHint)).toBe(true);
   });
 
+  it("adds recommendation reasons for near-complete martial routes", () => {
+    setLocale("en");
+    const state = createState({
+      weaponLevels: new Map([["magicBolt", 4]]),
+      skillLevels: new Map([["duguNineSwords", 2]]),
+      unlockedSkills: new Set(["duguNineSwords"])
+    });
+
+    const selected = chooseUpgradeOptions(state, buildUpgradePool(state), 3, () => 0);
+
+    expect(selected.filter((option) => option.recommendedText).length).toBeLessThanOrEqual(2);
+    expect(selected.some((option) => option.id === "weapon-magicBolt" && option.recommendationReason?.includes("Void-Cleaving"))).toBe(true);
+    expect(selected.some((option) => option.id === "skill-duguNineSwords" && option.recommendationReason?.includes("Void-Cleaving"))).toBe(true);
+  });
+
+  it("banishes ordinary stat options from future pools and selections", () => {
+    const state = createState({
+      banishedUpgradeIds: new Set(["damage"])
+    });
+    const pool = buildUpgradePool(state);
+    const selected = chooseUpgradeOptions(state, pool, 3, () => 0);
+
+    expect(pool.some((option) => option.id === "damage")).toBe(false);
+    expect(selected.some((option) => option.id === "damage")).toBe(false);
+    expect(pool.filter((option) => option.kind === "stat").every((option) => option.banishable)).toBe(true);
+    expect(pool.filter((option) => option.kind !== "stat").every((option) => !option.banishable)).toBe(true);
+  });
+
   it("limits ordinary stat choices and favors near-complete martial routes", () => {
     const state = createState({
       weaponLevels: new Map([["magicBolt", 4]]),
@@ -210,6 +256,33 @@ describe("game regression rules", () => {
       "vajraDemonSubduing"
     ]);
     expect(state.highestDifficulty).toBe(4);
+  });
+
+  it("formats codex recipe details with discovered names and hidden heart methods", () => {
+    setLocale("en");
+    const discovered = formatEvolutionRecipeDetail(
+      createRecord({
+        evolvedArtsSeen: ["voidDuguSword"],
+        skillsSeen: ["duguNineSwords"]
+      }),
+      "voidDuguSword"
+    );
+    const hidden = formatEvolutionRecipeDetail(createRecord(), "voidDuguSword");
+
+    expect(discovered.title).toBe(t("evolution_voidDuguSword"));
+    expect(discovered.body).toContain(skillName("duguNineSwords"));
+    expect(hidden.title).toBe(t("unknownUltimateArt"));
+    expect(hidden.body).toContain(t("hiddenHeartMethod"));
+  });
+
+  it("formats boss codex unlock details through the public unlock mapping", () => {
+    setLocale("en");
+    const defeated = formatBossUnlockDetail(createRecord({ bossDefeatsSeen: ["minorBoss"] }), "minorBoss");
+    const hidden = formatBossUnlockDetail(createRecord(), "minorBoss");
+
+    expect(getBossSkillUnlocks("minorBoss")).toEqual(["duguNineSwords", "zixiaDivineSkill"]);
+    expect(defeated.body).toContain(skillName("duguNineSwords"));
+    expect(hidden.body).toContain(t("hiddenHeartMethod"));
   });
 
   it("reports potential ultimate arts when boss skills unlock", () => {

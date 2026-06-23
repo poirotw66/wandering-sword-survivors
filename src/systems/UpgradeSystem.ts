@@ -3,6 +3,7 @@ import { buildUpgradePool, type UpgradeOption } from "../data/upgrades";
 import { EVOLUTION_CONFIGS } from "../data/evolutions";
 import { trackedEvolutionProgress } from "../data/evolutionProgress";
 import type { GameState } from "../game/GameState";
+import { t } from "../i18n";
 import { shuffle } from "../utils/random";
 
 export class UpgradeSystem {
@@ -30,6 +31,17 @@ export class UpgradeSystem {
     this.scene.scene.get("UIScene").events.emit("show-upgrades", this.rollOptions());
   }
 
+  banish(option: UpgradeOption): void {
+    if (!this.state.pausedForUpgrade || this.state.banishCharges <= 0 || !option.banishable) {
+      return;
+    }
+
+    this.state.banishCharges -= 1;
+    this.state.banishedUpgradeIds.add(option.id);
+    this.scene.events.emit("milestone-unlocked", t("sealedUpgradeToast", { name: option.title }));
+    this.scene.scene.get("UIScene").events.emit("show-upgrades", this.rollOptions());
+  }
+
   apply(option: UpgradeOption): void {
     option.apply(this.state);
     this.state.pausedForUpgrade = false;
@@ -49,7 +61,8 @@ export function chooseUpgradeOptions(
   random: () => number = Math.random
 ): UpgradeOption[] {
   const selected: UpgradeOption[] = [];
-  const readyEvolution = shuffle(pool.filter((option) => option.kind === "evolution")).slice(0, 1);
+  const availablePool = pool.filter((option) => !state.banishedUpgradeIds.has(option.id));
+  const readyEvolution = shuffle(availablePool.filter((option) => option.kind === "evolution")).slice(0, 1);
   selected.push(...readyEvolution);
 
   const pickedIds = new Set(selected.map((option) => option.id));
@@ -57,7 +70,7 @@ export function chooseUpgradeOptions(
   let statCount = selected.filter((option) => option.kind === "stat").length;
 
   while (selected.length < count) {
-    const candidates = pool
+    const candidates = availablePool
       .filter((option) => !pickedIds.has(option.id))
       .filter((option) => option.kind !== "evolution")
       .filter((option) => option.kind !== "stat" || statCount < 1)
@@ -78,7 +91,7 @@ export function chooseUpgradeOptions(
   }
 
   if (selected.length < count) {
-    for (const option of shuffle(pool.filter((candidate) => !pickedIds.has(candidate.id)))) {
+    for (const option of shuffle(availablePool.filter((candidate) => !pickedIds.has(candidate.id)))) {
       selected.push(option);
       pickedIds.add(option.id);
       if (selected.length >= count) {
@@ -87,7 +100,7 @@ export function chooseUpgradeOptions(
     }
   }
 
-  return selected;
+  return capRecommendations(selected);
 }
 
 function upgradeWeight(
@@ -137,4 +150,24 @@ function weightedPick(
     }
   }
   return candidates[candidates.length - 1].option;
+}
+
+function capRecommendations(options: UpgradeOption[]): UpgradeOption[] {
+  let nonEvolutionRecommendations = 0;
+  return options.map((option) => {
+    if (!option.recommendedText || option.kind === "evolution") {
+      return option;
+    }
+
+    nonEvolutionRecommendations += 1;
+    if (nonEvolutionRecommendations <= 2) {
+      return option;
+    }
+
+    return {
+      ...option,
+      recommendedText: undefined,
+      recommendationReason: undefined
+    };
+  });
 }

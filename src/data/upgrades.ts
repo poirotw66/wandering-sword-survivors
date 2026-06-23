@@ -2,7 +2,7 @@ import { SKILL_CONFIGS, type SkillId } from "./skills";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 import { BUILD_PATH_CONFIGS, type BuildPathId } from "./buildPaths";
 import { EVOLUTION_CONFIGS, type EvolutionId } from "./evolutions";
-import { findProgressForSkill, findProgressForWeapon } from "./evolutionProgress";
+import { findProgressForSkill, findProgressForWeapon, trackedEvolutionProgress, type EvolutionProgress } from "./evolutionProgress";
 import type { GameState } from "../game/GameState";
 import { buildPathName, skillName, t, weaponName } from "../i18n";
 
@@ -15,13 +15,16 @@ export type UpgradeOption = {
   badgeText?: string;
   recipeHint?: string;
   progressText?: string;
+  recommendedText?: string;
+  recommendationReason?: string;
+  banishable?: boolean;
   evolutionId?: EvolutionId;
   skillId?: SkillId;
   apply: (state: GameState) => void;
 };
 
 export function buildUpgradePool(state: GameState): UpgradeOption[] {
-  const options: UpgradeOption[] = [
+  const statOptions: UpgradeOption[] = [
     {
       id: "damage",
       kind: "stat",
@@ -33,7 +36,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       }),
       apply: ({ player }) => {
         player.stats.damageMultiplier += 0.15;
-      }
+      },
+      banishable: true
     },
     {
       id: "cooldown",
@@ -43,7 +47,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       description: t("cooldownDescription"),
       apply: ({ player }) => {
         player.stats.cooldownMultiplier *= 0.9;
-      }
+      },
+      banishable: true
     },
     {
       id: "speed",
@@ -53,7 +58,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       description: t("speedDescription", { current: state.player.stats.moveSpeed, next: state.player.stats.moveSpeed + 18 }),
       apply: ({ player }) => {
         player.stats.moveSpeed += 18;
-      }
+      },
+      banishable: true
     },
     {
       id: "pickup",
@@ -63,7 +69,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       description: t("pickupDescription", { current: state.player.stats.pickupRange, next: state.player.stats.pickupRange + 28 }),
       apply: ({ player }) => {
         player.stats.pickupRange += 28;
-      }
+      },
+      banishable: true
     },
     {
       id: "heal",
@@ -74,9 +81,14 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       apply: ({ player }) => {
         player.stats.maxHp += 10;
         player.stats.hp = Math.min(player.stats.maxHp, player.stats.hp + 25);
-      }
+      },
+      banishable: true
     }
   ];
+
+  const options: UpgradeOption[] = statOptions.filter((option) => !state.banishedUpgradeIds.has(option.id));
+
+  const nearRoutes = trackedEvolutionProgress(state, 4).filter((progress) => !progress.alreadyEvolved);
 
   for (const evolutionId of Object.keys(EVOLUTION_CONFIGS) as EvolutionId[]) {
     const config = EVOLUTION_CONFIGS[evolutionId];
@@ -120,6 +132,7 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
 
     const label = weaponName(weaponId);
     const progress = findProgressForWeapon(state, weaponId);
+    const recommendation = recommendationForProgress(progress);
     options.push({
       id: `weapon-${weaponId}`,
       kind: "weapon",
@@ -131,6 +144,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       progressText: progress
         ? t("recipeProgress", { current: progress.progressScore, total: progress.requiredWeaponLevel + progress.requiredSkillLevel })
         : undefined,
+      recommendedText: recommendation?.text,
+      recommendationReason: recommendation?.reason,
       apply: ({ weaponLevels }) => {
         weaponLevels.set(weaponId, level + 1);
       }
@@ -145,6 +160,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     }
 
     const nextLevel = level + 1;
+    const route = nearRoutes.find((progress) => EVOLUTION_CONFIGS[progress.evolutionId].preferredBuildPathId === buildPathId);
+    const artName = route ? t(route.config.nameKey as Parameters<typeof t>[0]) : "";
     options.push({
       id: `build-${buildPathId}`,
       kind: "build",
@@ -154,6 +171,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
           ? t("buildUnlock", { name: buildPathName(buildPathId) })
           : t("buildLevel", { name: buildPathName(buildPathId), level: nextLevel }),
       description: config.describe(state, nextLevel),
+      recommendedText: route ? t("recommendedBadge") : undefined,
+      recommendationReason: route ? t("recommendBuildPath", { path: buildPathName(buildPathId), art: artName }) : undefined,
       apply: (gameState) => {
         gameState.buildPathLevels.set(buildPathId, nextLevel);
         config.apply(gameState, nextLevel);
@@ -171,6 +190,7 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     const nextLevel = level + 1;
     const label = skillName(skillId);
     const progress = findProgressForSkill(state, skillId);
+    const recommendation = recommendationForProgress(progress);
     options.push({
       id: `skill-${skillId}`,
       kind: "skill",
@@ -182,6 +202,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       progressText: progress
         ? t("recipeProgress", { current: progress.progressScore, total: progress.requiredWeaponLevel + progress.requiredSkillLevel })
         : undefined,
+      recommendedText: recommendation?.text,
+      recommendationReason: recommendation?.reason,
       skillId,
       apply: (gameState) => {
         gameState.skillLevels.set(skillId, nextLevel);
@@ -237,4 +259,27 @@ function recipeHint(state: GameState, weaponId: WeaponId, skillId: SkillId, evol
     requiredSkill: config.requiredSkillLevel,
     art: t(config.nameKey as Parameters<typeof t>[0])
   });
+}
+
+function recommendationForProgress(progress?: EvolutionProgress): { text: string; reason: string } | undefined {
+  if (!progress) {
+    return undefined;
+  }
+
+  const total = progress.requiredWeaponLevel + progress.requiredSkillLevel;
+  const missing = total - progress.progressScore;
+  const art = t(progress.config.nameKey as Parameters<typeof t>[0]);
+  if (missing <= 1) {
+    return {
+      text: t("recommendedBadge"),
+      reason: t("recommendCompletesRecipe", { art, current: progress.progressScore, total })
+    };
+  }
+  if (missing <= 3 || progress.progressScore > 0) {
+    return {
+      text: t("recommendedBadge"),
+      reason: t("recommendNearRecipe", { art, current: progress.progressScore, total })
+    };
+  }
+  return undefined;
 }
