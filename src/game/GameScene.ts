@@ -64,6 +64,7 @@ export class GameScene extends Phaser.Scene {
       skillLevels: new Map(),
       buildPathLevels: new Map(),
       unlockedSkills: new Set(),
+      unlockedSkillsThisRun: new Set(),
       unlockedAchievements: new Set(),
       evolvedArtsSeen: new Set(),
       standaloneSkillsSeen: new Set(),
@@ -187,7 +188,10 @@ export class GameScene extends Phaser.Scene {
       highestDifficulty: this.state.highestDifficulty,
       achievements: [...this.state.unlockedAchievements],
       evolvedArtsSeen: [...this.state.evolvedArtsSeen],
-      standaloneSkillsSeen: [...this.state.standaloneSkillsSeen]
+      standaloneSkillsSeen: [...this.state.standaloneSkillsSeen],
+      unlockedSkillsThisRun: [...this.state.unlockedSkillsThisRun],
+      bossDefeatsSeen: [...this.state.bossDefeats.keys()],
+      favoriteBuildPathId: this.favoriteBuildPathId()
     };
     this.scene.stop("UIScene");
     this.scene.start("GameOverScene", data);
@@ -286,5 +290,11 @@ export class GameScene extends Phaser.Scene {
     });
     this.cameras.main.flash(180, 255, 220, 120, false);
     this.showScorePop(this.player.x, this.player.y - 118, title, "#ffe09a");
+  }
+
+  private favoriteBuildPathId(): GameOverData["favoriteBuildPathId"] {
+    const paths = [...this.state.buildPathLevels.entries()].filter(([, level]) => level > 0);
+    paths.sort((a, b) => b[1] - a[1]);
+    return paths[0]?.[0];
   }
 }

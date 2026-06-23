@@ -20,6 +20,7 @@ export type GameState = {
   skillLevels: Map<SkillId, number>;
   buildPathLevels: Map<BuildPathId, number>;
   unlockedSkills: Set<SkillId>;
+  unlockedSkillsThisRun: Set<SkillId>;
   unlockedAchievements: Set<string>;
   evolvedArtsSeen: Set<EvolutionId>;
   standaloneSkillsSeen: Set<SkillId>;

@@ -59,6 +59,7 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     skillLevels: new Map(),
     buildPathLevels: new Map(),
     unlockedSkills: new Set(),
+    unlockedSkillsThisRun: new Set(),
     unlockedAchievements: new Set(),
     bossDefeats: new Map(),
     highestDifficulty: 1,
@@ -255,13 +256,20 @@ describe("game regression rules", () => {
         highestDifficulty: 2,
         achievements: ["firstEvolution"],
         evolvedArtsSeen: ["voidDuguSword"],
-        standaloneSkillsSeen: ["yijinManual"]
+        standaloneSkillsSeen: ["yijinManual"],
+        skillsSeen: ["duguNineSwords"],
+        bossDefeatsSeen: ["minorBoss"],
+        favoriteBuildPathId: "swordSect"
       },
       false
     );
 
     expect(record.evolvedArtsSeen).toEqual(["voidDuguSword"]);
     expect(record.standaloneSkillsSeen).toEqual(["yijinManual"]);
+    expect(record.skillsSeen).toEqual(["duguNineSwords"]);
+    expect(record.bossDefeatsSeen).toEqual(["minorBoss"]);
+    expect(record.totalRenown).toBe(100);
+    expect(record.favoriteBuildPathId).toBe("swordSect");
   });
 
   it("keeps Traditional Chinese and English locale keys in sync", () => {

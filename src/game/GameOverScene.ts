@@ -1,10 +1,12 @@
 import Phaser from "phaser";
 import { formatClock } from "../utils/math";
-import { t } from "../i18n";
+import { buildPathName, skillName, t } from "../i18n";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import type { EvolutionId } from "../data/evolutions";
 import type { SkillId } from "../data/skills";
+import type { EnemyId } from "../data/enemies";
+import type { BuildPathId } from "../data/buildPaths";
 
 export type GameOverData = {
   won: boolean;
@@ -15,6 +17,9 @@ export type GameOverData = {
   achievements: string[];
   evolvedArtsSeen: EvolutionId[];
   standaloneSkillsSeen: SkillId[];
+  unlockedSkillsThisRun: SkillId[];
+  bossDefeatsSeen: EnemyId[];
+  favoriteBuildPathId?: BuildPathId;
 };
 
 export class GameOverScene extends Phaser.Scene {
@@ -30,7 +35,10 @@ export class GameOverScene extends Phaser.Scene {
         highestDifficulty: data.highestDifficulty,
         achievements: data.achievements,
         evolvedArtsSeen: data.evolvedArtsSeen,
-        standaloneSkillsSeen: data.standaloneSkillsSeen
+        standaloneSkillsSeen: data.standaloneSkillsSeen,
+        skillsSeen: [...data.unlockedSkillsThisRun, ...data.standaloneSkillsSeen],
+        bossDefeatsSeen: data.bossDefeatsSeen,
+        favoriteBuildPathId: data.favoriteBuildPathId
       },
       data.won
     );
@@ -87,8 +95,21 @@ export class GameOverScene extends Phaser.Scene {
       .setPadding(0, 8, 0, 8)
       .setOrigin(0.5);
 
+    const legacy = this.formatLegacy(data, record);
+    this.add
+      .text(width / 2, height * 0.66, legacy, {
+        fontFamily: UI_FONT,
+        fontSize: "16px",
+        color: "#d8e2eb",
+        align: "center",
+        lineSpacing: 8,
+        wordWrap: { width: Math.min(760, width - 72) }
+      })
+      .setPadding(0, 8, 0, 8)
+      .setOrigin(0.5);
+
     const restart = this.add
-      .text(width / 2, height * 0.68, t("restart"), {
+      .text(width / 2, height * 0.82, t("restart"), {
         fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
@@ -100,5 +121,19 @@ export class GameOverScene extends Phaser.Scene {
 
     restart.on("pointerdown", () => this.scene.start("GameScene"));
     this.input.keyboard?.once("keydown-SPACE", () => this.scene.start("GameScene"));
+  }
+
+  private formatLegacy(data: GameOverData, record: ReturnType<typeof AchievementSystem.readRecord>): string {
+    const unlocked = data.unlockedSkillsThisRun.length
+      ? data.unlockedSkillsThisRun.map((skillId) => skillName(skillId)).join("、")
+      : t("none");
+    const favoriteBuild = record.favoriteBuildPathId ? buildPathName(record.favoriteBuildPathId) : t("none");
+    return t("legacyLine", {
+      unlocked,
+      totalRenown: record.totalRenown,
+      ultimates: record.evolvedArtsSeen.length,
+      bosses: record.bossDefeatsSeen.length,
+      favoriteBuild
+    });
   }
 }

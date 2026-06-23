@@ -1,16 +1,22 @@
 import type { EnemyId } from "../data/enemies";
 import { EVOLUTION_CONFIGS, type EvolutionId } from "../data/evolutions";
 import type { SkillId } from "../data/skills";
+import type { BuildPathId } from "../data/buildPaths";
 import type { GameState } from "../game/GameState";
 import { achievementName, skillName, t } from "../i18n";
 
 export type RunRecord = {
   bestRenown: number;
+  totalRenown: number;
   fastestClearSec?: number;
   highestDifficulty: number;
   achievements: string[];
   evolvedArtsSeen: EvolutionId[];
   standaloneSkillsSeen: SkillId[];
+  skillsSeen: SkillId[];
+  bossDefeatsSeen: EnemyId[];
+  buildPathCounts: Partial<Record<BuildPathId, number>>;
+  favoriteBuildPathId?: BuildPathId;
 };
 
 export type RunSummary = {
@@ -20,6 +26,9 @@ export type RunSummary = {
   achievements: string[];
   evolvedArtsSeen?: EvolutionId[];
   standaloneSkillsSeen?: SkillId[];
+  skillsSeen?: SkillId[];
+  bossDefeatsSeen?: EnemyId[];
+  favoriteBuildPathId?: BuildPathId;
 };
 
 const RECORD_KEY = "sword-survivors-record";
@@ -41,7 +50,17 @@ const BOSS_ACHIEVEMENTS: Partial<Record<EnemyId, string>> = {
 
 export class AchievementSystem {
   static readRecord(): RunRecord {
-    const fallback: RunRecord = { bestRenown: 0, highestDifficulty: 1, achievements: [], evolvedArtsSeen: [], standaloneSkillsSeen: [] };
+    const fallback: RunRecord = {
+      bestRenown: 0,
+      totalRenown: 0,
+      highestDifficulty: 1,
+      achievements: [],
+      evolvedArtsSeen: [],
+      standaloneSkillsSeen: [],
+      skillsSeen: [],
+      bossDefeatsSeen: [],
+      buildPathCounts: {}
+    };
     try {
       return { ...fallback, ...JSON.parse(localStorage.getItem(RECORD_KEY) ?? "{}") };
     } catch {
@@ -52,6 +71,7 @@ export class AchievementSystem {
   static saveRun(summary: RunSummary, won: boolean): RunRecord {
     const record = AchievementSystem.readRecord();
     const bestRenown = Math.max(record.bestRenown, summary.score);
+    const totalRenown = record.totalRenown + summary.score;
     const highestDifficulty = Math.max(record.highestDifficulty, summary.highestDifficulty);
     const fastestClearSec = won
       ? record.fastestClearSec === undefined
@@ -61,7 +81,26 @@ export class AchievementSystem {
     const achievements = [...new Set([...record.achievements, ...summary.achievements])];
     const evolvedArtsSeen = [...new Set([...record.evolvedArtsSeen, ...(summary.evolvedArtsSeen ?? [])])];
     const standaloneSkillsSeen = [...new Set([...record.standaloneSkillsSeen, ...(summary.standaloneSkillsSeen ?? [])])];
-    const nextRecord = { bestRenown, fastestClearSec, highestDifficulty, achievements, evolvedArtsSeen, standaloneSkillsSeen };
+    const skillsSeen = [...new Set([...record.skillsSeen, ...(summary.skillsSeen ?? [])])];
+    const bossDefeatsSeen = [...new Set([...record.bossDefeatsSeen, ...(summary.bossDefeatsSeen ?? [])])];
+    const buildPathCounts = { ...record.buildPathCounts };
+    if (summary.favoriteBuildPathId) {
+      buildPathCounts[summary.favoriteBuildPathId] = (buildPathCounts[summary.favoriteBuildPathId] ?? 0) + 1;
+    }
+    const favoriteBuildPathId = Object.entries(buildPathCounts).sort((a, b) => (b[1] ?? 0) - (a[1] ?? 0))[0]?.[0] as BuildPathId | undefined;
+    const nextRecord = {
+      bestRenown,
+      totalRenown,
+      fastestClearSec,
+      highestDifficulty,
+      achievements,
+      evolvedArtsSeen,
+      standaloneSkillsSeen,
+      skillsSeen,
+      bossDefeatsSeen,
+      buildPathCounts,
+      favoriteBuildPathId
+    };
     localStorage.setItem(RECORD_KEY, JSON.stringify(nextRecord));
     return nextRecord;
   }
@@ -77,6 +116,7 @@ export class AchievementSystem {
     for (const skillId of skillIds) {
       if (!this.state.unlockedSkills.has(skillId)) {
         this.state.unlockedSkills.add(skillId);
+        this.state.unlockedSkillsThisRun.add(skillId);
         messages.push(t("skillUnlockedToast", { name: skillName(skillId) }));
         for (const evolution of this.evolutionsForSkill(skillId)) {
           messages.push(t("potentialEvolutionToast", { name: t(evolution.nameKey as Parameters<typeof t>[0]) }));

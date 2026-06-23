@@ -41,12 +41,23 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     const start = this.add
-      .text(width / 2, height * 0.74, t("startRun"), {
+      .text(width / 2, height * 0.71, t("startRun"), {
         fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
         backgroundColor: "#f7c66b",
         padding: { left: 28, right: 28, top: 12, bottom: 12 }
+      })
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    const collection = this.add
+      .text(width / 2, height * 0.8, t("collectionButton"), {
+        fontFamily: UI_FONT,
+        fontSize: "20px",
+        color: "#f7c66b",
+        backgroundColor: "#192033",
+        padding: { left: 22, right: 22, top: 10, bottom: 10 }
       })
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
@@ -63,7 +74,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     this.add
-      .text(width / 2, height * 0.84, t("controls"), {
+      .text(width / 2, height * 0.91, t("controls"), {
         fontFamily: UI_FONT,
         fontSize: "16px",
         color: "#aac7d8",
@@ -74,6 +85,7 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     start.on("pointerdown", () => this.scene.start("GameScene"));
+    collection.on("pointerdown", () => this.scene.start("CollectionScene"));
     language.on("pointerdown", () => {
       toggleLocale();
       this.scene.restart();
