@@ -4,6 +4,7 @@ import { buildPathName, locale } from "../i18n";
 import { BUILD_PATH_CONFIGS, type BuildPathId } from "./buildPaths";
 import { DIFFICULTY_CONFIGS } from "./metaProgression";
 import { EVOLUTION_CONFIGS } from "./evolutions";
+import { nextAffordableRenownUpgrade } from "./renownShop";
 
 export type StartStyleId = BuildPathId;
 
@@ -133,6 +134,14 @@ export function renownShopSummary(totalRenown: number): string {
 }
 
 export function nextRunGoal(record: RunRecord): string {
+  const affordableUpgrade = nextAffordableRenownUpgrade(record);
+  if (affordableUpgrade) {
+    return text({
+      zh: `購買 ${affordableUpgrade.title}：${affordableUpgrade.nextCost} 聲望`,
+      en: `Buy ${affordableUpgrade.title}: ${affordableUpgrade.nextCost} renown`
+    });
+  }
+
   const lockedStyle = startStyleOptions(record).find((option) => !option.unlocked);
   if (lockedStyle) {
     return text({ zh: `解鎖 ${lockedStyle.title}：${lockedStyle.unlockHint}`, en: `Unlock ${lockedStyle.title}: ${lockedStyle.unlockHint}` });

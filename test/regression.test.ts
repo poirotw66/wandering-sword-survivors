@@ -14,6 +14,14 @@ import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor 
 import { eliteTraitFor } from "../src/data/eliteTraits";
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows, startStyleOptions } from "../src/data/metaChoices";
+import {
+  canPurchaseRenownUpgrade,
+  metaBonusesFromShop,
+  nextAffordableRenownUpgrade,
+  purchaseRenownUpgrade,
+  renownShopState,
+  type RenownShopUpgradeId
+} from "../src/data/renownShop";
 
 function createStorage(): Storage {
   const store = new Map<string, string>();
@@ -89,6 +97,7 @@ function createRecord(overrides: Partial<RunRecord> = {}): RunRecord {
   return {
     bestRenown: 0,
     totalRenown: 0,
+    spendableRenown: 0,
     highestDifficulty: 1,
     achievements: [],
     evolvedArtsSeen: [],
@@ -96,6 +105,7 @@ function createRecord(overrides: Partial<RunRecord> = {}): RunRecord {
     skillsSeen: [],
     bossDefeatsSeen: [],
     buildPathCounts: {},
+    renownShopLevels: {},
     ...overrides
   };
 }
@@ -336,6 +346,96 @@ describe("game regression rules", () => {
     expect(rows.find((row) => row.id === "hp")).toMatchObject({ earned: true, threshold: 500 });
     expect(rows.find((row) => row.id === "speed")).toMatchObject({ earned: true, threshold: 1500 });
     expect(rows.find((row) => row.id === "pickup")).toMatchObject({ earned: false, threshold: 3000 });
+  });
+
+  it("migrates old records with spendable renown and empty shop levels", () => {
+    localStorage.setItem(
+      "sword-survivors-record",
+      JSON.stringify({
+        bestRenown: 1000,
+        totalRenown: 2400,
+        highestDifficulty: 2,
+        achievements: [],
+        evolvedArtsSeen: [],
+        standaloneSkillsSeen: [],
+        skillsSeen: [],
+        bossDefeatsSeen: [],
+        buildPathCounts: {}
+      })
+    );
+
+    const record = AchievementSystem.readRecord();
+
+    expect(record.totalRenown).toBe(2400);
+    expect(record.spendableRenown).toBe(2400);
+    expect(record.renownShopLevels).toEqual({});
+  });
+
+  it("adds run score to spendable renown during settlement", () => {
+    localStorage.setItem(
+      "sword-survivors-record",
+      JSON.stringify(createRecord({ totalRenown: 2000, spendableRenown: 500 }))
+    );
+
+    const record = AchievementSystem.saveRun(
+      { score: 900, elapsedSec: 300, highestDifficulty: 1, achievements: [] },
+      false
+    );
+
+    expect(record.totalRenown).toBe(2900);
+    expect(record.spendableRenown).toBe(1400);
+  });
+
+  it("purchases renown shop upgrades and blocks unaffordable or maxed upgrades", () => {
+    const affordable = createRecord({ spendableRenown: 900 });
+    const purchased = purchaseRenownUpgrade(affordable, "hp");
+    const unaffordable = purchaseRenownUpgrade(createRecord({ spendableRenown: 100 }), "hp");
+    const maxed = purchaseRenownUpgrade(
+      createRecord({ spendableRenown: 99999, renownShopLevels: { hp: 5 } }),
+      "hp"
+    );
+
+    expect(purchased.purchased).toBe(true);
+    expect(purchased.record.spendableRenown).toBe(600);
+    expect(purchased.record.renownShopLevels.hp).toBe(1);
+    expect(unaffordable).toMatchObject({ purchased: false, reason: "unaffordable" });
+    expect(maxed).toMatchObject({ purchased: false, reason: "maxed" });
+  });
+
+  it("calculates opening meta bonuses from purchased shop levels", () => {
+    const record = createRecord({
+      totalRenown: 9000,
+      renownShopLevels: { hp: 2, speed: 3, pickup: 1, reroll: 2 }
+    });
+    const bonuses = metaBonusesFromShop(record);
+
+    expect(bonuses).toMatchObject({
+      maxHp: 16,
+      moveSpeed: 15,
+      pickupRange: 8,
+      rerolls: 2,
+      titleKey: "renownTitleMaster"
+    });
+  });
+
+  it("prioritizes affordable shop upgrades in next-run goals", () => {
+    setLocale("en");
+    const record = createRecord({ spendableRenown: 400 });
+
+    expect(canPurchaseRenownUpgrade(record, "hp")).toBe(true);
+    expect(nextAffordableRenownUpgrade(record)?.id).toBe("hp");
+    expect(nextRunGoal(record)).toContain("Buy Opening HP");
+    expect(renownShopState(record).find((row) => row.id === "hp")).toMatchObject({ canPurchase: true });
+  });
+
+  it("defines valid cost curves for every renown shop upgrade", () => {
+    const ids: RenownShopUpgradeId[] = ["hp", "speed", "pickup", "reroll", "banish", "styleMastery"];
+
+    for (const id of ids) {
+      const row = renownShopState(createRecord()).find((entry) => entry.id === id);
+      expect(row?.maxLevel).toBeGreaterThan(0);
+      expect(row?.nextCost).toBeGreaterThan(0);
+    }
   });
 
   it("prioritizes next-run goals from unlocks to difficulty to mastery", () => {

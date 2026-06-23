@@ -8,6 +8,7 @@ import type { SkillId } from "../data/skills";
 import type { EnemyId } from "../data/enemies";
 import type { BuildPathId } from "../data/buildPaths";
 import { formatNextGoalLine, nextRunGoal } from "../data/metaChoices";
+import { formatSpendableRenownGained } from "../data/renownShop";
 
 export type GameOverData = {
   won: boolean;
@@ -139,7 +140,17 @@ export class GameOverScene extends Phaser.Scene {
       .setOrigin(0.5);
 
     this.add
-      .text(width / 2, height * 0.812, formatNextGoalLine(nextRunGoal(record)), {
+      .text(width / 2, height * 0.786, formatSpendableRenownGained(data.score, record.spendableRenown), {
+        fontFamily: UI_FONT,
+        fontSize: "14px",
+        color: "#f7c66b",
+        align: "center",
+        wordWrap: { width: Math.min(760, width - 72) }
+      })
+      .setOrigin(0.5);
+
+    this.add
+      .text(width / 2, height * 0.83, formatNextGoalLine(nextRunGoal(record)), {
         fontFamily: UI_FONT,
         fontSize: "15px",
         color: "#ffe09a",

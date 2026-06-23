@@ -1,7 +1,7 @@
 ---
 id: 008-renown-shop-and-meta-unlocks
 title: Renown Shop and Meta Unlocks
-status: approved
+status: done
 owner: openab
 created: 2026-06-23
 updated: 2026-06-23
@@ -245,3 +245,11 @@ Initial upgrades:
 ## 10. Review Notes
 
 Recommended next implementation path: run Vif God on this spec, then immediately playtest early difficulty 1 and 2 to tune first-upgrade costs.
+
+## 11. Implementation Notes
+
+- Implemented as a compact menu shop rather than a separate shop scene.
+- Added `src/data/renownShop.ts` for upgrade config, purchase rules, bonus calculation, and display helpers.
+- Added `spendableRenown` and `renownShopLevels` to saved records with old-save migration.
+- Opening bonuses now come from purchased shop levels.
+- Lifetime `totalRenown` still drives titles, difficulty unlocks, and opening-style unlock rules.

@@ -2,12 +2,14 @@ import type { EnemyId } from "../data/enemies";
 import { EVOLUTION_CONFIGS, type EvolutionId } from "../data/evolutions";
 import type { SkillId } from "../data/skills";
 import type { BuildPathId } from "../data/buildPaths";
+import type { RenownShopLevels } from "../data/renownShop";
 import type { GameState } from "../game/GameState";
 import { achievementName, skillName, t } from "../i18n";
 
 export type RunRecord = {
   bestRenown: number;
   totalRenown: number;
+  spendableRenown: number;
   fastestClearSec?: number;
   highestDifficulty: number;
   achievements: string[];
@@ -17,6 +19,7 @@ export type RunRecord = {
   bossDefeatsSeen: EnemyId[];
   buildPathCounts: Partial<Record<BuildPathId, number>>;
   favoriteBuildPathId?: BuildPathId;
+  renownShopLevels: RenownShopLevels;
 };
 
 export type RunSummary = {
@@ -57,25 +60,38 @@ export class AchievementSystem {
     const fallback: RunRecord = {
       bestRenown: 0,
       totalRenown: 0,
+      spendableRenown: 0,
       highestDifficulty: 1,
       achievements: [],
       evolvedArtsSeen: [],
       standaloneSkillsSeen: [],
       skillsSeen: [],
       bossDefeatsSeen: [],
-      buildPathCounts: {}
+      buildPathCounts: {},
+      renownShopLevels: {}
     };
     try {
-      return { ...fallback, ...JSON.parse(localStorage.getItem(RECORD_KEY) ?? "{}") };
+      const parsed = JSON.parse(localStorage.getItem(RECORD_KEY) ?? "{}");
+      const renownShopLevels: RenownShopLevels = parsed.renownShopLevels ?? {};
+      const hasPurchases = Object.values(renownShopLevels).some((level) => Number(level) > 0);
+      const totalRenown = Number(parsed.totalRenown ?? fallback.totalRenown);
+      const spendableRenown =
+        typeof parsed.spendableRenown === "number" ? parsed.spendableRenown : hasPurchases ? 0 : totalRenown;
+      return { ...fallback, ...parsed, totalRenown, spendableRenown, renownShopLevels };
     } catch {
       return fallback;
     }
+  }
+
+  static writeRecord(record: RunRecord): void {
+    localStorage.setItem(RECORD_KEY, JSON.stringify(record));
   }
 
   static saveRun(summary: RunSummary, won: boolean): RunRecord {
     const record = AchievementSystem.readRecord();
     const bestRenown = Math.max(record.bestRenown, summary.score);
     const totalRenown = record.totalRenown + summary.score;
+    const spendableRenown = record.spendableRenown + summary.score;
     const highestDifficulty = Math.max(record.highestDifficulty, summary.highestDifficulty);
     const fastestClearSec = won
       ? record.fastestClearSec === undefined
@@ -95,6 +111,7 @@ export class AchievementSystem {
     const nextRecord = {
       bestRenown,
       totalRenown,
+      spendableRenown,
       fastestClearSec,
       highestDifficulty,
       achievements,
@@ -103,9 +120,10 @@ export class AchievementSystem {
       skillsSeen,
       bossDefeatsSeen,
       buildPathCounts,
-      favoriteBuildPathId
+      favoriteBuildPathId,
+      renownShopLevels: record.renownShopLevels
     };
-    localStorage.setItem(RECORD_KEY, JSON.stringify(nextRecord));
+    AchievementSystem.writeRecord(nextRecord);
     return nextRecord;
   }
 

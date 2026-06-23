@@ -4,7 +4,6 @@ import {
   DIFFICULTY_CONFIGS,
   difficultyDisplays,
   difficultyForLevel,
-  metaBonusesFor,
   titleProgressFor,
   unlockedDifficulties
 } from "../data/metaProgression";
@@ -14,11 +13,19 @@ import {
   formatStartStyleButton,
   nextRunGoal,
   normalizeStartStyle,
-  renownShopSummary,
   startStyleLabel,
   startStyleOptions,
   type StartStyleId
 } from "../data/metaChoices";
+import {
+  formatPurchaseToast,
+  formatRenownShopRow,
+  metaBonusesFromShop,
+  purchaseRenownUpgrade,
+  renownShopBalanceLine,
+  renownShopState,
+  type RenownShopRow
+} from "../data/renownShop";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 
@@ -33,7 +40,7 @@ export class MenuScene extends Phaser.Scene {
   create(): void {
     const { width, height } = this.scale;
     const record = AchievementSystem.readRecord();
-    const bonuses = metaBonusesFor(record.totalRenown);
+    const bonuses = metaBonusesFromShop(record);
     const titleProgress = titleProgressFor(record.totalRenown);
     const unlocked = unlockedDifficulties(record).map((difficulty) => difficulty.level);
     this.selectedDifficulty = Math.min(
@@ -75,7 +82,7 @@ export class MenuScene extends Phaser.Scene {
       .setPadding(0, 6, 0, 6)
       .setOrigin(0.5);
 
-    this.createMetaPanel(record.totalRenown, bonuses, titleProgress, width, height);
+    this.createMetaPanel(record, bonuses, titleProgress, width, height);
 
     this.createDifficultyButtons(record.totalRenown, unlocked, width, height);
     this.createStartStyleButtons(record, width, height);
@@ -179,8 +186,8 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private createMetaPanel(
-    totalRenown: number,
-    bonuses: ReturnType<typeof metaBonusesFor>,
+    record: ReturnType<typeof AchievementSystem.readRecord>,
+    bonuses: ReturnType<typeof metaBonusesFromShop>,
     titleProgress: ReturnType<typeof titleProgressFor>,
     width: number,
     height: number
@@ -194,14 +201,14 @@ export class MenuScene extends Phaser.Scene {
           });
     const panelWidth = Math.min(720, width - 72);
     const panelY = height * 0.625;
-    this.add.rectangle(width / 2, panelY, panelWidth, 116, 0x111421, 0.78).setStrokeStyle(1, 0x5f4a2a, 0.85);
+    this.add.rectangle(width / 2, panelY, panelWidth, 146, 0x111421, 0.78).setStrokeStyle(1, 0x5f4a2a, 0.85);
     this.add
       .text(
         width / 2,
-        panelY - 50,
+        panelY - 66,
         t("metaProgressionLine", {
           title: t(bonuses.titleKey),
-          renown: totalRenown,
+          renown: record.totalRenown,
           next: nextText
         }),
         {
@@ -216,7 +223,7 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        panelY - 14,
+        panelY - 34,
         t("metaBonusLine", {
           title: t(bonuses.titleKey),
           hp: bonuses.maxHp,
@@ -234,16 +241,7 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0);
     this.add
-      .text(width / 2, panelY + 16, renownShopSummary(totalRenown), {
-        fontFamily: UI_FONT,
-        fontSize: "12px",
-        color: "#aac7d8",
-        align: "center",
-        wordWrap: { width: panelWidth - 32 }
-      })
-      .setOrigin(0.5, 0);
-    this.add
-      .text(width / 2, panelY + 42, formatNextGoalLine(nextRunGoal(AchievementSystem.readRecord())), {
+      .text(width / 2, panelY - 8, renownShopBalanceLine(record), {
         fontFamily: UI_FONT,
         fontSize: "12px",
         color: "#ffe09a",
@@ -251,6 +249,63 @@ export class MenuScene extends Phaser.Scene {
         wordWrap: { width: panelWidth - 32 }
       })
       .setOrigin(0.5, 0);
+    this.createRenownShopRows(record, width, panelY, panelWidth);
+    this.add
+      .text(width / 2, panelY + 54, formatNextGoalLine(nextRunGoal(record)), {
+        fontFamily: UI_FONT,
+        fontSize: "12px",
+        color: "#ffe09a",
+        align: "center",
+        wordWrap: { width: panelWidth - 32 }
+      })
+      .setOrigin(0.5, 0);
+  }
+
+  private createRenownShopRows(
+    record: ReturnType<typeof AchievementSystem.readRecord>,
+    width: number,
+    panelY: number,
+    panelWidth: number
+  ): void {
+    const rows = renownShopState(record);
+    const startX = width / 2 - panelWidth / 2 + 74;
+    rows.forEach((row, index) => {
+      const x = startX + (index % 3) * ((panelWidth - 148) / 2);
+      const y = panelY + 14 + Math.floor(index / 3) * 28;
+      const button = this.add
+        .text(x, y, formatRenownShopRow(row), {
+          fontFamily: UI_FONT,
+          fontSize: "10px",
+          color: row.canPurchase ? "#10121f" : row.isMaxed ? "#84f7b2" : "#aac7d8",
+          backgroundColor: row.canPurchase ? "#f7c66b" : "#192033",
+          align: "center",
+          padding: { left: 6, right: 6, top: 4, bottom: 4 },
+          wordWrap: { width: 176 }
+        })
+        .setOrigin(0.5)
+        .setInteractive(row.canPurchase ? { useHandCursor: true } : undefined);
+      if (row.canPurchase) {
+        button.on("pointerdown", () => this.purchaseUpgrade(row));
+      }
+    });
+  }
+
+  private purchaseUpgrade(row: RenownShopRow): void {
+    const result = purchaseRenownUpgrade(AchievementSystem.readRecord(), row.id);
+    if (!result.purchased) {
+      return;
+    }
+    AchievementSystem.writeRecord(result.record);
+    this.add
+      .text(this.scale.width / 2, this.scale.height * 0.52, formatPurchaseToast(row), {
+        fontFamily: UI_FONT,
+        fontSize: "18px",
+        color: "#ffe09a",
+        backgroundColor: "#111421dd",
+        padding: { left: 14, right: 14, top: 8, bottom: 8 }
+      })
+      .setOrigin(0.5);
+    this.time.delayedCall(160, () => this.scene.restart());
   }
 
   private createStartStyleButtons(record: ReturnType<typeof AchievementSystem.readRecord>, width: number, height: number): void {

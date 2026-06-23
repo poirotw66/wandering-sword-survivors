@@ -15,8 +15,9 @@ import type { UpgradeOption } from "../data/upgrades";
 import type { GameOverData } from "./GameOverScene";
 import type { GameState } from "./GameState";
 import { buildPathName, t } from "../i18n";
-import { difficultyForLevel, metaBonusesFor, type DifficultyConfig } from "../data/metaProgression";
+import { difficultyForLevel, type DifficultyConfig } from "../data/metaProgression";
 import { applyStartStyleBonus, formatStartStyleToast, normalizeStartStyle, type StartStyleId } from "../data/metaChoices";
+import { applyStyleMasteryBonus, banishChargesFromShop, metaBonusesFromShop } from "../data/renownShop";
 
 type GameSceneData = {
   difficultyLevel?: number;
@@ -61,7 +62,7 @@ export class GameScene extends Phaser.Scene {
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
     this.cameras.main.setDeadzone(28, 28);
     const record = AchievementSystem.readRecord();
-    const metaBonuses = metaBonusesFor(record.totalRenown);
+    const metaBonuses = metaBonusesFromShop(record);
     const startStyleId = normalizeStartStyle(
       record,
       data.startStyleId ?? window.localStorage?.getItem("sword-survivors-start-style")
@@ -92,7 +93,7 @@ export class GameScene extends Phaser.Scene {
       difficultyRewardMultiplier: difficulty.rewardMultiplier,
       rerolls: metaBonuses.rerolls,
       banishedUpgradeIds: new Set(),
-      banishCharges: 1,
+      banishCharges: banishChargesFromShop(record),
       renownTitle: t(metaBonuses.titleKey),
       devMode: {
         enabled: this.isDevModeRequested(),
@@ -100,6 +101,7 @@ export class GameScene extends Phaser.Scene {
       }
     };
     applyStartStyleBonus(this.state, startStyleId);
+    applyStyleMasteryBonus(this.state, startStyleId, record);
     this.showScorePop(this.player.x, this.player.y - 100, formatStartStyleToast(buildPathName(startStyleId)), "#b8f7ff");
 
     this.playerSystem = new PlayerSystem(this, this.player);
@@ -324,7 +326,7 @@ export class GameScene extends Phaser.Scene {
 
   private applyMetaBonuses(difficulty: DifficultyConfig): void {
     const record = AchievementSystem.readRecord();
-    const bonuses = metaBonusesFor(record.totalRenown);
+    const bonuses = metaBonusesFromShop(record);
     this.player.stats.maxHp += bonuses.maxHp;
     this.player.stats.hp = this.player.stats.maxHp;
     this.player.stats.moveSpeed += bonuses.moveSpeed;
