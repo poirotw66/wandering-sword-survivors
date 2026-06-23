@@ -2,7 +2,7 @@
 
 ## Status
 
-Completed the playable implementation stage for the martial evolution spec.
+COMPLETED. The playable implementation stage for the martial evolution spec is closed.
 
 ## Decisions Made
 
@@ -31,3 +31,9 @@ Completed the playable implementation stage for the martial evolution spec.
 
 - Add dedicated VFX and audio cues for each ultimate martial art.
 - Add achievements for first evolution, specific evolved forms, and standalone manual discovery.
+
+## Close
+
+- Spec status set to `done`.
+- Progress phase `Close` completed.
+- Specs overview status set to `done`.

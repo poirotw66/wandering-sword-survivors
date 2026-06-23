@@ -7,7 +7,7 @@
 - [x] Implementation
 - [x] Verification
 - [x] Review
-- [ ] Close
+- [x] Close
 
 ## Implementation Notes
 
@@ -29,6 +29,14 @@
 - [ ] Add unique VFX/audio polish for each evolved martial art.
 - [ ] Add achievements for first evolution, specific evolved forms, and standalone manual discovery.
 
+## Close Notes
+
+- Martial evolution MVP is complete and playable.
+- All 10 base forms are available in the upgrade pool.
+- All 10 evolution recipes can produce an evolution option when requirements are met.
+- Standalone heart methods are implemented as stronger non-evolving passive upgrades.
+- Verification passed with `npm test -- --run` and `npm run build`.
+
 ## Planned Scope
 
 - Define 10 martial evolution recipes.
@@ -42,11 +50,11 @@
 - Add localization keys for evolved names, standalone heart methods, and descriptions.
 - Add regression tests for unlock, evolution, and standalone exclusion rules.
 
-## Pending Decisions
+## Final Decisions
 
-- Whether evolution requires extra renown or insight currency.
-- Whether a run should limit the total number of evolved martial arts.
-- Whether evolved weapons can continue leveling after evolution.
+- Evolution does not require extra renown or insight currency in the MVP.
+- A run does not currently limit the total number of evolved martial arts.
+- Evolved weapons keep their existing base form level and use evolved behavior immediately.
 - Standalone heart methods are currently capped at 2 per run.
 - Standalone heart methods currently enter the pool after 5 minutes, after any boss defeat, or immediately in dev mode.
-- Final VFX/audio polish level for each evolved martial art.
+- Final VFX/audio polish is deferred to a follow-up polish spec or backlog task.

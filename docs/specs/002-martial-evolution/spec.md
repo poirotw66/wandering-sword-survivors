@@ -1,7 +1,7 @@
 ---
 id: 002-martial-evolution
 title: 武學招式進化系統
-status: in-progress
+status: done
 owner: openab
 created: 2026-06-23
 updated: 2026-06-23
