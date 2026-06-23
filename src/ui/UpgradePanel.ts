@@ -68,10 +68,21 @@ export class UpgradePanel {
       const iconKey = this.scene.textures.exists(option.iconKey) ? option.iconKey : "icon-upgrade-default";
       const iconHalo = this.scene.add.circle(0, -65, 34, 0x2a2333, 0.96).setStrokeStyle(2, this.cardStroke(option.kind), 0.9);
       const icon = this.scene.add.image(0, -65, iconKey).setDisplaySize(54, 54);
+      const badge = option.badgeText
+        ? this.scene.add
+            .text(cardWidth / 2 - 12, -cardHeight / 2 + 12, option.badgeText, {
+              fontFamily: UI_FONT,
+              fontSize: "12px",
+              color: option.kind === "standaloneSkill" ? "#101a20" : "#1b1720",
+              backgroundColor: option.kind === "standaloneSkill" ? "#8ff4ff" : "#ffe09a",
+              padding: { left: 7, right: 7, top: 3, bottom: 3 }
+            })
+            .setOrigin(1, 0)
+        : undefined;
       const title = this.scene.add
-        .text(0, -17, option.title, {
+        .text(0, -18, option.title, {
           fontFamily: UI_FONT,
-          fontSize: "18px",
+          fontSize: "17px",
           color: option.kind === "evolution" ? "#ffe09a" : option.kind === "standaloneSkill" ? "#b8f7ff" : "#f7c66b",
           align: "center",
           lineSpacing: 4,
@@ -80,9 +91,9 @@ export class UpgradePanel {
         .setPadding(0, 8, 0, 8)
         .setOrigin(0.5);
       const description = this.scene.add
-        .text(0, 62, option.description, {
+        .text(0, 45, option.description, {
           fontFamily: UI_FONT,
-          fontSize: "15px",
+          fontSize: "13px",
           color: "#d8e2eb",
           align: "center",
           lineSpacing: 6,
@@ -90,11 +101,26 @@ export class UpgradePanel {
         })
         .setPadding(0, 6, 0, 6)
         .setOrigin(0.5);
+      const recipe = option.recipeHint ?? option.progressText ?? "";
+      const recipeText = this.scene.add
+        .text(0, 94, recipe, {
+          fontFamily: UI_FONT,
+          fontSize: "12px",
+          color: option.kind === "evolution" ? "#ffe09a" : "#aac7d8",
+          align: "center",
+          lineSpacing: 3,
+          wordWrap: { width: cardWidth - 28 }
+        })
+        .setPadding(0, 4, 0, 4)
+        .setOrigin(0.5);
 
       card.on("pointerover", () => bg.setStrokeStyle(3, 0xffe09a));
       card.on("pointerout", () => bg.setStrokeStyle(option.kind === "evolution" ? 3 : 2, this.cardStroke(option.kind)));
       card.on("pointerdown", () => onPick(option));
-      card.add([bg, iconHalo, icon, seal, indexText, title, description]);
+      card.add([bg, iconHalo, icon, seal, indexText, title, description, recipeText]);
+      if (badge) {
+        card.add(badge);
+      }
       this.container.add(card);
       this.cards.push(card);
     });

@@ -3,6 +3,8 @@ import { formatClock } from "../utils/math";
 import { t } from "../i18n";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
+import type { EvolutionId } from "../data/evolutions";
+import type { SkillId } from "../data/skills";
 
 export type GameOverData = {
   won: boolean;
@@ -11,6 +13,8 @@ export type GameOverData = {
   elapsedSec: number;
   highestDifficulty: number;
   achievements: string[];
+  evolvedArtsSeen: EvolutionId[];
+  standaloneSkillsSeen: SkillId[];
 };
 
 export class GameOverScene extends Phaser.Scene {
@@ -24,7 +28,9 @@ export class GameOverScene extends Phaser.Scene {
         score: data.score,
         elapsedSec: data.elapsedSec,
         highestDifficulty: data.highestDifficulty,
-        achievements: data.achievements
+        achievements: data.achievements,
+        evolvedArtsSeen: data.evolvedArtsSeen,
+        standaloneSkillsSeen: data.standaloneSkillsSeen
       },
       data.won
     );

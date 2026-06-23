@@ -92,7 +92,7 @@ export class WeaponSystem {
         tint: evolved ? 0xffe09a : 0x89d8ff
       });
     }
-    this.scene.events.emit("weapon-fired", "magicBolt");
+    this.emitFired("magicBolt", evolved ? "voidDuguSword" : undefined);
   }
 
   private fireFlameWave(level: number): void {
@@ -116,7 +116,7 @@ export class WeaponSystem {
       this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
       this.scene.events.emit("player-healed", healAmount);
     }
-    this.scene.events.emit("weapon-fired", "flameWave");
+    this.emitFired("flameWave", evolved ? "starDrainingPalm" : undefined);
   }
 
   private fireThunderStrike(level: number): void {
@@ -139,7 +139,7 @@ export class WeaponSystem {
       });
       this.flashAt(target.x, target.y, evolved ? 0xffa55f : 0xfff27a, evolved ? 82 : 62);
     }
-    this.scene.events.emit("weapon-fired", "thunderStrike");
+    this.emitFired("thunderStrike", evolved ? "drunkenShadowNineSwords" : undefined);
   }
 
   private fireStarVortex(level: number): void {
@@ -173,7 +173,7 @@ export class WeaponSystem {
     const healAmount = (evolved ? 8 : 2) + Math.floor(level / 2) + Math.floor(this.player.stats.areaMultiplier - 1);
     this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
     this.scene.events.emit("player-healed", healAmount);
-    this.scene.events.emit("weapon-fired", "starVortex");
+    this.emitFired("starVortex", evolved ? "starReturningOriginField" : undefined);
   }
 
   private fireBlossomBlade(level: number): void {
@@ -210,7 +210,7 @@ export class WeaponSystem {
         }
       });
     }
-    this.scene.events.emit("weapon-fired", "blossomBlade");
+    this.emitFired("blossomBlade", evolved ? "violetMistBlossomSword" : undefined);
   }
 
   private fireGaleSword(level: number): void {
@@ -242,7 +242,7 @@ export class WeaponSystem {
         });
       }
     }
-    this.scene.events.emit("weapon-fired", "galeSword");
+    this.emitFired("galeSword", evolved ? "shadowlessGaleSlash" : undefined);
   }
 
   private fireTaiyuePeak(level: number): void {
@@ -267,7 +267,7 @@ export class WeaponSystem {
       target.setVelocity(Math.cos(angle) * (evolved ? 240 : 150), Math.sin(angle) * (evolved ? 240 : 150));
       this.flashAt(target.x, target.y, evolved ? 0xffd36a : 0xf7c66b, evolved ? 104 : 74);
     }
-    this.scene.events.emit("weapon-fired", "taiyuePeak");
+    this.emitFired("taiyuePeak", evolved ? "taiyueMountainSealingForm" : undefined);
   }
 
   private fireColdPondSword(level: number): void {
@@ -290,7 +290,7 @@ export class WeaponSystem {
         this.flashAt(target.x, target.y, 0x8ff4ff, 54);
       }
     }
-    this.scene.events.emit("weapon-fired", "coldPondSword");
+    this.emitFired("coldPondSword", evolved ? "coldPondMirrorSword" : undefined);
   }
 
   private fireVajraFist(level: number): void {
@@ -317,7 +317,7 @@ export class WeaponSystem {
       this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
       this.scene.events.emit("player-healed", healAmount);
     }
-    this.scene.events.emit("weapon-fired", "vajraFist");
+    this.emitFired("vajraFist", evolved ? "vajraHundredStepQuake" : undefined);
   }
 
   private updateOrbitBlades(): void {
@@ -356,7 +356,14 @@ export class WeaponSystem {
     }
     if (this.scene.time.now >= this.nextOrbitSoundAt) {
       this.nextOrbitSoundAt = this.scene.time.now + 520;
-      this.scene.events.emit("weapon-fired", "orbitBlade");
+      this.emitFired("orbitBlade", evolved ? "windClearSwordArray" : undefined);
+    }
+  }
+
+  private emitFired(weaponId: WeaponId, evolutionId?: EvolutionId): void {
+    this.scene.events.emit("weapon-fired", weaponId);
+    if (evolutionId) {
+      this.scene.events.emit("evolution-fired", evolutionId);
     }
   }
 

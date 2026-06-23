@@ -6,6 +6,7 @@ import { missingLocaleKeys, setLocale } from "../src/i18n";
 import { EVOLUTION_CONFIGS, isEvolutionRecipeValid } from "../src/data/evolutions";
 import { SKILL_CONFIGS } from "../src/data/skills";
 import { WEAPON_CONFIGS } from "../src/data/weapons";
+import { computeEvolutionProgress, trackedEvolutionProgress } from "../src/data/evolutionProgress";
 
 function createStorage(): Storage {
   const store = new Map<string, string>();
@@ -60,6 +61,8 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     unlockedAchievements: new Set(),
     bossDefeats: new Map(),
     highestDifficulty: 1,
+    evolvedArtsSeen: new Set(),
+    standaloneSkillsSeen: new Set(),
     devMode: {
       enabled: false,
       timeScale: 1
@@ -119,6 +122,39 @@ describe("game regression rules", () => {
     expect(options.some((option) => option.id === "evolution-voidDuguSword")).toBe(true);
   });
 
+  it("computes and sorts martial evolution progress for build guidance", () => {
+    const state = createState({
+      weaponLevels: new Map([
+        ["magicBolt", 5],
+        ["flameWave", 2]
+      ]),
+      skillLevels: new Map([
+        ["duguNineSwords", 3],
+        ["starAbsorption", 1]
+      ])
+    });
+
+    const progress = computeEvolutionProgress(state);
+
+    expect(progress[0]).toMatchObject({ evolutionId: "voidDuguSword", canEvolve: true, progressScore: 8 });
+    expect(trackedEvolutionProgress(state, 1)[0].evolutionId).toBe("voidDuguSword");
+  });
+
+  it("adds badges and recipe hints for upgrade choices", () => {
+    const options = buildUpgradePool(
+      createState({
+        elapsedSec: 300,
+        weaponLevels: new Map([["magicBolt", 4]]),
+        skillLevels: new Map([["duguNineSwords", 2]]),
+        unlockedSkills: new Set(["duguNineSwords"])
+      })
+    );
+
+    expect(options.some((option) => option.kind === "weapon" && option.badgeText && option.recipeHint)).toBe(true);
+    expect(options.some((option) => option.kind === "skill" && option.badgeText && option.recipeHint)).toBe(true);
+    expect(options.some((option) => option.kind === "standaloneSkill" && option.badgeText && !option.recipeHint)).toBe(true);
+  });
+
   it("keeps standalone heart methods from creating evolution options", () => {
     const options = buildUpgradePool(
       createState({
@@ -155,6 +191,30 @@ describe("game regression rules", () => {
     expect(state.highestDifficulty).toBe(4);
   });
 
+  it("reports potential ultimate arts when boss skills unlock", () => {
+    const state = createState();
+    const achievements = new AchievementSystem(state);
+
+    const messages = achievements.recordBossDefeat("minorBoss");
+
+    expect(messages.some((message) => message.includes("可悟絕學"))).toBe(true);
+  });
+
+  it("records evolution and standalone manual achievements", () => {
+    const state = createState({
+      evolvedWeapons: new Map([["magicBolt", "voidDuguSword"]])
+    });
+    const achievements = new AchievementSystem(state);
+
+    achievements.recordEvolution("voidDuguSword");
+    achievements.recordStandaloneSkill("yijinManual");
+
+    expect(state.unlockedAchievements.has("firstEvolution")).toBe(true);
+    expect(state.unlockedAchievements.has("voidDuguSword")).toBe(true);
+    expect(state.unlockedAchievements.has("rareManual")).toBe(true);
+    expect(state.unlockedAchievements.has("mixedMastery")).toBe(true);
+  });
+
   it("persists best renown, highest difficulty, and fastest clear", () => {
     AchievementSystem.saveRun(
       { score: 4000, elapsedSec: 1800, highestDifficulty: 5, achievements: ["finalBoss"] },
@@ -169,6 +229,23 @@ describe("game regression rules", () => {
     expect(record.highestDifficulty).toBe(5);
     expect(record.fastestClearSec).toBe(1700);
     expect(record.achievements).toEqual(["finalBoss", "renown10000"]);
+  });
+
+  it("persists discovered ultimate arts and standalone manuals", () => {
+    const record = AchievementSystem.saveRun(
+      {
+        score: 100,
+        elapsedSec: 900,
+        highestDifficulty: 2,
+        achievements: ["firstEvolution"],
+        evolvedArtsSeen: ["voidDuguSword"],
+        standaloneSkillsSeen: ["yijinManual"]
+      },
+      false
+    );
+
+    expect(record.evolvedArtsSeen).toEqual(["voidDuguSword"]);
+    expect(record.standaloneSkillsSeen).toEqual(["yijinManual"]);
   });
 
   it("keeps Traditional Chinese and English locale keys in sync", () => {

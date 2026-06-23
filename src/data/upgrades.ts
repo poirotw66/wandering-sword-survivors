@@ -2,6 +2,7 @@ import { SKILL_CONFIGS, type SkillId } from "./skills";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 import { BUILD_PATH_CONFIGS, type BuildPathId } from "./buildPaths";
 import { EVOLUTION_CONFIGS, type EvolutionId } from "./evolutions";
+import { findProgressForSkill, findProgressForWeapon } from "./evolutionProgress";
 import type { GameState } from "../game/GameState";
 import { buildPathName, skillName, t, weaponName } from "../i18n";
 
@@ -11,6 +12,11 @@ export type UpgradeOption = {
   iconKey: string;
   title: string;
   description: string;
+  badgeText?: string;
+  recipeHint?: string;
+  progressText?: string;
+  evolutionId?: EvolutionId;
+  skillId?: SkillId;
   apply: (state: GameState) => void;
 };
 
@@ -92,6 +98,10 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       iconKey: config.iconKey,
       title: t("evolutionTitle", { name }),
       description: t(config.descriptionKey as Parameters<typeof t>[0]),
+      badgeText: t("evolutionBadge"),
+      recipeHint: recipeHint(state, config.baseWeaponId, config.requiredSkillId, evolutionId),
+      progressText: t("readyToEvolve"),
+      evolutionId,
       apply: ({ evolvedWeapons }) => {
         evolvedWeapons.set(config.baseWeaponId, evolutionId);
       }
@@ -109,12 +119,18 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     }
 
     const label = weaponName(weaponId);
+    const progress = findProgressForWeapon(state, weaponId);
     options.push({
       id: `weapon-${weaponId}`,
       kind: "weapon",
       iconKey: config.iconKey,
       title: level === 0 ? t("unlock", { name: label }) : t("weaponLevel", { name: label, level: level + 1 }),
       description: level === 0 ? t("addWeapon", { name: label }) : t("improveWeapon", { level }),
+      badgeText: progress ? t("comboBadge") : undefined,
+      recipeHint: progress ? recipeHint(state, progress.config.baseWeaponId, progress.config.requiredSkillId, progress.evolutionId) : undefined,
+      progressText: progress
+        ? t("recipeProgress", { current: progress.progressScore, total: progress.requiredWeaponLevel + progress.requiredSkillLevel })
+        : undefined,
       apply: ({ weaponLevels }) => {
         weaponLevels.set(weaponId, level + 1);
       }
@@ -154,12 +170,19 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
 
     const nextLevel = level + 1;
     const label = skillName(skillId);
+    const progress = findProgressForSkill(state, skillId);
     options.push({
       id: `skill-${skillId}`,
       kind: "skill",
       iconKey: config.iconKey,
       title: level === 0 ? t("learn", { name: label }) : t("skillLevel", { name: label, level: nextLevel }),
       description: config.describe(state, nextLevel),
+      badgeText: t("comboBadge"),
+      recipeHint: progress ? recipeHint(state, progress.config.baseWeaponId, progress.config.requiredSkillId, progress.evolutionId) : undefined,
+      progressText: progress
+        ? t("recipeProgress", { current: progress.progressScore, total: progress.requiredWeaponLevel + progress.requiredSkillLevel })
+        : undefined,
+      skillId,
       apply: (gameState) => {
         gameState.skillLevels.set(skillId, nextLevel);
         config.apply(gameState, nextLevel);
@@ -187,6 +210,9 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
         iconKey: config.iconKey,
         title: level === 0 ? t("standaloneSkillTitle", { name: label }) : t("skillLevel", { name: label, level: nextLevel }),
         description: `${t("standaloneSkillHint")}\n${config.describe(state, nextLevel)}`,
+        badgeText: t("standaloneBadge"),
+        progressText: t("standaloneNoRecipe"),
+        skillId,
         apply: (gameState) => {
           gameState.skillLevels.set(skillId, nextLevel);
           config.apply(gameState, nextLevel);
@@ -196,4 +222,19 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
   }
 
   return options;
+}
+
+function recipeHint(state: GameState, weaponId: WeaponId, skillId: SkillId, evolutionId: EvolutionId): string {
+  const config = EVOLUTION_CONFIGS[evolutionId];
+  const weaponLevel = state.weaponLevels.get(weaponId) ?? 0;
+  const skillLevel = state.skillLevels.get(skillId) ?? 0;
+  return t("recipeHint", {
+    weapon: weaponName(weaponId),
+    weaponLevel,
+    requiredWeapon: config.requiredWeaponLevel,
+    skill: skillName(skillId),
+    skillLevel,
+    requiredSkill: config.requiredSkillLevel,
+    art: t(config.nameKey as Parameters<typeof t>[0])
+  });
 }

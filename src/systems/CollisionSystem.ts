@@ -46,8 +46,8 @@ export class CollisionSystem {
 
     projectile.hitIds.add(enemy);
     const killed = enemy.damage(projectile.damage);
-    this.scene.events.emit("projectile-hit", enemy.x, enemy.y);
-    const flashColor = projectile.weaponId === "starVortex" ? 0xb86bff : projectile.weaponId === "flameWave" ? 0x8ff4ff : 0xfff1a1;
+    this.scene.events.emit("projectile-hit", enemy.x, enemy.y, projectile.weaponId);
+    const flashColor = this.hitColor(projectile.weaponId);
     this.flashHit(enemy.x, enemy.y, flashColor);
     if (enemy.config.isBoss) {
       this.scene.events.emit("boss-health-changed", Math.max(0, enemy.hp), enemy.maxHp, enemyName(enemy.enemyId));
@@ -90,6 +90,22 @@ export class CollisionSystem {
     });
   }
 
+  private hitColor(weaponId: string): number {
+    const colors: Record<string, number> = {
+      magicBolt: 0xfff1a1,
+      orbitBlade: 0xb8f7ff,
+      flameWave: 0xb86bff,
+      thunderStrike: 0xffa55f,
+      starVortex: 0xb86bff,
+      blossomBlade: 0xffb7d5,
+      galeSword: 0xb8ffd8,
+      taiyuePeak: 0xffd36a,
+      coldPondSword: 0x8ff4ff,
+      vajraFist: 0xffd36a
+    };
+    return colors[weaponId] ?? 0xfff1a1;
+  }
+
   private killEnemy(enemy: Enemy): void {
     this.state.kills += 1;
     this.state.score += enemy.config.score;
@@ -98,6 +114,7 @@ export class CollisionSystem {
     this.pickupSystem.maybeDropHealth(enemy.x, enemy.y, enemy.config.isBoss || enemy.enemyId === "golem" ? 0.16 : 0.055);
     const wonRun = Boolean(enemy.config.endsRunOnDefeat);
     if (enemy.config.isBoss) {
+      this.scene.events.emit("boss-defeated");
       for (const message of this.achievementSystem.recordBossDefeat(enemy.enemyId)) {
         this.scene.events.emit("milestone-unlocked", message);
       }

@@ -21,6 +21,8 @@ export type GameState = {
   buildPathLevels: Map<BuildPathId, number>;
   unlockedSkills: Set<SkillId>;
   unlockedAchievements: Set<string>;
+  evolvedArtsSeen: Set<EvolutionId>;
+  standaloneSkillsSeen: Set<SkillId>;
   bossDefeats: Map<EnemyId, number>;
   highestDifficulty: number;
   devMode: {

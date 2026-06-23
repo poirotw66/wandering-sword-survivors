@@ -1,4 +1,5 @@
 import type { EnemyId } from "../data/enemies";
+import { EVOLUTION_CONFIGS, type EvolutionId } from "../data/evolutions";
 import type { SkillId } from "../data/skills";
 import type { GameState } from "../game/GameState";
 import { achievementName, skillName, t } from "../i18n";
@@ -8,6 +9,8 @@ export type RunRecord = {
   fastestClearSec?: number;
   highestDifficulty: number;
   achievements: string[];
+  evolvedArtsSeen: EvolutionId[];
+  standaloneSkillsSeen: SkillId[];
 };
 
 export type RunSummary = {
@@ -15,6 +18,8 @@ export type RunSummary = {
   elapsedSec: number;
   highestDifficulty: number;
   achievements: string[];
+  evolvedArtsSeen?: EvolutionId[];
+  standaloneSkillsSeen?: SkillId[];
 };
 
 const RECORD_KEY = "sword-survivors-record";
@@ -36,7 +41,7 @@ const BOSS_ACHIEVEMENTS: Partial<Record<EnemyId, string>> = {
 
 export class AchievementSystem {
   static readRecord(): RunRecord {
-    const fallback: RunRecord = { bestRenown: 0, highestDifficulty: 1, achievements: [] };
+    const fallback: RunRecord = { bestRenown: 0, highestDifficulty: 1, achievements: [], evolvedArtsSeen: [], standaloneSkillsSeen: [] };
     try {
       return { ...fallback, ...JSON.parse(localStorage.getItem(RECORD_KEY) ?? "{}") };
     } catch {
@@ -54,7 +59,9 @@ export class AchievementSystem {
         : Math.min(record.fastestClearSec, summary.elapsedSec)
       : record.fastestClearSec;
     const achievements = [...new Set([...record.achievements, ...summary.achievements])];
-    const nextRecord = { bestRenown, fastestClearSec, highestDifficulty, achievements };
+    const evolvedArtsSeen = [...new Set([...record.evolvedArtsSeen, ...(summary.evolvedArtsSeen ?? [])])];
+    const standaloneSkillsSeen = [...new Set([...record.standaloneSkillsSeen, ...(summary.standaloneSkillsSeen ?? [])])];
+    const nextRecord = { bestRenown, fastestClearSec, highestDifficulty, achievements, evolvedArtsSeen, standaloneSkillsSeen };
     localStorage.setItem(RECORD_KEY, JSON.stringify(nextRecord));
     return nextRecord;
   }
@@ -71,6 +78,9 @@ export class AchievementSystem {
       if (!this.state.unlockedSkills.has(skillId)) {
         this.state.unlockedSkills.add(skillId);
         messages.push(t("skillUnlockedToast", { name: skillName(skillId) }));
+        for (const evolution of this.evolutionsForSkill(skillId)) {
+          messages.push(t("potentialEvolutionToast", { name: t(evolution.nameKey as Parameters<typeof t>[0]) }));
+        }
       }
     }
 
@@ -88,6 +98,35 @@ export class AchievementSystem {
     return messages;
   }
 
+  recordEvolution(evolutionId: EvolutionId): string[] {
+    const messages: string[] = [];
+    this.state.evolvedArtsSeen.add(evolutionId);
+    this.addAchievement("firstEvolution", messages);
+    if (evolutionId === "voidDuguSword") {
+      this.addAchievement("voidDuguSword", messages);
+    }
+    if (this.state.evolvedWeapons.size >= 3) {
+      this.addAchievement("threeEvolutions", messages);
+    }
+    if (this.state.evolvedArtsSeen.size >= 5) {
+      this.addAchievement("fiveEvolutions", messages);
+    }
+    if (this.state.standaloneSkillsSeen.size > 0) {
+      this.addAchievement("mixedMastery", messages);
+    }
+    return messages;
+  }
+
+  recordStandaloneSkill(skillId: SkillId): string[] {
+    const messages: string[] = [];
+    this.state.standaloneSkillsSeen.add(skillId);
+    this.addAchievement("rareManual", messages);
+    if (this.state.evolvedWeapons.size > 0) {
+      this.addAchievement("mixedMastery", messages);
+    }
+    return messages;
+  }
+
   private difficultyFor(enemyId: EnemyId): number {
     const difficulty: Partial<Record<EnemyId, number>> = {
       minorBoss: 1,
@@ -97,5 +136,17 @@ export class AchievementSystem {
       finalBoss: 5
     };
     return difficulty[enemyId] ?? this.state.highestDifficulty;
+  }
+
+  private addAchievement(achievementId: string, messages: string[]): void {
+    if (this.state.unlockedAchievements.has(achievementId)) {
+      return;
+    }
+    this.state.unlockedAchievements.add(achievementId);
+    messages.push(t("achievementToast", { name: achievementName(achievementId) }));
+  }
+
+  private evolutionsForSkill(skillId: SkillId) {
+    return Object.values(EVOLUTION_CONFIGS).filter((evolution) => evolution.requiredSkillId === skillId);
   }
 }

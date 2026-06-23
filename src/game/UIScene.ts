@@ -8,6 +8,7 @@ import { UpgradePanel } from "../ui/UpgradePanel";
 import { buildPathName, enemyName, skillName, t, weaponName } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import { EVOLUTION_CONFIGS } from "../data/evolutions";
+import { trackedEvolutionProgress } from "../data/evolutionProgress";
 
 export class UIScene extends Phaser.Scene {
   private state!: GameState;
@@ -19,6 +20,7 @@ export class UIScene extends Phaser.Scene {
   private weaponText!: Phaser.GameObjects.Text;
   private skillText!: Phaser.GameObjects.Text;
   private innerForceText!: Phaser.GameObjects.Text;
+  private evolutionGuideText!: Phaser.GameObjects.Text;
   private buildPathText!: Phaser.GameObjects.Text;
   private bossText!: Phaser.GameObjects.Text;
   private bossBar!: Phaser.GameObjects.Container;
@@ -57,8 +59,12 @@ export class UIScene extends Phaser.Scene {
       .text(24, 280, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#84f7b2", lineSpacing: 8 })
       .setPadding(0, 4, 0, 4)
       .setScrollFactor(0);
+    this.evolutionGuideText = this.add
+      .text(24, 338, "", { fontFamily: UI_FONT, fontSize: "13px", color: "#b8f7ff", lineSpacing: 7 })
+      .setPadding(0, 4, 0, 4)
+      .setScrollFactor(0);
     this.buildPathText = this.add
-      .text(24, 350, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#ffe09a", lineSpacing: 8 })
+      .text(24, 440, "", { fontFamily: UI_FONT, fontSize: "13px", color: "#ffe09a", lineSpacing: 7 })
       .setPadding(0, 4, 0, 4)
       .setScrollFactor(0);
     this.bossText = this.add
@@ -99,6 +105,7 @@ export class UIScene extends Phaser.Scene {
     this.weaponText.setText(this.formatWeapons());
     this.skillText.setText(this.formatSkills());
     this.innerForceText.setText(this.formatInnerForce());
+    this.evolutionGuideText.setText(this.formatEvolutionGuide());
     this.buildPathText.setText(this.formatBuildPaths());
   }
 
@@ -158,6 +165,21 @@ export class UIScene extends Phaser.Scene {
       .filter(([, level]) => level > 0)
       .map(([pathId, level]) => t("buildLevel", { name: buildPathName(pathId), level }));
     return paths.length > 0 ? `${t("buildPaths")}\n${paths.join("\n")}` : `${t("buildPaths")}\n${t("none")}`;
+  }
+
+  private formatEvolutionGuide(): string {
+    const tracked = trackedEvolutionProgress(this.state, 3).filter((progress) => progress.progressScore > 0 || progress.canEvolve);
+    if (tracked.length === 0) {
+      return `${t("evolutionRoutes")}\n${t("none")}`;
+    }
+
+    const lines = tracked.map((progress) => {
+      const name = t(EVOLUTION_CONFIGS[progress.evolutionId].nameKey as Parameters<typeof t>[0]);
+      const total = progress.requiredWeaponLevel + progress.requiredSkillLevel;
+      const status = progress.canEvolve ? ` ${t("readyToEvolveShort")}` : "";
+      return `${name} ${progress.progressScore}/${total}${status}`;
+    });
+    return `${t("evolutionRoutes")}\n${lines.join("\n")}`;
   }
 
   private createPauseOverlay(): Phaser.GameObjects.Container {

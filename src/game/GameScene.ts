@@ -65,6 +65,8 @@ export class GameScene extends Phaser.Scene {
       buildPathLevels: new Map(),
       unlockedSkills: new Set(),
       unlockedAchievements: new Set(),
+      evolvedArtsSeen: new Set(),
+      standaloneSkillsSeen: new Set(),
       bossDefeats: new Map(),
       highestDifficulty: 1,
       devMode: {
@@ -112,6 +114,18 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.on("keydown-N", () => this.devAdvanceWave());
     this.events.on("upgrade-picked", (option: UpgradeOption) => {
       this.upgradeSystem.apply(option);
+      if (option.evolutionId) {
+        this.events.emit("evolution-learned", option.evolutionId);
+        this.showEvolutionLearned(option.title);
+        for (const message of this.achievementSystem.recordEvolution(option.evolutionId)) {
+          this.showScorePop(this.player.x, this.player.y - 94, message, "#ffe09a");
+        }
+      }
+      if (option.kind === "standaloneSkill" && option.skillId) {
+        for (const message of this.achievementSystem.recordStandaloneSkill(option.skillId)) {
+          this.showScorePop(this.player.x, this.player.y - 82, message, "#b8f7ff");
+        }
+      }
     });
 
     this.devText = this.add
@@ -171,7 +185,9 @@ export class GameScene extends Phaser.Scene {
       kills: this.state.kills,
       elapsedSec: this.state.elapsedSec,
       highestDifficulty: this.state.highestDifficulty,
-      achievements: [...this.state.unlockedAchievements]
+      achievements: [...this.state.unlockedAchievements],
+      evolvedArtsSeen: [...this.state.evolvedArtsSeen],
+      standaloneSkillsSeen: [...this.state.standaloneSkillsSeen]
     };
     this.scene.stop("UIScene");
     this.scene.start("GameOverScene", data);
@@ -256,5 +272,19 @@ export class GameScene extends Phaser.Scene {
       ease: "Sine.easeOut",
       onComplete: () => text.destroy()
     });
+  }
+
+  private showEvolutionLearned(title: string): void {
+    const ring = this.add.circle(this.player.x, this.player.y, 54, 0xffd36a, 0.22).setDepth(36);
+    this.tweens.add({
+      targets: ring,
+      alpha: 0,
+      scale: 2.7,
+      duration: 420,
+      ease: "Sine.easeOut",
+      onComplete: () => ring.destroy()
+    });
+    this.cameras.main.flash(180, 255, 220, 120, false);
+    this.showScorePop(this.player.x, this.player.y - 118, title, "#ffe09a");
   }
 }
