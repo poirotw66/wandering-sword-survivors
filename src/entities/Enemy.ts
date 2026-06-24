@@ -37,7 +37,7 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const eliteMultiplier = this.isElite ? eliteTraitFor(enemyId).hpMultiplier : 1;
     this.hp = Math.floor(this.config.hp * eliteMultiplier * difficulty.hp);
     this.maxHp = this.hp;
-    this.setTexture(this.textureFor(enemyId));
+    this.setTexture(this.textureFor(this.config));
     this.setPosition(x, y);
     this.setActive(true);
     this.setVisible(true);
@@ -112,17 +112,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     return t(eliteTraitFor(this.enemyId).labelKey);
   }
 
-  private textureFor(enemyId: EnemyId): string {
-    const textures: Record<EnemyId, string> = {
-      slime: "enemy-purple",
-      bat: "enemy-green",
-      golem: "enemy-red",
-      minorBoss: "boss-master",
-      midBoss: "boss-master",
-      greatBoss: "boss-master",
-      megaBoss: "boss-master",
-      finalBoss: "boss-master"
-    };
-    return textures[enemyId];
+  private textureFor(config: EnemyConfig): string {
+    if (this.scene.textures.exists(config.spriteKey)) {
+      return config.spriteKey;
+    }
+    return config.isBoss ? "boss-master" : "enemy-green";
   }
 }

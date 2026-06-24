@@ -12,8 +12,10 @@ import { formatBossUnlockDetail, formatEvolutionRecipeDetail } from "../src/data
 import { buildBossLegacySummary } from "../src/data/bossLegacy";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor } from "../src/data/bossSkills";
 import { eliteTraitFor } from "../src/data/eliteTraits";
+import { ENEMY_CONFIGS } from "../src/data/enemies";
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows, startStyleOptions } from "../src/data/metaChoices";
+import { SPAWN_WAVES } from "../src/data/waves";
 import {
   canPurchaseRenownUpgrade,
   metaBonusesFromShop,
@@ -525,6 +527,34 @@ describe("game regression rules", () => {
     expect(demonic.moveSpeedMultiplier).toBeGreaterThan(qingcheng.moveSpeedMultiplier);
     expect(songshan.hpMultiplier).toBeGreaterThan(qingcheng.hpMultiplier);
     expect(songshan.damageMultiplier).toBeGreaterThan(demonic.damageMultiplier);
+  });
+
+  it("defines ten ordinary wuxia enemies with configured sprites", () => {
+    const ordinaryEnemies = Object.values(ENEMY_CONFIGS).filter((enemy) => !enemy.isBoss);
+    const spriteKeys = new Set(ordinaryEnemies.map((enemy) => enemy.spriteKey));
+
+    expect(ordinaryEnemies).toHaveLength(10);
+    expect(spriteKeys.size).toBe(10);
+    expect(ordinaryEnemies.every((enemy) => enemy.spriteKey.startsWith("enemy-"))).toBe(true);
+  });
+
+  it("gives each boss tier a unique boss sprite key", () => {
+    const bosses = Object.values(ENEMY_CONFIGS).filter((enemy) => enemy.isBoss);
+    const spriteKeys = new Set(bosses.map((enemy) => enemy.spriteKey));
+
+    expect(bosses).toHaveLength(5);
+    expect(spriteKeys.size).toBe(5);
+    expect(bosses.every((enemy) => enemy.spriteKey.startsWith("boss-"))).toBe(true);
+    expect(spriteKeys.has("boss-master")).toBe(false);
+  });
+
+  it("spawns every ordinary enemy archetype during the run", () => {
+    const ordinaryEnemyIds = Object.values(ENEMY_CONFIGS)
+      .filter((enemy) => !enemy.isBoss)
+      .map((enemy) => enemy.id);
+    const waveEnemyIds = new Set(SPAWN_WAVES.map((wave) => wave.enemyId));
+
+    expect(ordinaryEnemyIds.every((enemyId) => waveEnemyIds.has(enemyId))).toBe(true);
   });
 
   it("reports potential ultimate arts when boss skills unlock", () => {

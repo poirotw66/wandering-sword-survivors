@@ -207,6 +207,14 @@ npm run build
 npm audit --audit-level=moderate
 ```
 
+## Visual Identity Update 009
+
+- Ordinary enemies now cover ten wuxia archetypes: Qingcheng Disciple, Demonic Cult Assassin, Songshan Expert, Huashan Sword Trainee, Hengshan Guard Nun, Taishan Acolyte, River Bandit, Medicine Valley Heretic, Sun Moon Cultist, and Imperial Brocade Guard.
+- Each ordinary enemy has a configured sprite key and appears in spawn waves.
+- Boss tiers now have unique sprite keys and generated fallback silhouettes.
+- Boss codex icons now use each Boss config sprite instead of a shared placeholder.
+- Remaining art backlog: model-generated PNGs, animation sheets, and higher-quality Boss artwork.
+
 目前驗證狀態：
 
 - `npm test`：PASS

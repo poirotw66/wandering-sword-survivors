@@ -149,7 +149,7 @@ export class CollectionScene extends Phaser.Scene {
     return this.addIconRows(
       t("bossCodexTitle"),
       BOSS_IDS.map((enemyId) => ({
-        iconKey: "boss-master",
+        iconKey: ENEMY_CONFIGS[enemyId].spriteKey,
         label: `${enemyName(enemyId)} · ${ENEMY_CONFIGS[enemyId].score}`,
         unlocked: record.bossDefeatsSeen.includes(enemyId),
         onSelect: () => this.showDetail(formatBossUnlockDetail(record, enemyId))

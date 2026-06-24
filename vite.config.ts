@@ -1,7 +1,7 @@
 import { defineConfig } from "vite";
 
 export default defineConfig({
-  root: process.cwd(),
+  root: __dirname,
   base: "./",
   build: {
     outDir: "dist",

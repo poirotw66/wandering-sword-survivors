@@ -89,9 +89,21 @@ export class BootScene extends Phaser.Scene {
     if (!this.textures.exists("enemy-green")) {
       this.createCircleTexture("enemy-green", 32, 0xffffff, 0x2b2036);
     }
+    this.createEnemyFigureTexture("enemy-huashan", 0x9ee7ff, 0xf7efd8, "sword");
+    this.createEnemyFigureTexture("enemy-hengshan", 0xb8f7ff, 0xffffff, "staff");
+    this.createEnemyFigureTexture("enemy-taishan", 0xd9b45f, 0x5f4a2a, "saber");
+    this.createEnemyFigureTexture("enemy-river-bandit", 0xb9824d, 0x84f7b2, "axe");
+    this.createEnemyFigureTexture("enemy-medicine-heretic", 0x84f7b2, 0xcaff6e, "bottle");
+    this.createEnemyFigureTexture("enemy-sun-moon", 0x2b2036, 0xff73d2, "crescent");
+    this.createEnemyFigureTexture("enemy-royal-guard", 0x27415f, 0xffd36a, "spear");
     if (!this.textures.exists("boss-master")) {
       this.createCircleTexture("boss-master", 64, 0xff4f64, 0x2b2036);
     }
+    this.createBossFigureTexture("boss-rival-captain", 0xff8f70, 0xffd36a, "banner");
+    this.createBossFigureTexture("boss-renegade-master", 0xff4f64, 0x2b2036, "sleeves");
+    this.createBossFigureTexture("boss-grand-elder", 0xf7efd8, 0xd9b45f, "elderSword");
+    this.createBossFigureTexture("boss-demonic-overlord", 0x2b2036, 0xb86bff, "aura");
+    this.createBossFigureTexture("boss-eastern-invincible", 0xff2f86, 0xf7efd8, "needleFan");
     if (!this.textures.exists("bolt")) {
       this.createCircleTexture("bolt", 14, 0x9ee7ff, 0xffffff);
     }
@@ -168,6 +180,147 @@ export class BootScene extends Phaser.Scene {
     graphics.fillCircle(size / 2, size / 2, size / 2 - 3);
     graphics.strokeCircle(size / 2, size / 2, size / 2 - 3);
     graphics.generateTexture(key, size, size);
+    graphics.destroy();
+  }
+
+  private createEnemyFigureTexture(
+    key: string,
+    robe: number,
+    accent: number,
+    weapon: "sword" | "staff" | "saber" | "axe" | "bottle" | "crescent" | "spear"
+  ): void {
+    if (this.textures.exists(key)) {
+      return;
+    }
+
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0x080912, 0);
+    graphics.fillRect(0, 0, 56, 56);
+    graphics.fillStyle(robe, 0.96);
+    graphics.lineStyle(3, 0x171522, 0.92);
+    graphics.fillCircle(28, 13, 8);
+    graphics.strokeCircle(28, 13, 8);
+    graphics.fillTriangle(18, 22, 38, 22, 44, 46);
+    graphics.fillTriangle(18, 22, 12, 46, 44, 46);
+    graphics.strokeTriangle(18, 22, 38, 22, 44, 46);
+    graphics.lineStyle(4, accent, 0.95);
+    graphics.lineBetween(20, 29, 36, 29);
+    graphics.lineStyle(3, accent, 1);
+
+    switch (weapon) {
+      case "sword":
+        graphics.lineBetween(37, 20, 52, 5);
+        graphics.lineStyle(1, 0xffffff, 0.9);
+        graphics.lineBetween(40, 18, 51, 7);
+        break;
+      case "staff":
+        graphics.lineBetween(11, 8, 45, 49);
+        graphics.fillStyle(accent, 0.9);
+        graphics.fillCircle(12, 8, 3);
+        break;
+      case "saber":
+        graphics.beginPath();
+        graphics.moveTo(38, 17);
+        graphics.lineTo(50, 26);
+        graphics.lineTo(40, 35);
+        graphics.strokePath();
+        break;
+      case "axe":
+        graphics.lineBetween(13, 17, 42, 45);
+        graphics.fillStyle(accent, 0.92);
+        graphics.fillTriangle(11, 15, 23, 17, 15, 27);
+        break;
+      case "bottle":
+        graphics.fillStyle(accent, 0.92);
+        graphics.fillRoundedRect(39, 26, 8, 14, 3);
+        graphics.fillRect(41, 21, 4, 7);
+        break;
+      case "crescent":
+        graphics.strokeCircle(41, 20, 9);
+        graphics.lineStyle(4, 0x080912, 1);
+        graphics.strokeCircle(45, 17, 9);
+        break;
+      case "spear":
+        graphics.lineBetween(42, 6, 42, 48);
+        graphics.fillStyle(accent, 0.96);
+        graphics.fillTriangle(42, 3, 37, 13, 47, 13);
+        break;
+    }
+
+    graphics.generateTexture(key, 56, 56);
+    graphics.destroy();
+  }
+
+  private createBossFigureTexture(
+    key: string,
+    robe: number,
+    accent: number,
+    style: "banner" | "sleeves" | "elderSword" | "aura" | "needleFan"
+  ): void {
+    if (this.textures.exists(key)) {
+      return;
+    }
+
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0x080912, 0);
+    graphics.fillRect(0, 0, 96, 96);
+    graphics.lineStyle(4, accent, 0.38);
+    graphics.strokeCircle(48, 52, 36);
+    graphics.fillStyle(robe, 0.98);
+    graphics.lineStyle(4, 0x171522, 0.94);
+    graphics.fillCircle(48, 22, 13);
+    graphics.strokeCircle(48, 22, 13);
+    graphics.fillTriangle(30, 40, 66, 40, 74, 82);
+    graphics.fillTriangle(30, 40, 22, 82, 74, 82);
+    graphics.strokeTriangle(30, 40, 66, 40, 74, 82);
+    graphics.lineStyle(5, accent, 0.96);
+    graphics.lineBetween(32, 52, 64, 52);
+
+    switch (style) {
+      case "banner":
+        graphics.lineBetween(68, 16, 68, 76);
+        graphics.fillStyle(accent, 0.85);
+        graphics.fillTriangle(70, 18, 88, 26, 70, 34);
+        graphics.lineStyle(4, 0xf7efd8, 0.9);
+        graphics.lineBetween(30, 34, 12, 52);
+        break;
+      case "sleeves":
+        graphics.lineStyle(9, accent, 0.9);
+        graphics.lineBetween(24, 42, 8, 62);
+        graphics.lineBetween(72, 42, 88, 62);
+        graphics.lineStyle(3, 0xffffff, 0.5);
+        graphics.lineBetween(18, 49, 10, 60);
+        break;
+      case "elderSword":
+        graphics.lineStyle(5, accent, 1);
+        graphics.lineBetween(23, 75, 78, 20);
+        graphics.lineStyle(2, 0xffffff, 0.86);
+        graphics.lineBetween(28, 70, 76, 22);
+        graphics.fillStyle(0xf7efd8, 0.95);
+        graphics.fillTriangle(43, 33, 53, 33, 48, 48);
+        break;
+      case "aura":
+        graphics.lineStyle(6, accent, 0.66);
+        graphics.strokeCircle(48, 52, 42);
+        graphics.lineStyle(3, 0xff73d2, 0.85);
+        graphics.beginPath();
+        graphics.moveTo(18, 74);
+        graphics.lineTo(29, 58);
+        graphics.lineTo(20, 46);
+        graphics.lineTo(36, 34);
+        graphics.strokePath();
+        break;
+      case "needleFan":
+        graphics.lineStyle(3, accent, 0.95);
+        for (let i = 0; i < 7; i += 1) {
+          graphics.lineBetween(51, 40, 70 + i * 3, 24 + i * 7);
+        }
+        graphics.fillStyle(0xf7efd8, 0.85);
+        graphics.fillCircle(51, 40, 4);
+        break;
+    }
+
+    graphics.generateTexture(key, 96, 96);
     graphics.destroy();
   }
 

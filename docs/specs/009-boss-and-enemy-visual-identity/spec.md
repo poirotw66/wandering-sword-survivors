@@ -1,10 +1,10 @@
 ---
 id: 009-boss-and-enemy-visual-identity
 title: Boss and Enemy Visual Identity
-status: approved
+status: done
 owner: openab
 created: 2026-06-23
-updated: 2026-06-23
+updated: 2026-06-24
 prd: prd-001-nightfall-survivors
 ---
 
@@ -19,7 +19,7 @@ This spec focuses on making enemies and Bosses visually readable as different ji
 ## 2. Goals
 
 - Give each Boss tier a distinct visual silhouette.
-- Make ordinary enemy factions easier to distinguish at a glance.
+- Expand ordinary enemy factions to ten wuxia archetypes and make them easier to distinguish at a glance.
 - Improve elite enemy readability without adding UI clutter.
 - Preserve current combat rules and Boss schedules.
 - Prepare a clear asset pipeline for generated or hand-authored wuxia sprites.
@@ -57,7 +57,8 @@ This spec focuses on making enemies and Bosses visually readable as different ji
     - Eastern Invincible.
   - Keep fallback to `boss-master.png` if a unique asset is missing.
 - Enemy faction polish:
-  - Keep three base enemy families.
+  - Expand from three base enemy families to ten ordinary enemy archetypes.
+  - Give each ordinary enemy a configured sprite key and faction-matching fallback sprite.
   - Add clearer tint/outline/scale differences.
   - Improve elite marker visuals.
 - Asset loading:
@@ -101,6 +102,13 @@ This spec focuses on making enemies and Bosses visually readable as different ji
 | Qingcheng Disciple | Green robe, light weapon, fast readable small unit. |
 | Demonic Cult Assassin | Purple/black, narrow silhouette, fast threat. |
 | Songshan Expert | Red/gold, broader silhouette, heavier threat. |
+| Huashan Sword Trainee | Blue/white sword disciple, balanced pressure unit. |
+| Hengshan Guard Nun | White/teal staff silhouette, calm but sturdy guard. |
+| Taishan Acolyte | Earth/gold heavy saber silhouette, slower armored threat. |
+| River Bandit | Brown/teal rough jianghu raider, faster swarm unit. |
+| Medicine Valley Heretic | Jade/acid bottle silhouette, strange poison-doctor flavor. |
+| Sun Moon Cultist | Black/pink crescent silhouette, aggressive cult unit. |
+| Imperial Brocade Guard | Navy/gold spear silhouette, late-game armored guard. |
 
 ### 5.3 Elite Marker
 
@@ -115,7 +123,8 @@ This spec focuses on making enemies and Bosses visually readable as different ji
 ### 6.1 Sprite Config
 
 - Add `spriteKey` to `EnemyConfig`.
-- Ordinary enemies must map to existing enemy assets.
+- Ordinary enemies must include ten configured non-Boss archetypes.
+- Ordinary enemies must map to unique or faction-correct sprite keys.
 - Bosses must map to unique Boss sprite keys.
 - If a texture is missing, the runtime should fall back to generated texture or `boss-master`.
 
@@ -150,6 +159,7 @@ This spec focuses on making enemies and Bosses visually readable as different ji
 
 - Add `spriteKey` to `EnemyConfig`.
 - Map every enemy and Boss to a sprite key.
+- Expand ordinary enemy configs and spawn waves to ten faction archetypes.
 - Add tests for sprite key coverage.
 
 ### Task 2: Boot Asset Loading

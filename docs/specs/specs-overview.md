@@ -10,4 +10,4 @@
 | `006-boss-combat-depth` | `prd-001-nightfall-survivors` | done | Implemented data-driven Boss skill profiles, clearer telegraphs, Boss bar technique status, final phase cue, and elite identity tests. |
 | `007-meta-choice-and-replay-loop` | `prd-001-nightfall-survivors` | done | Adds renown shop tiers, start-style choices, Boss-linked unlocks, and next-run recommendations. |
 | `008-renown-shop-and-meta-unlocks` | `prd-001-nightfall-survivors` | done | Implemented spendable renown, purchasable meta upgrades, save migration, and compact shop UX. |
-| `009-boss-and-enemy-visual-identity` | `prd-001-nightfall-survivors` | approved | Plans unique Boss sprite identity, enemy faction readability, elite markers, and asset fallbacks. |
+| `009-boss-and-enemy-visual-identity` | `prd-001-nightfall-survivors` | done | Implemented ten ordinary wuxia enemy archetypes, unique Boss sprite keys, fallback silhouettes, codex icons, and sprite mapping tests. |
