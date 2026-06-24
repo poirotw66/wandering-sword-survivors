@@ -35,7 +35,10 @@ export class GameScene extends Phaser.Scene {
   private pickupSystem!: PickupSystem;
   private upgradeSystem!: UpgradeSystem;
   private achievementSystem!: AchievementSystem;
+  private playerGroundFx?: Phaser.GameObjects.Graphics;
+  private playerShadow?: Phaser.GameObjects.Ellipse;
   private devText?: Phaser.GameObjects.Text;
+  private nextFootstepAt = 0;
   private ended = false;
 
   constructor() {
@@ -54,9 +57,12 @@ export class GameScene extends Phaser.Scene {
     this.events.removeAllListeners("upgrade-banish");
     this.physics.world.setBounds(-3000, -3000, 6000, 6000);
     this.cameras.main.setBackgroundColor("#111421");
+    this.cameras.main.setBounds(-3000, -3000, 6000, 6000);
+    this.cameras.main.roundPixels = true;
 
     this.createFloor();
     this.player = new Player(this, 0, 0);
+    this.createPlayerGroundingEffects();
     const difficulty = difficultyForLevel(data.difficultyLevel ?? 1);
     this.applyMetaBonuses(difficulty);
     this.cameras.main.startFollow(this.player, true, 0.14, 0.14);
@@ -173,7 +179,7 @@ export class GameScene extends Phaser.Scene {
     this.refreshDevText();
   }
 
-  update(_time: number, delta: number): void {
+  update(time: number, delta: number): void {
     if (this.ended || this.state.pausedForUpgrade) {
       return;
     }
@@ -184,6 +190,7 @@ export class GameScene extends Phaser.Scene {
 
     this.state.elapsedSec += (delta / 1000) * this.state.devMode.timeScale;
     this.playerSystem.update(delta);
+    this.updatePlayerGroundingEffects(time);
     this.spawnSystem.update(this.state.elapsedSec);
     this.enemySystem.update();
     this.weaponSystem.update();
@@ -194,15 +201,97 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createFloor(): void {
+    this.add
+      .image(0, 0, "wuxia-jianghu-map")
+      .setDisplaySize(6000, 6000)
+      .setDepth(-20);
+
     const graphics = this.add.graphics();
-    graphics.lineStyle(1, 0x24283b, 0.45);
-    for (let x = -3000; x <= 3000; x += 120) {
+    graphics.fillStyle(0x07101a, 0.18);
+    graphics.fillRect(-3000, -3000, 6000, 6000);
+
+    graphics.lineStyle(1, 0xd8e2eb, 0.08);
+    for (let x = -3000; x <= 3000; x += 240) {
       graphics.lineBetween(x, -3000, x, 3000);
     }
-    for (let y = -3000; y <= 3000; y += 120) {
+    for (let y = -3000; y <= 3000; y += 240) {
       graphics.lineBetween(-3000, y, 3000, y);
     }
+
+    this.drawMistBand(graphics, -2780, -930, 1320, 155);
+    this.drawMistBand(graphics, -1020, -1210, 1160, 130);
+    this.drawMistBand(graphics, 760, -900, 1420, 160);
+    this.drawMistBand(graphics, -2440, 920, 1520, 150);
+    this.drawMistBand(graphics, 500, 1120, 1660, 170);
+
+    graphics.fillStyle(0xe4cf8f, 0.26);
+    graphics.fillCircle(-145, 65, 7);
+    graphics.lineStyle(2, 0xe4cf8f, 0.28);
+    graphics.strokeCircle(-145, 65, 22);
+    graphics.strokeCircle(-145, 65, 36);
     graphics.setDepth(-10);
+  }
+
+  private drawMistBand(graphics: Phaser.GameObjects.Graphics, x: number, y: number, width: number, height: number): void {
+    graphics.fillStyle(0xd8e2eb, 0.08);
+    graphics.fillEllipse(x, y, width, height);
+    graphics.fillStyle(0xb8f7ff, 0.05);
+    graphics.fillEllipse(x + width * 0.18, y + 24, width * 0.62, height * 0.54);
+  }
+
+  private createPlayerGroundingEffects(): void {
+    this.playerGroundFx = this.add.graphics().setDepth(-8);
+    this.playerShadow = this.add
+      .ellipse(this.player.x, this.player.y + 18, 48, 18, 0x02060a, 0.48)
+      .setDepth(19);
+  }
+
+  private updatePlayerGroundingEffects(time: number): void {
+    const body = this.player.body as Phaser.Physics.Arcade.Body;
+    const speed = body.velocity.length();
+    const stride = Phaser.Math.Clamp(speed / this.player.stats.moveSpeed, 0, 1);
+
+    this.playerShadow
+      ?.setPosition(this.player.x, this.player.y + 18)
+      .setScale(1 + stride * 0.18, 1 + stride * 0.08)
+      .setAlpha(0.42 + stride * 0.12);
+
+    if (this.playerGroundFx) {
+      this.playerGroundFx.clear();
+      this.playerGroundFx.fillStyle(0xd8e2eb, 0.045);
+      this.playerGroundFx.fillCircle(this.player.x, this.player.y + 8, 120);
+      this.playerGroundFx.fillStyle(0x8fd3dc, 0.035);
+      this.playerGroundFx.fillCircle(this.player.x, this.player.y + 8, 76);
+      this.playerGroundFx.lineStyle(2, 0xe4cf8f, 0.2);
+      this.playerGroundFx.strokeCircle(this.player.x, this.player.y + 8, 42 + stride * 8);
+    }
+
+    if (speed > 55 && time >= this.nextFootstepAt) {
+      this.nextFootstepAt = time + 105;
+      this.spawnFootstepDust(body.velocity);
+    }
+  }
+
+  private spawnFootstepDust(velocity: Phaser.Math.Vector2): void {
+    const direction = velocity.clone().normalize();
+    const x = this.player.x - direction.x * 18 + Phaser.Math.Between(-7, 7);
+    const y = this.player.y + 20 - direction.y * 8 + Phaser.Math.Between(-4, 4);
+    const dust = this.add
+      .ellipse(x, y, Phaser.Math.Between(18, 28), Phaser.Math.Between(6, 10), 0xd8c79e, 0.22)
+      .setDepth(18)
+      .setRotation(Phaser.Math.FloatBetween(-0.45, 0.45));
+
+    this.tweens.add({
+      targets: dust,
+      alpha: 0,
+      scaleX: 1.8,
+      scaleY: 1.45,
+      x: x - direction.x * 12,
+      y: y - direction.y * 8,
+      duration: 360,
+      ease: "Sine.easeOut",
+      onComplete: () => dust.destroy()
+    });
   }
 
   private finish(won: boolean): void {

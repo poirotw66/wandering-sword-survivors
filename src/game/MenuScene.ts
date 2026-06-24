@@ -39,6 +39,17 @@ export class MenuScene extends Phaser.Scene {
 
   create(): void {
     const { width, height } = this.scale;
+    const panelWidth = Math.min(760, width - 72);
+    const titleY = Math.max(76, Math.min(128, height * 0.13));
+    const subtitleY = titleY + 58;
+    const pitchY = subtitleY + 48;
+    const panelY = pitchY + 118;
+    const difficultyHintY = panelY + 94;
+    const difficultyY = difficultyHintY + 34;
+    const startStyleLabelY = difficultyY + 68;
+    const startStyleY = startStyleLabelY + 40;
+    const actionsY = Math.min(height - 104, startStyleY + 78);
+    const controlsY = Math.min(height - 26, actionsY + 66);
     const record = AchievementSystem.readRecord();
     const bonuses = metaBonusesFromShop(record);
     const titleProgress = titleProgressFor(record.totalRenown);
@@ -52,18 +63,18 @@ export class MenuScene extends Phaser.Scene {
       window.localStorage?.getItem("sword-survivors-start-style")
     );
     this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17);
-    this.add.image(width / 2, height * 0.58, "player").setScale(0.34).setAlpha(0.78);
-    this.add.image(width / 2 + 86, height * 0.56, "strike").setScale(0.7).setAlpha(0.42).setAngle(22);
+    this.add.image(width / 2, pitchY + 42, "player").setScale(0.24).setAlpha(0.48);
+    this.add.image(width / 2 + 78, pitchY + 36, "strike").setScale(0.52).setAlpha(0.28).setAngle(22);
     this.add
-      .text(width / 2, height * 0.31, t("title"), {
+      .text(width / 2, titleY, t("title"), {
         fontFamily: TITLE_FONT,
-        fontSize: "46px",
+        fontSize: "42px",
         color: "#f7efd8"
       })
       .setPadding(0, 10, 0, 10)
       .setOrigin(0.5);
     this.add
-      .text(width / 2, height * 0.42, t("menuSubtitle"), {
+      .text(width / 2, subtitleY, t("menuSubtitle"), {
         fontFamily: UI_FONT,
         fontSize: "20px",
         color: "#aac7d8"
@@ -71,7 +82,7 @@ export class MenuScene extends Phaser.Scene {
       .setPadding(0, 6, 0, 6)
       .setOrigin(0.5);
     this.add
-      .text(width / 2, height * 0.56, t("menuPitch"), {
+      .text(width / 2, pitchY, t("menuPitch"), {
         fontFamily: UI_FONT,
         fontSize: "18px",
         color: "#d8e2eb",
@@ -82,13 +93,19 @@ export class MenuScene extends Phaser.Scene {
       .setPadding(0, 6, 0, 6)
       .setOrigin(0.5);
 
-    this.createMetaPanel(record, bonuses, titleProgress, width, height);
+    this.createMetaPanel(record, bonuses, titleProgress, width, panelY, panelWidth);
 
-    this.createDifficultyButtons(record.totalRenown, unlocked, width, height);
-    this.createStartStyleButtons(record, width, height);
+    this.createDifficultyButtons(record.totalRenown, unlocked, width, difficultyY, difficultyHintY);
+    this.createStartStyleButtons(record, width, startStyleY, startStyleLabelY);
 
+    const actionGap = Math.min(190, Math.max(148, width * 0.18));
+    const stackActions = width < 620 || actionsY + 104 > height - 34;
+    const actionY = stackActions ? Math.min(actionsY, height - 142) : actionsY;
+    const startX = stackActions ? width / 2 : width / 2 - actionGap / 2;
+    const collectionX = stackActions ? width / 2 : width / 2 + actionGap / 2;
+    const collectionY = stackActions ? actionY + 54 : actionY;
     const start = this.add
-      .text(width / 2, height * 0.845, t("startRun"), {
+      .text(startX, actionY, t("startRun"), {
         fontFamily: UI_FONT,
         fontSize: "24px",
         color: "#10121f",
@@ -99,7 +116,7 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     const collection = this.add
-      .text(width / 2, height * 0.91, t("collectionButton"), {
+      .text(collectionX, collectionY, t("collectionButton"), {
         fontFamily: UI_FONT,
         fontSize: "20px",
         color: "#f7c66b",
@@ -121,9 +138,9 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     this.add
-      .text(width / 2, height * 0.968, t("controls"), {
+      .text(width / 2, stackActions ? height - 22 : controlsY, t("controls"), {
         fontFamily: UI_FONT,
-        fontSize: "16px",
+        fontSize: "14px",
         color: "#aac7d8",
         align: "center",
         lineSpacing: 6
@@ -140,8 +157,15 @@ export class MenuScene extends Phaser.Scene {
     this.input.keyboard?.once("keydown-SPACE", () => this.startRun());
   }
 
-  private createDifficultyButtons(totalRenown: number, unlocked: number[], width: number, height: number): void {
-    const startX = width / 2 - 176;
+  private createDifficultyButtons(
+    totalRenown: number,
+    unlocked: number[],
+    width: number,
+    buttonY: number,
+    hintY: number
+  ): void {
+    const spacing = Math.min(92, Math.max(76, (width - 96) / 5));
+    const startX = width / 2 - spacing * 2;
     const record = AchievementSystem.readRecord();
     difficultyDisplays(record).forEach((difficulty, index) => {
       const isUnlocked = unlocked.includes(difficulty.level);
@@ -155,7 +179,7 @@ export class MenuScene extends Phaser.Scene {
           })
         : t("difficultyLocked", { level: difficulty.level, renown: difficulty.renownRequired });
       const button = this.add
-        .text(startX + index * 88, height * 0.715, label, {
+        .text(startX + index * spacing, buttonY, label, {
           fontFamily: UI_FONT,
           fontSize: "12px",
           color: isUnlocked ? (selected ? "#10121f" : "#f7c66b") : "#6f7d91",
@@ -176,10 +200,12 @@ export class MenuScene extends Phaser.Scene {
 
     if (totalRenown < DIFFICULTY_CONFIGS[DIFFICULTY_CONFIGS.length - 1].renownRequired) {
       this.add
-        .text(width / 2, height * 0.685, t("difficultyHint"), {
+        .text(width / 2, hintY, t("difficultyHint"), {
           fontFamily: UI_FONT,
           fontSize: "13px",
-          color: "#aac7d8"
+          color: "#aac7d8",
+          align: "center",
+          wordWrap: { width: Math.min(620, width - 72) }
         })
         .setOrigin(0.5);
     }
@@ -190,7 +216,8 @@ export class MenuScene extends Phaser.Scene {
     bonuses: ReturnType<typeof metaBonusesFromShop>,
     titleProgress: ReturnType<typeof titleProgressFor>,
     width: number,
-    height: number
+    panelY: number,
+    panelWidth: number
   ): void {
     const nextText =
       titleProgress.isMaxTitle || !titleProgress.nextTitleKey || titleProgress.nextRenownRequired === undefined
@@ -199,13 +226,11 @@ export class MenuScene extends Phaser.Scene {
             title: t(titleProgress.nextTitleKey),
             renown: titleProgress.nextRenownRequired
           });
-    const panelWidth = Math.min(720, width - 72);
-    const panelY = height * 0.625;
-    this.add.rectangle(width / 2, panelY, panelWidth, 146, 0x111421, 0.78).setStrokeStyle(1, 0x5f4a2a, 0.85);
+    this.add.rectangle(width / 2, panelY, panelWidth, 156, 0x111421, 0.78).setStrokeStyle(1, 0x5f4a2a, 0.85);
     this.add
       .text(
         width / 2,
-        panelY - 66,
+        panelY - 72,
         t("metaProgressionLine", {
           title: t(bonuses.titleKey),
           renown: record.totalRenown,
@@ -223,7 +248,7 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(
         width / 2,
-        panelY - 34,
+        panelY - 40,
         t("metaBonusLine", {
           title: t(bonuses.titleKey),
           hp: bonuses.maxHp,
@@ -241,7 +266,7 @@ export class MenuScene extends Phaser.Scene {
       )
       .setOrigin(0.5, 0);
     this.add
-      .text(width / 2, panelY - 8, renownShopBalanceLine(record), {
+      .text(width / 2, panelY - 14, renownShopBalanceLine(record), {
         fontFamily: UI_FONT,
         fontSize: "12px",
         color: "#ffe09a",
@@ -249,9 +274,9 @@ export class MenuScene extends Phaser.Scene {
         wordWrap: { width: panelWidth - 32 }
       })
       .setOrigin(0.5, 0);
-    this.createRenownShopRows(record, width, panelY, panelWidth);
+    this.createRenownShopRows(record, width, panelY + 4, panelWidth);
     this.add
-      .text(width / 2, panelY + 54, formatNextGoalLine(nextRunGoal(record)), {
+      .text(width / 2, panelY + 60, formatNextGoalLine(nextRunGoal(record)), {
         fontFamily: UI_FONT,
         fontSize: "12px",
         color: "#ffe09a",
@@ -308,21 +333,27 @@ export class MenuScene extends Phaser.Scene {
     this.time.delayedCall(160, () => this.scene.restart());
   }
 
-  private createStartStyleButtons(record: ReturnType<typeof AchievementSystem.readRecord>, width: number, height: number): void {
+  private createStartStyleButtons(
+    record: ReturnType<typeof AchievementSystem.readRecord>,
+    width: number,
+    buttonY: number,
+    labelY: number
+  ): void {
     this.add
-      .text(width / 2, height * 0.758, startStyleLabel(), {
+      .text(width / 2, labelY, startStyleLabel(), {
         fontFamily: UI_FONT,
         fontSize: "13px",
         color: "#aac7d8"
       })
       .setOrigin(0.5);
 
-    const startX = width / 2 - 210;
+    const spacing = Math.min(140, Math.max(116, (width - 112) / 4));
+    const startX = width / 2 - spacing * 1.5;
     startStyleOptions(record).forEach((option, index) => {
       const selected = this.selectedStartStyle === option.id;
       const label = formatStartStyleButton(option);
       const button = this.add
-        .text(startX + index * 140, height * 0.792, label, {
+        .text(startX + index * spacing, buttonY, label, {
           fontFamily: UI_FONT,
           fontSize: "11px",
           color: option.unlocked ? (selected ? "#10121f" : "#f7c66b") : "#6f7d91",

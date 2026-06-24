@@ -7,6 +7,7 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     const basePath = "assets/sprites/wuxia";
+    this.load.image("wuxia-jianghu-map", "assets/maps/wuxia-jianghu-map.png");
     this.loadGeneratedUpgradeIcons();
     this.load.image("player", `${basePath}/hero-linghu.png`);
     this.load.image("enemy-purple", `${basePath}/enemy-purple.png`);
