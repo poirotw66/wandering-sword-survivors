@@ -28,6 +28,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("blade", `${basePath}/orbit-swords.png`);
     this.load.image("palm-wave", `${basePath}/palm-wave.png`);
     this.load.image("strike", `${basePath}/sword-flash.png`);
+    this.load.image("star-vortex", `${basePath}/star-vortex.png`);
     this.load.image("gem", `${basePath}/jade-gem.png`);
     this.load.image("heart", `${basePath}/wine-gourd.png`);
   }
@@ -62,6 +63,11 @@ export class BootScene extends Phaser.Scene {
   private loadGeneratedUpgradeIcons(): void {
     const iconPath = "assets/icons/wuxia";
     const iconKeys = [
+      "icon-damage",
+      "icon-cooldown",
+      "icon-speed",
+      "icon-pickup",
+      "icon-heal",
       "icon-weapon-bolt",
       "icon-weapon-blade",
       "icon-weapon-palm-wave",
@@ -144,7 +150,8 @@ export class BootScene extends Phaser.Scene {
       "palm-wave",
       "strike",
       "gem",
-      "heart"
+      "heart",
+      "star-vortex"
     ];
 
     for (const key of smoothTextureKeys) {

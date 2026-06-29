@@ -6,9 +6,10 @@ AI image generation prompts for missing game assets. Style reference: `public/as
 
 | Category | Have | Missing | Output path |
 | --- | --- | --- | --- |
-| Minion sprites | 3 (`enemy-green`, `enemy-purple`, `enemy-red`) | 13 | `public/assets/sprites/wuxia/{spriteKey}.png` |
-| Boss sprites | 1 (`boss-master` fallback) | 5 | `public/assets/sprites/wuxia/{spriteKey}.png` |
-| Upgrade icons | 37 | 1 | `public/assets/icons/wuxia/icon-marrow-cleansing.png` |
+| Minion sprites | 16 | 0 | `public/assets/sprites/wuxia/{spriteKey}.png` |
+| Boss sprites | 5 unique + fallback | 0 | `public/assets/sprites/wuxia/{spriteKey}.png` |
+| Upgrade icons | 37 weapon/skill/evolution | 5 stat icons | `public/assets/icons/wuxia/icon-{damage,cooldown,speed,pickup,heal}.png` |
+| Combat VFX | sword-qi, palm-wave, etc. | 1 | `public/assets/sprites/wuxia/star-vortex.png` |
 
 `atlas-transparent.png` already contains some characters; cut and wire those before regenerating overlapping designs.
 
@@ -263,6 +264,75 @@ These three PNGs already exist. Regenerate only if you want a unified batch styl
 
 ---
 
+## Stat Upgrade Icons (5 missing)
+
+Used in level-up cards for generic stat boosts (`src/data/upgrades.ts`). Match `icon-weapon-bolt.png` frame style.
+
+### Shared Style Prefix (stat icons)
+
+Same as icons section above. Each icon centers a distinct symbolic object inside the gold frame.
+
+| File | Game key | Name (zh-TW) | Palette accent |
+| --- | --- | --- | --- |
+| `icon-damage.png` | `icon-damage` | 傷害提升 | gold `#f7c66b`, crimson |
+| `icon-cooldown.png` | `icon-cooldown` | 冷卻縮短 | cyan `#8ff4ff`, ice blue |
+| `icon-speed.png` | `icon-speed` | 移動加速 | mint `#92f5bd`, jade green |
+| `icon-pickup.png` | `icon-pickup` | 拾取範圍 | teal `#84f7b2`, jade gem |
+| `icon-heal.png` | `icon-heal` | 氣血回復 | rose `#ff8fa3`, warm pink |
+
+### 1. Damage Boost — `icon-damage.png`
+
+```text
+2D mobile RPG skill icon, square format, ornate antique gold decorative frame with corner filigree, dark navy background inside frame, centered symbolic object, glowing magical aura, high detail digital painting, no text, no watermark, wuxia cultivation manual icon style. A glowing jian sword pointing upward with crimson qi flame burst and golden martial energy sparks, symbol of increased attack power, palette: gold #f7c66b and deep crimson
+```
+
+### 2. Cooldown Reduction — `icon-cooldown.png`
+
+```text
+2D mobile RPG skill icon, square format, ornate antique gold decorative frame with corner filigree, dark navy background inside frame, centered symbolic object, glowing magical aura, high detail digital painting, no text, no watermark, wuxia cultivation manual icon style. A mystical hourglass merged with swirling cyan inner-force spiral, frozen time droplets, symbol of faster technique recovery, palette: cyan #8ff4ff and deep navy
+```
+
+### 3. Movement Speed — `icon-speed.png`
+
+```text
+2D mobile RPG skill icon, square format, ornate antique gold decorative frame with corner filigree, dark navy background inside frame, centered symbolic object, glowing magical aura, high detail digital painting, no text, no watermark, wuxia cultivation manual icon style. Three glowing green footprint trails with wind qi streaks and light body technique motion lines, symbol of qinggong footwork speed, palette: mint #92f5bd and jade green
+```
+
+### 4. Pickup Range — `icon-pickup.png`
+
+```text
+2D mobile RPG skill icon, square format, ornate antique gold decorative frame with corner filigree, dark navy background inside frame, centered symbolic object, glowing magical aura, high detail digital painting, no text, no watermark, wuxia cultivation manual icon style. A luminous jade cultivation gem with magnetic teal qi rings pulling small light orbs inward, symbol of expanded pickup radius, palette: teal #84f7b2 and emerald
+```
+
+### 5. Heal — `icon-heal.png`
+
+```text
+2D mobile RPG skill icon, square format, ornate antique gold decorative frame with corner filigree, dark navy background inside frame, centered symbolic object, glowing magical aura, high detail digital painting, no text, no watermark, wuxia cultivation manual icon style. A small wine gourd pouring warm pink healing qi mist with soft heart-shaped inner force glow, symbol of HP recovery, palette: rose #ff8fa3 and warm amber
+```
+
+---
+
+## Combat VFX — Star Absorption Vortex
+
+### `star-vortex.png`
+
+- **Game texture key:** `star-vortex`
+- **Weapon:** `starVortex` (吸星漩勁)
+- **Size:** 192×192 px (circular spell field centered on player)
+- **Output:** `public/assets/sprites/wuxia/star-vortex.png`
+
+```text
+2D game VFX sprite, top-down circular spell effect, swirling purple and cyan cosmic energy vortex spiral, star absorption inner force martial arts field, glowing particle trails along spiral arms, bright core at center fading outward, no character, no UI frame, transparent background, no text, no watermark, vibrant palette #b86bff violet and #8ff4ff cyan, mobile ARPG spell aura, readable at small size, symmetrical spiral
+```
+
+## Shared Negative Prompt (VFX)
+
+```text
+realistic photo, 3D render, character, human figure, text, logo, watermark, square frame, UI border, background scenery, rectangular crop, low resolution, blurry
+```
+
+---
+
 ## Production Workflow
 
 1. Generate one test asset first (`enemy-huashan.png`) and compare against `enemy-green.png`.
@@ -277,6 +347,5 @@ These three PNGs already exist. Regenerate only if you want a unified batch styl
 
 | Priority | Category | Count |
 | --- | --- | --- |
-| P0 | Minion sprites | 13 |
-| P1 | Boss sprites | 5 |
-| P2 | Upgrade icon | 1 |
+| P0 | Stat upgrade icons | 5 |
+| P1 | Star vortex VFX | 1 |

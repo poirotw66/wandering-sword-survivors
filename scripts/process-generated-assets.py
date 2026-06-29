@@ -38,6 +38,15 @@ BOSS_FILES = [
 
 ICON_FILES = [
     "icon-marrow-cleansing.png",
+    "icon-damage.png",
+    "icon-cooldown.png",
+    "icon-speed.png",
+    "icon-pickup.png",
+    "icon-heal.png",
+]
+
+VFX_FILES = [
+    "star-vortex.png",
 ]
 
 
@@ -89,6 +98,8 @@ def main() -> None:
         process_file(filename, SPRITE_DIR / filename, 768)
     for filename in ICON_FILES:
         process_file(filename, ICON_DIR / filename, 512)
+    for filename in VFX_FILES:
+        process_file(filename, SPRITE_DIR / filename, 192)
     print("done")
 
 
