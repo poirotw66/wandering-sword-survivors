@@ -16,7 +16,7 @@ import { ENEMY_CONFIGS } from "../src/data/enemies";
 import { archetypeConfigFor, ordinaryEnemyBehaviorMap } from "../src/data/minionBehaviors";
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows, startStyleOptions } from "../src/data/metaChoices";
-import { SPAWN_WAVES } from "../src/data/waves";
+import { SPAWN_DENSITY, SPAWN_WAVES } from "../src/data/waves";
 import {
   canPurchaseRenownUpgrade,
   metaBonusesFromShop,
@@ -641,6 +641,12 @@ describe("game regression rules", () => {
     expect(eliteTank.actionMs).toBeGreaterThan(normalTank.actionMs);
     expect(eliteRanger.cooldownMs).toBeLessThan(normalRanger.cooldownMs);
     expect(archetypeConfigFor("chaser", true).speedMultiplier).toBe(1);
+  });
+
+  it("uses elevated spawn density tuning for busier on-screen waves", () => {
+    expect(SPAWN_DENSITY.intervalScale).toBeLessThan(1);
+    expect(SPAWN_DENSITY.amountBonus).toBeGreaterThanOrEqual(1);
+    expect(SPAWN_DENSITY.timeAmountScaleCap).toBeGreaterThan(6);
   });
 
   it("reports potential ultimate arts when boss skills unlock", () => {

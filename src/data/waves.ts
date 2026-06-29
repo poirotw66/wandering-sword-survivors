@@ -15,6 +15,13 @@ export type BossScheduleEntry = {
 
 export const GAME_DURATION_SEC = 1800;
 
+export const SPAWN_DENSITY = {
+  intervalScale: 0.84,
+  amountBonus: 1,
+  timeAmountScaleStepSec: 300,
+  timeAmountScaleCap: 8
+};
+
 export const BOSS_SCHEDULE: BossScheduleEntry[] = [
   { markSec: 60, enemyId: "minorBoss" },
   { markSec: 120, enemyId: "minorBoss" },

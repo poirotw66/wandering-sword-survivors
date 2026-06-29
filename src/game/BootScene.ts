@@ -7,7 +7,16 @@ export class BootScene extends Phaser.Scene {
 
   preload(): void {
     const basePath = "assets/sprites/wuxia";
+    const audioPath = "assets/audio/wuxia";
     this.load.image("wuxia-jianghu-map", "assets/maps/wuxia-jianghu-map.png");
+    this.load.audio("sfx-hit", `${audioPath}/sfx-hit.wav`);
+    this.load.audio("sfx-sword", `${audioPath}/sfx-sword.wav`);
+    this.load.audio("sfx-level-up", `${audioPath}/sfx-level-up.wav`);
+    this.load.audio("sfx-pickup", `${audioPath}/sfx-pickup.wav`);
+    this.load.audio("sfx-heal", `${audioPath}/sfx-heal.wav`);
+    this.load.audio("sfx-hurt", `${audioPath}/sfx-hurt.wav`);
+    this.load.audio("sfx-boss", `${audioPath}/sfx-boss.wav`);
+    this.load.audio("sfx-evolution", `${audioPath}/sfx-evolution.wav`);
     this.loadGeneratedUpgradeIcons();
     this.loadEnemyAndBossSprites(basePath);
     this.load.image("player", `${basePath}/hero-linghu.png`);

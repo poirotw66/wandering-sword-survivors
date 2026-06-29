@@ -31,11 +31,15 @@ This spec focuses on making enemies and Bosses visually readable as different ji
 - `enemy-green.png`: Qingcheng-style disciple.
 - `enemy-purple.png`: Demonic cult assassin.
 - `enemy-red.png`: Songshan-style expert.
+- Thirteen additional faction sprites under `public/assets/sprites/wuxia/` (Huashan, Hengshan, Taishan, river bandits, medicine heretics, Sun-Moon cult, royal guards, Wudang, Shaolin, Emei, beggars, northern riders, poison cult).
+- **16 ordinary enemy archetypes** in `enemies.ts`, each with `spriteKey`, `behaviorArchetype`, and faction-matching fallback silhouette in `BootScene`.
 - Enemies also differ through HP, movement speed, radius, tint, score, and elite traits.
+- Elite enemies: faction tint, 1.22x scale, pulsing aura ring, and label text.
 
 ### 3.2 Existing Boss Assets
 
-- All Boss tiers currently use `boss-master.png`.
+- Five unique Boss sprites: `boss-rival-captain`, `boss-renegade-master`, `boss-grand-elder`, `boss-demonic-overlord`, `boss-eastern-invincible`.
+- Fallback to `boss-master.png` if a unique asset is missing.
 - Boss identity differs through:
   - size/radius,
   - tint,
@@ -57,7 +61,7 @@ This spec focuses on making enemies and Bosses visually readable as different ji
     - Eastern Invincible.
   - Keep fallback to `boss-master.png` if a unique asset is missing.
 - Enemy faction polish:
-  - Expand from three base enemy families to ten ordinary enemy archetypes.
+  - Expand from three base enemy families to **sixteen** ordinary enemy archetypes.
   - Give each ordinary enemy a configured sprite key and faction-matching fallback sprite.
   - Add clearer tint/outline/scale differences.
   - Improve elite marker visuals.

@@ -11,6 +11,8 @@ npm install
 npm run dev
 ```
 
+Dev playtest mode: open `http://127.0.0.1:5173/?dev=1` for `F1` / `L` / `B` / `N` shortcuts.
+
 ## Build
 
 ```bash
@@ -33,12 +35,37 @@ npm run serve
 ## MVP Features
 
 - Phaser 3 + Vite + TypeScript setup
-- Player movement and camera follow
-- Enemy waves with Slime, Bat, Golem, and a 10-minute boss
+- Player movement and camera follow with `RESIZE` scaling and native-resolution map tiles
+- 16 ordinary enemy factions (Qingcheng, Demonic Cult, Songshan, Huashan, Hengshan, Taishan, river bandits, medicine heretics, Sun-Moon cult, royal guards, Wudang, Shaolin, Emei, beggars, northern riders, poison cult) plus 5 Boss tiers on a 30-minute timeline
+- Minion behavior archetypes: chaser, dasher, tank, ranger
+- Elite enemies: faction tint, 1.22x scale, pulsing aura ring, and label
 - Automatic martial forms: Sword Qi, Circling Sword Guard, Breaking Palm Wave, Nine Swords Flash
-- Martial skill upgrades: Dugu Nine Swords, Star Absorption Inner Force, Huashan Cloud Steps, Wine-Tempered Sword Heart
-- Generated wuxia sprite art for Linghu Chong, enemies, boss, martial effects, EXP gem, and wine gourd pickup
+- Martial skill upgrades and 10 evolution forms
+- Generated wuxia sprite art for hero, enemies, bosses, effects, icons, and map tiles
+- Procedural wuxia SFX (`public/assets/audio/wuxia/`) with Web Audio synth fallback
 - Experience gems, level-up choices, HP, score, kills, timer, best score
 - Pause overlay, weapon-level HUD, damage shake, and kill score popups
-- Health pickups, rising wave pressure, and a visible boss health bar
-- GitHub Pages workflow at `.github/workflows/deploy.yml`
+- Health pickups, rising wave pressure, and visible boss health bars
+- Meta progression, renown shop, achievements, and collection screen
+
+## GitHub Pages
+
+Workflow: `.github/workflows/deploy.yml` (build on push to `main`, deploy `dist/`).
+
+If the site returns 404, enable Pages in the repo settings:
+
+1. **Settings → Pages → Build and deployment**
+2. Source: **GitHub Actions** (not legacy branch deploy)
+3. Push to `main` or re-run the **Deploy to GitHub Pages** workflow
+
+Regenerate SFX after editing `scripts/generate-sfx.py`:
+
+```bash
+python3 scripts/generate-sfx.py
+```
+
+## Docs
+
+- `docs/game-content.md` — full content reference (Traditional Chinese)
+- `docs/asset-image-prompts.md` — image generation prompts for sprites
+- `docs/specs/` — feature specs and verification reports

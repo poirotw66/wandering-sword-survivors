@@ -15,6 +15,9 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private hpBarBg?: Phaser.GameObjects.Rectangle;
   private hpBarFill?: Phaser.GameObjects.Rectangle;
   private eliteMarker?: Phaser.GameObjects.Text;
+  private eliteAuraOuter?: Phaser.GameObjects.Arc;
+  private eliteAuraInner?: Phaser.GameObjects.Arc;
+  private elitePulseTween?: Phaser.Tweens.Tween;
 
   constructor(scene: Phaser.Scene, x: number, y: number, enemyId: EnemyId) {
     super(scene, x, y, "enemy");
@@ -44,6 +47,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.clearTint();
     if (this.isElite) {
       this.applyEliteTrait(enemyId);
+    } else {
+      this.stopElitePulse();
     }
     const scale = this.config.isBoss ? this.config.radius / 150 : this.config.radius / 90;
     this.setScale(this.isElite ? scale * 1.22 : scale);
@@ -66,9 +71,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.hpBarBg?.setVisible(false);
     this.hpBarFill?.setVisible(false);
     this.eliteMarker?.setVisible(false);
+    this.eliteAuraOuter?.setVisible(false);
+    this.eliteAuraInner?.setVisible(false);
+    this.stopElitePulse();
   }
 
   updateStatusUi(): void {
+    this.syncEliteAura();
     const shouldShow = this.active && (this.config.isBoss || this.isElite || this.hp < this.maxHp);
     this.hpBarBg?.setVisible(shouldShow);
     this.hpBarFill?.setVisible(shouldShow);
@@ -117,5 +126,63 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       return config.spriteKey;
     }
     return config.isBoss ? "boss-master" : "enemy-green";
+  }
+
+  private syncEliteAura(): void {
+    if (!this.active || !this.isElite) {
+      this.eliteAuraOuter?.setVisible(false);
+      this.eliteAuraInner?.setVisible(false);
+      this.stopElitePulse();
+      return;
+    }
+
+    const trait = eliteTraitFor(this.enemyId);
+    const radius = Math.max(this.displayWidth, this.displayHeight) * 0.56;
+    this.ensureEliteAura(trait.tint);
+    this.eliteAuraOuter
+      ?.setVisible(true)
+      .setPosition(this.x, this.y)
+      .setRadius(radius)
+      .setStrokeStyle(3, trait.tint, 0.9);
+    this.eliteAuraInner
+      ?.setVisible(true)
+      .setPosition(this.x, this.y)
+      .setRadius(radius * 0.82)
+      .setFillStyle(trait.tint, 0.14);
+    if (!this.elitePulseTween) {
+      this.startElitePulse();
+    }
+  }
+
+  private ensureEliteAura(color: number): void {
+    if (this.eliteAuraOuter && this.eliteAuraInner) {
+      return;
+    }
+
+    this.eliteAuraOuter = this.scene.add
+      .circle(this.x, this.y, 40, 0x000000, 0)
+      .setStrokeStyle(3, color, 0.9)
+      .setDepth(9);
+    this.eliteAuraInner = this.scene.add.circle(this.x, this.y, 34, color, 0.14).setDepth(9);
+  }
+
+  private startElitePulse(): void {
+    if (!this.eliteAuraOuter) {
+      return;
+    }
+
+    this.elitePulseTween = this.scene.tweens.add({
+      targets: this.eliteAuraOuter,
+      alpha: { from: 0.95, to: 0.42 },
+      duration: 720,
+      yoyo: true,
+      repeat: -1
+    });
+  }
+
+  private stopElitePulse(): void {
+    this.elitePulseTween?.stop();
+    this.elitePulseTween = undefined;
+    this.eliteAuraOuter?.setAlpha(1);
   }
 }

@@ -204,10 +204,19 @@ export class GameScene extends Phaser.Scene {
   }
 
   private createFloor(): void {
-    this.add
-      .image(0, 0, "wuxia-jianghu-map")
-      .setDisplaySize(6000, 6000)
-      .setDepth(-20);
+    const mapTileSize = 1254;
+    const worldHalf = 3000;
+    const tilesPerSide = Math.ceil((worldHalf * 2) / mapTileSize);
+    const tiledWorldSize = tilesPerSide * mapTileSize;
+    const tileOrigin = -tiledWorldSize / 2 + mapTileSize / 2;
+
+    for (let row = 0; row < tilesPerSide; row += 1) {
+      for (let col = 0; col < tilesPerSide; col += 1) {
+        this.add
+          .image(tileOrigin + col * mapTileSize, tileOrigin + row * mapTileSize, "wuxia-jianghu-map")
+          .setDepth(-20);
+      }
+    }
 
     const graphics = this.add.graphics();
     graphics.fillStyle(0x07101a, 0.18);
