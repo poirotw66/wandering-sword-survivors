@@ -9,6 +9,12 @@ export type EnemyId =
   | "medicineHeretic"
   | "sunMoonCultist"
   | "royalGuard"
+  | "wudangMonk"
+  | "shaolinMonk"
+  | "emeiDisciple"
+  | "beggarSect"
+  | "northernRider"
+  | "poisonMaster"
   | "minorBoss"
   | "midBoss"
   | "greatBoss"
@@ -153,6 +159,78 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     tint: 0x6aa8ff,
     score: 55,
     spriteKey: "enemy-royal-guard"
+  },
+  wudangMonk: {
+    id: "wudangMonk",
+    name: "Wudang Taoist",
+    hp: 38,
+    damage: 13,
+    moveSpeed: 62,
+    exp: 4,
+    radius: 15,
+    tint: 0x7ec8e3,
+    score: 22,
+    spriteKey: "enemy-wudang"
+  },
+  shaolinMonk: {
+    id: "shaolinMonk",
+    name: "Shaolin Monk",
+    hp: 58,
+    damage: 18,
+    moveSpeed: 52,
+    exp: 6,
+    radius: 18,
+    tint: 0xffb347,
+    score: 34,
+    spriteKey: "enemy-shaolin"
+  },
+  emeiDisciple: {
+    id: "emeiDisciple",
+    name: "Emei Sword Maiden",
+    hp: 22,
+    damage: 10,
+    moveSpeed: 105,
+    exp: 3,
+    radius: 12,
+    tint: 0xf4b8ff,
+    score: 19,
+    spriteKey: "enemy-emei"
+  },
+  beggarSect: {
+    id: "beggarSect",
+    name: "Beggar Sect Scout",
+    hp: 28,
+    damage: 12,
+    moveSpeed: 78,
+    exp: 4,
+    radius: 14,
+    tint: 0x8b7355,
+    score: 21,
+    spriteKey: "enemy-beggar"
+  },
+  northernRider: {
+    id: "northernRider",
+    name: "Northern Steppe Raider",
+    hp: 26,
+    damage: 14,
+    moveSpeed: 112,
+    exp: 4,
+    radius: 13,
+    tint: 0xc67b4e,
+    score: 24,
+    spriteKey: "enemy-northern-rider"
+  },
+  poisonMaster: {
+    id: "poisonMaster",
+    name: "Five Poisons Cultist",
+    hp: 36,
+    damage: 16,
+    moveSpeed: 68,
+    exp: 5,
+    radius: 14,
+    tint: 0x6ecf4a,
+    score: 32,
+    spriteKey: "enemy-poison-cult"
   },
   minorBoss: {
     id: "minorBoss",

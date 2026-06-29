@@ -9,6 +9,7 @@ export class BootScene extends Phaser.Scene {
     const basePath = "assets/sprites/wuxia";
     this.load.image("wuxia-jianghu-map", "assets/maps/wuxia-jianghu-map.png");
     this.loadGeneratedUpgradeIcons();
+    this.loadEnemyAndBossSprites(basePath);
     this.load.image("player", `${basePath}/hero-linghu.png`);
     this.load.image("enemy-purple", `${basePath}/enemy-purple.png`);
     this.load.image("enemy-red", `${basePath}/enemy-red.png`);
@@ -20,6 +21,33 @@ export class BootScene extends Phaser.Scene {
     this.load.image("strike", `${basePath}/sword-flash.png`);
     this.load.image("gem", `${basePath}/jade-gem.png`);
     this.load.image("heart", `${basePath}/wine-gourd.png`);
+  }
+
+  private loadEnemyAndBossSprites(basePath: string): void {
+    const spriteKeys = [
+      "enemy-huashan",
+      "enemy-hengshan",
+      "enemy-taishan",
+      "enemy-river-bandit",
+      "enemy-medicine-heretic",
+      "enemy-sun-moon",
+      "enemy-royal-guard",
+      "enemy-wudang",
+      "enemy-shaolin",
+      "enemy-emei",
+      "enemy-beggar",
+      "enemy-northern-rider",
+      "enemy-poison-cult",
+      "boss-rival-captain",
+      "boss-renegade-master",
+      "boss-grand-elder",
+      "boss-demonic-overlord",
+      "boss-eastern-invincible"
+    ];
+
+    for (const key of spriteKeys) {
+      this.load.image(key, `${basePath}/${key}.png`);
+    }
   }
 
   private loadGeneratedUpgradeIcons(): void {
@@ -83,7 +111,25 @@ export class BootScene extends Phaser.Scene {
       "enemy-purple",
       "enemy-red",
       "enemy-green",
+      "enemy-huashan",
+      "enemy-hengshan",
+      "enemy-taishan",
+      "enemy-river-bandit",
+      "enemy-medicine-heretic",
+      "enemy-sun-moon",
+      "enemy-royal-guard",
+      "enemy-wudang",
+      "enemy-shaolin",
+      "enemy-emei",
+      "enemy-beggar",
+      "enemy-northern-rider",
+      "enemy-poison-cult",
       "boss-master",
+      "boss-rival-captain",
+      "boss-renegade-master",
+      "boss-grand-elder",
+      "boss-demonic-overlord",
+      "boss-eastern-invincible",
       "bolt",
       "blade",
       "palm-wave",
@@ -106,13 +152,13 @@ export class BootScene extends Phaser.Scene {
       this.createHeroTexture();
     }
     if (!this.textures.exists("enemy-purple")) {
-      this.createCircleTexture("enemy-purple", 32, 0xffffff, 0x2b2036);
+      this.createEnemyFigureTexture("enemy-purple", 0xd17de8, 0xff73d2, "dagger");
     }
     if (!this.textures.exists("enemy-red")) {
-      this.createCircleTexture("enemy-red", 32, 0xffffff, 0x2b2036);
+      this.createEnemyFigureTexture("enemy-red", 0xc0a46b, 0xff8f70, "hammer");
     }
     if (!this.textures.exists("enemy-green")) {
-      this.createCircleTexture("enemy-green", 32, 0xffffff, 0x2b2036);
+      this.createEnemyFigureTexture("enemy-green", 0x61d394, 0x92f5bd, "dagger");
     }
     this.createEnemyFigureTexture("enemy-huashan", 0x9ee7ff, 0xf7efd8, "sword");
     this.createEnemyFigureTexture("enemy-hengshan", 0xb8f7ff, 0xffffff, "staff");
@@ -121,6 +167,12 @@ export class BootScene extends Phaser.Scene {
     this.createEnemyFigureTexture("enemy-medicine-heretic", 0x84f7b2, 0xcaff6e, "bottle");
     this.createEnemyFigureTexture("enemy-sun-moon", 0x2b2036, 0xff73d2, "crescent");
     this.createEnemyFigureTexture("enemy-royal-guard", 0x27415f, 0xffd36a, "spear");
+    this.createEnemyFigureTexture("enemy-wudang", 0x7ec8e3, 0xf7efd8, "fan");
+    this.createEnemyFigureTexture("enemy-shaolin", 0xffb347, 0xf7efd8, "fist");
+    this.createEnemyFigureTexture("enemy-emei", 0xf4b8ff, 0xffffff, "needle");
+    this.createEnemyFigureTexture("enemy-beggar", 0x8b7355, 0xd4a574, "club");
+    this.createEnemyFigureTexture("enemy-northern-rider", 0xc67b4e, 0xffd36a, "whip");
+    this.createEnemyFigureTexture("enemy-poison-cult", 0x2a3a1f, 0x6ecf4a, "vial");
     if (!this.textures.exists("boss-master")) {
       this.createCircleTexture("boss-master", 64, 0xff4f64, 0x2b2036);
     }
@@ -212,7 +264,7 @@ export class BootScene extends Phaser.Scene {
     key: string,
     robe: number,
     accent: number,
-    weapon: "sword" | "staff" | "saber" | "axe" | "bottle" | "crescent" | "spear"
+    weapon: "sword" | "staff" | "saber" | "axe" | "bottle" | "crescent" | "spear" | "dagger" | "hammer" | "fan" | "fist" | "needle" | "club" | "whip" | "vial"
   ): void {
     if (this.textures.exists(key)) {
       return;
@@ -269,6 +321,51 @@ export class BootScene extends Phaser.Scene {
         graphics.lineBetween(42, 6, 42, 48);
         graphics.fillStyle(accent, 0.96);
         graphics.fillTriangle(42, 3, 37, 13, 47, 13);
+        break;
+      case "dagger":
+        graphics.lineBetween(38, 18, 50, 8);
+        graphics.fillStyle(accent, 0.92);
+        graphics.fillTriangle(50, 6, 54, 10, 48, 12);
+        break;
+      case "hammer":
+        graphics.lineBetween(14, 20, 44, 44);
+        graphics.fillStyle(accent, 0.94);
+        graphics.fillRect(10, 14, 14, 10);
+        break;
+      case "fan":
+        graphics.beginPath();
+        graphics.moveTo(36, 18);
+        graphics.lineTo(52, 12);
+        graphics.lineTo(50, 28);
+        graphics.lineTo(34, 30);
+        graphics.closePath();
+        graphics.strokePath();
+        break;
+      case "fist":
+        graphics.fillStyle(accent, 0.94);
+        graphics.fillCircle(40, 16, 5);
+        graphics.fillCircle(48, 22, 5);
+        break;
+      case "needle":
+        graphics.lineBetween(36, 24, 52, 10);
+        graphics.lineStyle(1, 0xffffff, 0.85);
+        graphics.lineBetween(38, 22, 50, 12);
+        break;
+      case "club":
+        graphics.lineBetween(12, 12, 40, 46);
+        graphics.fillStyle(accent, 0.94);
+        graphics.fillCircle(12, 10, 6);
+        break;
+      case "whip":
+        graphics.lineBetween(38, 16, 46, 10);
+        graphics.lineBetween(46, 10, 50, 22);
+        graphics.lineBetween(50, 22, 48, 34);
+        break;
+      case "vial":
+        graphics.fillStyle(accent, 0.94);
+        graphics.fillRoundedRect(40, 24, 7, 12, 2);
+        graphics.fillRect(42, 20, 3, 6);
+        graphics.fillCircle(43, 38, 2);
         break;
     }
 

@@ -575,12 +575,12 @@ describe("game regression rules", () => {
     expect(songshan.damageMultiplier).toBeGreaterThan(demonic.damageMultiplier);
   });
 
-  it("defines ten ordinary wuxia enemies with configured sprites", () => {
+  it("defines sixteen ordinary wuxia enemies with configured sprites", () => {
     const ordinaryEnemies = Object.values(ENEMY_CONFIGS).filter((enemy) => !enemy.isBoss);
     const spriteKeys = new Set(ordinaryEnemies.map((enemy) => enemy.spriteKey));
 
-    expect(ordinaryEnemies).toHaveLength(10);
-    expect(spriteKeys.size).toBe(10);
+    expect(ordinaryEnemies).toHaveLength(16);
+    expect(spriteKeys.size).toBe(16);
     expect(ordinaryEnemies.every((enemy) => enemy.spriteKey.startsWith("enemy-"))).toBe(true);
   });
 

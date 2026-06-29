@@ -98,6 +98,54 @@ const ELITE_TRAITS: Partial<Record<EnemyId, EliteTrait>> = {
     damageMultiplier: 1.32,
     tint: 0xffd36a,
     labelKey: "elite"
+  },
+  wudangMonk: {
+    enemyId: "wudangMonk",
+    hpMultiplier: 2.2,
+    moveSpeedMultiplier: 1.05,
+    damageMultiplier: 1.12,
+    tint: 0xb8f7ff,
+    labelKey: "elite"
+  },
+  shaolinMonk: {
+    enemyId: "shaolinMonk",
+    hpMultiplier: 2.7,
+    moveSpeedMultiplier: 0.9,
+    damageMultiplier: 1.28,
+    tint: 0xffd36a,
+    labelKey: "elite"
+  },
+  emeiDisciple: {
+    enemyId: "emeiDisciple",
+    hpMultiplier: 1.85,
+    moveSpeedMultiplier: 1.28,
+    damageMultiplier: 1.14,
+    tint: 0xffb8ff,
+    labelKey: "elite"
+  },
+  beggarSect: {
+    enemyId: "beggarSect",
+    hpMultiplier: 2,
+    moveSpeedMultiplier: 1.16,
+    damageMultiplier: 1.12,
+    tint: 0xd4a574,
+    labelKey: "elite"
+  },
+  northernRider: {
+    enemyId: "northernRider",
+    hpMultiplier: 1.9,
+    moveSpeedMultiplier: 1.3,
+    damageMultiplier: 1.18,
+    tint: 0xffa55f,
+    labelKey: "elite"
+  },
+  poisonMaster: {
+    enemyId: "poisonMaster",
+    hpMultiplier: 2.3,
+    moveSpeedMultiplier: 1.06,
+    damageMultiplier: 1.24,
+    tint: 0xa8ff6e,
+    labelKey: "elite"
   }
 };
 
