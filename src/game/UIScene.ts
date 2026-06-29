@@ -3,12 +3,12 @@ import type { UpgradeOption } from "../data/upgrades";
 import type { GameState } from "./GameState";
 import { ExpBar } from "../ui/ExpBar";
 import { HealthBar } from "../ui/HealthBar";
+import { LoadoutBar } from "../ui/LoadoutBar";
+import { StatusPanel } from "../ui/StatusPanel";
 import { TimerText } from "../ui/TimerText";
 import { UpgradePanel } from "../ui/UpgradePanel";
-import { buildPathName, enemyName, skillName, t, weaponName } from "../i18n";
+import { enemyName, t } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
-import { EVOLUTION_CONFIGS } from "../data/evolutions";
-import { trackedEvolutionProgress } from "../data/evolutionProgress";
 import type { BossLegacySummary } from "../data/bossLegacy";
 
 export class UIScene extends Phaser.Scene {
@@ -16,13 +16,10 @@ export class UIScene extends Phaser.Scene {
   private healthBar!: HealthBar;
   private expBar!: ExpBar;
   private timerText!: TimerText;
+  private loadoutBar!: LoadoutBar;
+  private statusPanel!: StatusPanel;
   private levelText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
-  private weaponText!: Phaser.GameObjects.Text;
-  private skillText!: Phaser.GameObjects.Text;
-  private innerForceText!: Phaser.GameObjects.Text;
-  private evolutionGuideText!: Phaser.GameObjects.Text;
-  private buildPathText!: Phaser.GameObjects.Text;
   private bossText!: Phaser.GameObjects.Text;
   private bossBar!: Phaser.GameObjects.Container;
   private bossBarFill!: Phaser.GameObjects.Rectangle;
@@ -41,35 +38,23 @@ export class UIScene extends Phaser.Scene {
     this.events.removeAllListeners("show-upgrades");
     this.events.removeAllListeners("hide-upgrades");
     this.events.removeAllListeners("upgrade-picked");
+    this.events.removeAllListeners("status-changed");
     this.expBar = new ExpBar(this);
     this.healthBar = new HealthBar(this, 24, 34);
     this.timerText = new TimerText(this, this.scale.width / 2, 18);
-    this.levelText = this.add.text(24, 52, "", { fontFamily: UI_FONT, fontSize: "18px", color: "#f7efd8" }).setPadding(0, 4, 0, 4).setScrollFactor(0);
+    this.levelText = this.add
+      .text(0, 0, "", { fontFamily: UI_FONT, fontSize: "16px", color: "#f7efd8" })
+      .setPadding(0, 2, 0, 2)
+      .setScrollFactor(0)
+      .setDepth(830);
     this.scoreText = this.add
       .text(this.scale.width - 24, 26, "", { fontFamily: UI_FONT, fontSize: "18px", color: "#d8e2eb" })
       .setPadding(0, 4, 0, 4)
       .setOrigin(1, 0)
       .setScrollFactor(0);
-    this.weaponText = this.add
-      .text(24, 82, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#aac7d8", lineSpacing: 8 })
-      .setPadding(0, 4, 0, 4)
-      .setScrollFactor(0);
-    this.skillText = this.add
-      .text(24, 174, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#f7c66b", lineSpacing: 8 })
-      .setPadding(0, 4, 0, 4)
-      .setScrollFactor(0);
-    this.innerForceText = this.add
-      .text(24, 280, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#84f7b2", lineSpacing: 8 })
-      .setPadding(0, 4, 0, 4)
-      .setScrollFactor(0);
-    this.evolutionGuideText = this.add
-      .text(24, 338, "", { fontFamily: UI_FONT, fontSize: "13px", color: "#b8f7ff", lineSpacing: 7 })
-      .setPadding(0, 4, 0, 4)
-      .setScrollFactor(0);
-    this.buildPathText = this.add
-      .text(24, 440, "", { fontFamily: UI_FONT, fontSize: "13px", color: "#ffe09a", lineSpacing: 7 })
-      .setPadding(0, 4, 0, 4)
-      .setScrollFactor(0);
+    this.loadoutBar = new LoadoutBar(this, 24, 0);
+    this.statusPanel = new StatusPanel(this);
+    this.levelText.setText(`${t("playerName")} Lv ${state.level}`);
     this.bossText = this.add
       .text(this.scale.width / 2, 62, "", { fontFamily: UI_FONT, fontSize: "21px", color: "#ff7687", fontStyle: "700" })
       .setPadding(0, 6, 0, 6)
@@ -93,6 +78,9 @@ export class UIScene extends Phaser.Scene {
     });
     this.events.on("hide-upgrades", () => this.upgradePanel.hide());
     this.events.on("pause-changed", (paused: boolean) => this.pauseOverlay.setVisible(paused));
+    this.events.on("status-changed", (visible: boolean) => {
+      this.statusPanel.setVisible(visible, this.state);
+    });
     this.scene.get("GameScene").events.on("boss-spawned", (name: string, markSec: number) => this.showBossWarning(name, markSec));
     this.scene.get("GameScene").events.on("boss-health-changed", (hp: number, maxHp: number, name: string) => {
       this.updateBossBar(hp, maxHp, name);
@@ -114,18 +102,17 @@ export class UIScene extends Phaser.Scene {
     this.expBar.update(this.state);
     this.timerText.update(this.state);
     this.levelText.setText(`${t("playerName")} Lv ${this.state.level}`);
+    this.layoutLeftHud();
     this.scoreText.setText(`${t("renown")} ${this.state.score}  ${t("defeated")} ${this.state.kills}`);
-    this.weaponText.setText(this.formatWeapons());
-    this.skillText.setText(this.formatSkills());
-    this.innerForceText.setText(this.formatInnerForce());
-    this.evolutionGuideText.setText(this.formatEvolutionGuide());
-    this.buildPathText.setText(this.formatBuildPaths());
+    this.loadoutBar.update(this.state);
+    this.statusPanel.refresh(this.state);
   }
 
   private resize(): void {
     const width = this.scale.width;
     this.expBar.resize(width);
     this.timerText.setPosition(width / 2, 18);
+    this.layoutLeftHud();
     if (this.scoreText) {
       this.scoreText.setPosition(width - 24, 26);
     }
@@ -142,57 +129,11 @@ export class UIScene extends Phaser.Scene {
     }
   }
 
-  private formatWeapons(): string {
-    const equipped = [...this.state.weaponLevels.entries()]
-      .filter(([, level]) => level > 0)
-      .map(([weaponId, level]) => {
-        const evolutionId = this.state.evolvedWeapons.get(weaponId);
-        const name = evolutionId ? t(EVOLUTION_CONFIGS[evolutionId].nameKey as Parameters<typeof t>[0]) : weaponName(weaponId);
-        return t("weaponLevel", { name, level });
-      });
-    return equipped.length > 0
-      ? `${t("forms")}\n${equipped.join("\n")}`
-      : `${t("forms")}\n${t("weaponLevel", { name: weaponName("magicBolt"), level: 1 })}`;
-  }
-
-  private formatSkills(): string {
-    const learned = [...this.state.skillLevels.entries()]
-      .filter(([, level]) => level > 0)
-      .map(([skillId, level]) => t("skillLevel", { name: skillName(skillId), level }));
-    return learned.length > 0 ? `${t("martialSkills")}\n${learned.join("\n")}` : `${t("martialSkills")}\n${t("none")}`;
-  }
-
-  private formatInnerForce(): string {
-    const weaponLayers = [...this.state.weaponLevels.values()].reduce((total, level) => total + level, 0);
-    const skillLayers = [...this.state.skillLevels.values()].reduce((total, level) => total + level, 0);
-    const innerForce = Math.round(
-      100 * this.state.player.stats.damageMultiplier +
-        this.state.player.stats.pickupRange * 0.4 +
-        (1 / this.state.player.stats.cooldownMultiplier) * 28
-    );
-    return `${t("innerForce")} ${innerForce}\n${t("martialLayers")} ${weaponLayers + skillLayers}`;
-  }
-
-  private formatBuildPaths(): string {
-    const paths = [...this.state.buildPathLevels.entries()]
-      .filter(([, level]) => level > 0)
-      .map(([pathId, level]) => t("buildLevel", { name: buildPathName(pathId), level }));
-    return paths.length > 0 ? `${t("buildPaths")}\n${paths.join("\n")}` : `${t("buildPaths")}\n${t("none")}`;
-  }
-
-  private formatEvolutionGuide(): string {
-    const tracked = trackedEvolutionProgress(this.state, 3).filter((progress) => progress.progressScore > 0 || progress.canEvolve);
-    if (tracked.length === 0) {
-      return `${t("evolutionRoutes")}\n${t("none")}`;
-    }
-
-    const lines = tracked.map((progress) => {
-      const name = t(EVOLUTION_CONFIGS[progress.evolutionId].nameKey as Parameters<typeof t>[0]);
-      const total = progress.requiredWeaponLevel + progress.requiredSkillLevel;
-      const status = progress.canEvolve ? ` ${t("readyToEvolveShort")}` : "";
-      return `${name} ${progress.progressScore}/${total}${status}`;
-    });
-    return `${t("evolutionRoutes")}\n${lines.join("\n")}`;
+  private layoutLeftHud(): void {
+    const hpBarBottom = 43;
+    const loadoutTop = hpBarBottom + 12;
+    this.levelText.setPosition(292, 25);
+    this.loadoutBar.setPosition(24, loadoutTop);
   }
 
   private createPauseOverlay(): Phaser.GameObjects.Container {

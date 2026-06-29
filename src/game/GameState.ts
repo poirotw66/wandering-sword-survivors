@@ -15,6 +15,7 @@ export type GameState = {
   elapsedSec: number;
   pausedForUpgrade: boolean;
   pausedForMenu: boolean;
+  pausedForStatus: boolean;
   weaponLevels: Map<WeaponId, number>;
   evolvedWeapons: Map<WeaponId, EvolutionId>;
   skillLevels: Map<SkillId, number>;

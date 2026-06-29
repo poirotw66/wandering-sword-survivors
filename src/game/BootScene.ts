@@ -72,7 +72,31 @@ export class BootScene extends Phaser.Scene {
 
   create(): void {
     this.createFallbackTextures();
+    this.configureTextureFilters();
     this.scene.start("MenuScene");
+  }
+
+  private configureTextureFilters(): void {
+    const smoothTextureKeys = [
+      "wuxia-jianghu-map",
+      "player",
+      "enemy-purple",
+      "enemy-red",
+      "enemy-green",
+      "boss-master",
+      "bolt",
+      "blade",
+      "palm-wave",
+      "strike",
+      "gem",
+      "heart"
+    ];
+
+    for (const key of smoothTextureKeys) {
+      if (this.textures.exists(key)) {
+        this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+      }
+    }
   }
 
   private createFallbackTextures(): void {

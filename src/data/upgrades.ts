@@ -3,6 +3,7 @@ import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 import { BUILD_PATH_CONFIGS, type BuildPathId } from "./buildPaths";
 import { EVOLUTION_CONFIGS, type EvolutionId } from "./evolutions";
 import { findProgressForSkill, findProgressForWeapon, trackedEvolutionProgress, type EvolutionProgress } from "./evolutionProgress";
+import { canLearnNewSkill, canLearnNewWeapon } from "./loadoutLimits";
 import type { GameState } from "../game/GameState";
 import { buildPathName, skillName, t, weaponName } from "../i18n";
 
@@ -129,6 +130,9 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     if (!config.availableInUpgradePool) {
       continue;
     }
+    if (level === 0 && !canLearnNewWeapon(state)) {
+      continue;
+    }
 
     const label = weaponName(weaponId);
     const progress = findProgressForWeapon(state, weaponId);
@@ -186,6 +190,9 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     if (config.kind !== "combo" || level >= config.maxLevel || !state.unlockedSkills.has(skillId)) {
       continue;
     }
+    if (level === 0 && !canLearnNewSkill(state)) {
+      continue;
+    }
 
     const nextLevel = level + 1;
     const label = skillName(skillId);
@@ -221,6 +228,9 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       const config = SKILL_CONFIGS[skillId];
       const level = state.skillLevels.get(skillId) ?? 0;
       if (config.kind !== "standalone" || level >= config.maxLevel) {
+        continue;
+      }
+      if (level === 0 && !canLearnNewSkill(state)) {
         continue;
       }
 

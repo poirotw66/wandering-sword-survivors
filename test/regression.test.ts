@@ -70,6 +70,7 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     elapsedSec: 0,
     pausedForUpgrade: false,
     pausedForMenu: false,
+    pausedForStatus: false,
     weaponLevels: new Map(),
     evolvedWeapons: new Map(),
     skillLevels: new Map(),
@@ -149,6 +150,51 @@ describe("game regression rules", () => {
   it("makes all ten martial forms available in the upgrade pool", () => {
     expect(Object.values(WEAPON_CONFIGS)).toHaveLength(10);
     expect(Object.values(WEAPON_CONFIGS).every((weapon) => weapon.availableInUpgradePool)).toBe(true);
+  });
+
+  it("hides new weapons when six forms are learned but keeps level-up options", () => {
+    const state = createState({
+      weaponLevels: new Map([
+        ["magicBolt", 2],
+        ["orbitBlade", 1],
+        ["flameWave", 1],
+        ["thunderStrike", 1],
+        ["starVortex", 1],
+        ["blossomBlade", 1]
+      ])
+    });
+    const options = buildUpgradePool(state);
+
+    expect(options.some((option) => option.id === "weapon-galeSword")).toBe(false);
+    expect(options.some((option) => option.id === "weapon-magicBolt")).toBe(true);
+    expect(options.some((option) => option.id === "weapon-orbitBlade")).toBe(true);
+  });
+
+  it("hides new heart methods when six are learned but keeps level-up options", () => {
+    const state = createState({
+      unlockedSkills: new Set([
+        "duguNineSwords",
+        "huashanFootwork",
+        "starAbsorption",
+        "wineSwordHeart",
+        "zixiaDivineSkill",
+        "windChasingStep",
+        "hunyuanQi"
+      ]),
+      skillLevels: new Map([
+        ["duguNineSwords", 2],
+        ["huashanFootwork", 1],
+        ["starAbsorption", 1],
+        ["wineSwordHeart", 1],
+        ["zixiaDivineSkill", 1],
+        ["windChasingStep", 1]
+      ])
+    });
+    const options = buildUpgradePool(state);
+
+    expect(options.some((option) => option.id === "skill-hunyuanQi")).toBe(false);
+    expect(options.some((option) => option.id === "skill-duguNineSwords")).toBe(true);
+    expect(options.some((option) => option.id === "skill-huashanFootwork")).toBe(true);
   });
 
   it("offers an evolution option when the required form and heart method are mastered", () => {

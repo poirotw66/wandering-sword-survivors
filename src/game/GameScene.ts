@@ -83,6 +83,7 @@ export class GameScene extends Phaser.Scene {
       elapsedSec: 0,
       pausedForUpgrade: false,
       pausedForMenu: false,
+      pausedForStatus: false,
       weaponLevels: new Map(),
       evolvedWeapons: new Map(),
       skillLevels: new Map(),
@@ -143,6 +144,8 @@ export class GameScene extends Phaser.Scene {
     this.events.on("milestone-unlocked", (message: string) => this.showScorePop(this.player.x, this.player.y - 78, message, "#ffe09a"));
     this.events.on("player-healed", (amount: number) => this.showScorePop(this.player.x, this.player.y - 12, amount, "#84f7b2"));
     this.input.keyboard?.on("keydown-ESC", () => this.togglePause());
+    this.input.keyboard?.on("keydown-P", () => this.toggleStatusPanel());
+    this.input.keyboard?.on("keydown-p", () => this.toggleStatusPanel());
     this.input.keyboard?.on("keydown-F1", () => this.toggleDevMode());
     this.input.keyboard?.on("keydown-L", () => this.devGrantLevel());
     this.input.keyboard?.on("keydown-B", () => this.devSpawnBoss());
@@ -184,7 +187,7 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
-    if (this.state.pausedForMenu) {
+    if (this.state.pausedForMenu || this.state.pausedForStatus) {
       return;
     }
 
@@ -323,13 +326,32 @@ export class GameScene extends Phaser.Scene {
       return;
     }
 
+    if (this.state.pausedForStatus) {
+      this.state.pausedForStatus = false;
+      this.scene.get("UIScene").events.emit("status-changed", false);
+    }
+
     this.state.pausedForMenu = !this.state.pausedForMenu;
     if (this.state.pausedForMenu) {
+      this.physics.world.pause();
+    } else if (!this.state.pausedForStatus) {
+      this.physics.world.resume();
+    }
+    this.scene.get("UIScene").events.emit("pause-changed", this.state.pausedForMenu);
+  }
+
+  private toggleStatusPanel(): void {
+    if (this.ended || this.state.pausedForUpgrade || this.state.pausedForMenu) {
+      return;
+    }
+
+    this.state.pausedForStatus = !this.state.pausedForStatus;
+    if (this.state.pausedForStatus) {
       this.physics.world.pause();
     } else {
       this.physics.world.resume();
     }
-    this.scene.get("UIScene").events.emit("pause-changed", this.state.pausedForMenu);
+    this.scene.get("UIScene").events.emit("status-changed", this.state.pausedForStatus);
   }
 
   private isDevModeRequested(): boolean {
