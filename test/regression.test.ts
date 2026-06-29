@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { buildUpgradePool } from "../src/data/upgrades";
+import { buildSkillLoadoutSlots, buildWeaponLoadoutSlots } from "../src/data/loadoutEntries";
+import { isMartialLoadoutComplete, learnedSkillCount } from "../src/data/loadoutLimits";
+import { buildUpgradePool, isEndgameUpgradeUnlocked } from "../src/data/upgrades";
 import type { GameState } from "../src/game/GameState";
 import { AchievementSystem, getBossSkillUnlocks, type RunRecord } from "../src/systems/AchievementSystem";
 import { chooseUpgradeOptions } from "../src/systems/UpgradeSystem";
@@ -17,6 +19,10 @@ import { archetypeConfigFor, ordinaryEnemyBehaviorMap } from "../src/data/minion
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows, startStyleOptions } from "../src/data/metaChoices";
 import { SPAWN_DENSITY, SPAWN_WAVES } from "../src/data/waves";
+import { expToNextForLevel } from "../src/data/expCurve";
+import { estimateBossTimeToDefeat, estimateWeaponDps } from "../src/data/combatMetrics";
+import { isBuildPathUpgradeUnlocked, isStandaloneSkillPoolUnlocked } from "../src/data/upgradeUnlocks";
+import { formatCompactNumber } from "../src/utils/math";
 import {
   canPurchaseRenownUpgrade,
   metaBonusesFromShop,
@@ -65,7 +71,7 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     } as GameState["player"],
     level: 1,
     exp: 0,
-    expToNext: 8,
+    expToNext: expToNextForLevel(1),
     score: 0,
     kills: 0,
     elapsedSec: 0,
@@ -114,18 +120,85 @@ function createRecord(overrides: Partial<RunRecord> = {}): RunRecord {
   };
 }
 
+function createMasteredLoadoutState(overrides: Partial<GameState> = {}): GameState {
+  return createState({
+    weaponLevels: new Map([
+      ["magicBolt", 5],
+      ["orbitBlade", 5],
+      ["flameWave", 5],
+      ["thunderStrike", 5],
+      ["blossomBlade", 5],
+      ["galeSword", 5]
+    ]),
+    skillLevels: new Map([
+      ["duguNineSwords", 5],
+      ["huashanFootwork", 5],
+      ["starAbsorption", 5],
+      ["wineSwordHeart", 5],
+      ["zixiaDivineSkill", 5],
+      ["windChasingStep", 5]
+    ]),
+    evolvedWeapons: new Map([
+      ["magicBolt", "voidDuguSword"],
+      ["orbitBlade", "windClearSwordArray"],
+      ["flameWave", "starDrainingPalm"],
+      ["thunderStrike", "drunkenShadowNineSwords"],
+      ["blossomBlade", "violetMistBlossomSword"],
+      ["galeSword", "shadowlessGaleSlash"]
+    ]),
+    unlockedSkills: new Set([
+      "duguNineSwords",
+      "huashanFootwork",
+      "starAbsorption",
+      "wineSwordHeart",
+      "zixiaDivineSkill",
+      "windChasingStep"
+    ]),
+    ...overrides
+  });
+}
+
 beforeEach(() => {
   vi.stubGlobal("localStorage", createStorage());
   setLocale("zh-TW");
 });
 
 describe("game regression rules", () => {
-  it("keeps the upgrade pool populated before boss skills are unlocked", () => {
+  it("includes combo heart methods in the upgrade pool from the start", () => {
     const options = buildUpgradePool(createState());
 
     expect(options.length).toBeGreaterThan(0);
+    expect(options.some((option) => option.id.startsWith("weapon-"))).toBe(true);
+    expect(options.some((option) => option.id.startsWith("skill-"))).toBe(true);
+    expect(options.some((option) => option.id.startsWith("build-"))).toBe(false);
+    expect(options.some((option) => option.kind === "stat")).toBe(false);
+  });
+
+  it("unlocks stat and build upgrades after the martial loadout is complete", () => {
+    const mastered = createMasteredLoadoutState();
+    const options = buildUpgradePool(mastered);
+
+    expect(isMartialLoadoutComplete(mastered)).toBe(true);
+    expect(options.some((option) => option.kind === "stat")).toBe(true);
     expect(options.some((option) => option.id.startsWith("build-"))).toBe(true);
-    expect(options.some((option) => option.id.startsWith("skill-"))).toBe(false);
+    expect(isEndgameUpgradeUnlocked(mastered)).toBe(true);
+    expect(isEndgameUpgradeUnlocked(createState())).toBe(false);
+  });
+
+  it("keeps stat and build upgrades locked when an eligible ultimate art is still unmastered", () => {
+    const almostDone = createMasteredLoadoutState({
+      evolvedWeapons: new Map([
+        ["orbitBlade", "windClearSwordArray"],
+        ["flameWave", "starDrainingPalm"],
+        ["thunderStrike", "drunkenShadowNineSwords"],
+        ["blossomBlade", "violetMistBlossomSword"],
+        ["galeSword", "shadowlessGaleSlash"]
+      ])
+    });
+
+    expect(isMartialLoadoutComplete(almostDone)).toBe(false);
+    expect(buildUpgradePool(almostDone).some((option) => option.kind === "stat")).toBe(false);
+    expect(buildUpgradePool(almostDone).some((option) => option.id.startsWith("build-"))).toBe(false);
   });
 
   it("provides an icon for every upgrade option shown in the manual", () => {
@@ -198,11 +271,41 @@ describe("game regression rules", () => {
     expect(options.some((option) => option.id === "skill-huashanFootwork")).toBe(true);
   });
 
+  it("shows learned heart methods in loadout slots after upgrade apply", () => {
+    const state = createState({
+      unlockedSkills: new Set(["duguNineSwords", "huashanFootwork"])
+    });
+    const learnHuashan = buildUpgradePool(state).find((option) => option.id === "skill-huashanFootwork");
+    const learnDugu = buildUpgradePool(state).find((option) => option.id === "skill-duguNineSwords");
+
+    expect(learnHuashan).toBeDefined();
+    expect(learnDugu).toBeDefined();
+
+    learnHuashan?.apply(state);
+    learnDugu?.apply(state);
+
+    expect(learnedSkillCount(state)).toBe(2);
+    const slots = buildSkillLoadoutSlots(state);
+    expect(slots[0]).toMatchObject({ iconKey: "icon-huashan-footwork", level: 1 });
+    expect(slots[1]).toMatchObject({ iconKey: "icon-dugu-sword", level: 1 });
+    expect(slots[2]).toEqual({});
+  });
+
+  it("shows evolved forms in weapon loadout slots", () => {
+    const state = createState({
+      weaponLevels: new Map([["magicBolt", 5]]),
+      evolvedWeapons: new Map([["magicBolt", "voidDuguSword"]])
+    });
+
+    const slots = buildWeaponLoadoutSlots(state);
+    expect(slots[0]).toMatchObject({ iconKey: "icon-evolution-dugu", level: 5 });
+  });
+
   it("offers an evolution option when the required form and heart method are mastered", () => {
     const options = buildUpgradePool(
       createState({
         weaponLevels: new Map([["magicBolt", 5]]),
-        skillLevels: new Map([["duguNineSwords", 3]]),
+        skillLevels: new Map([["duguNineSwords", 5]]),
         unlockedSkills: new Set(["duguNineSwords"])
       })
     );
@@ -217,14 +320,14 @@ describe("game regression rules", () => {
         ["flameWave", 2]
       ]),
       skillLevels: new Map([
-        ["duguNineSwords", 3],
+        ["duguNineSwords", 5],
         ["starAbsorption", 1]
       ])
     });
 
     const progress = computeEvolutionProgress(state);
 
-    expect(progress[0]).toMatchObject({ evolutionId: "voidDuguSword", canEvolve: true, progressScore: 8 });
+    expect(progress[0]).toMatchObject({ evolutionId: "voidDuguSword", canEvolve: true, progressScore: 10 });
     expect(trackedEvolutionProgress(state, 1)[0].evolutionId).toBe("voidDuguSword");
   });
 
@@ -259,7 +362,7 @@ describe("game regression rules", () => {
   });
 
   it("banishes ordinary stat options from future pools and selections", () => {
-    const state = createState({
+    const state = createMasteredLoadoutState({
       banishedUpgradeIds: new Set(["damage"])
     });
     const pool = buildUpgradePool(state);
@@ -271,7 +374,7 @@ describe("game regression rules", () => {
     expect(pool.filter((option) => option.kind !== "stat").every((option) => !option.banishable)).toBe(true);
   });
 
-  it("limits ordinary stat choices and favors near-complete martial routes", () => {
+  it("prioritizes martial upgrades before the endgame phase", () => {
     const state = createState({
       weaponLevels: new Map([["magicBolt", 4]]),
       skillLevels: new Map([["duguNineSwords", 2]]),
@@ -280,10 +383,19 @@ describe("game regression rules", () => {
 
     const selected = chooseUpgradeOptions(state, buildUpgradePool(state), 3, () => 0);
 
-    expect(selected.filter((option) => option.kind === "stat").length).toBeLessThanOrEqual(1);
+    expect(selected.every((option) => option.kind === "weapon" || option.kind === "skill")).toBe(true);
     expect(selected.map((option) => option.id)).toContain("weapon-magicBolt");
     expect(selected.map((option) => option.id)).toContain("skill-duguNineSwords");
-    expect(selected.map((option) => option.id)).toContain("build-swordSect");
+  });
+
+  it("limits ordinary stat choices once only stat and build upgrades remain", () => {
+    const state = createMasteredLoadoutState();
+
+    const selected = chooseUpgradeOptions(state, buildUpgradePool(state), 3, () => 0);
+
+    expect(selected.filter((option) => option.kind === "stat").length).toBeLessThanOrEqual(1);
+    expect(selected.every((option) => option.kind === "stat" || option.kind === "build")).toBe(true);
+    expect(selected.some((option) => option.id.startsWith("build-"))).toBe(true);
   });
 
   it("keeps standalone heart methods from creating evolution options", () => {
@@ -372,7 +484,7 @@ describe("game regression rules", () => {
 
     expect(displays.find((difficulty) => difficulty.level === 1)).toMatchObject({ unlocked: true, unlockReason: "available" });
     expect(displays.find((difficulty) => difficulty.level === 2)).toMatchObject({ unlocked: true, unlockReason: "renown" });
-    expect(displays.find((difficulty) => difficulty.level === 3)).toMatchObject({ unlocked: false, hpMultiplier: 1.34, speedMultiplier: 1.08 });
+    expect(displays.find((difficulty) => difficulty.level === 3)).toMatchObject({ unlocked: false, hpMultiplier: 1.36, speedMultiplier: 1.09 });
   });
 
   it("unlocks opening styles through renown or boss defeats", () => {
@@ -647,6 +759,44 @@ describe("game regression rules", () => {
     expect(SPAWN_DENSITY.intervalScale).toBeLessThan(1);
     expect(SPAWN_DENSITY.amountBonus).toBeGreaterThanOrEqual(1);
     expect(SPAWN_DENSITY.timeAmountScaleCap).toBeGreaterThan(6);
+  });
+
+  it("requires progressively more experience for higher levels", () => {
+    expect(expToNextForLevel(1)).toBe(14);
+    expect(expToNextForLevel(10)).toBeGreaterThan(expToNextForLevel(5) * 1.5);
+    expect(expToNextForLevel(20)).toBeGreaterThan(expToNextForLevel(10) * 1.6);
+  });
+
+  it("gives ordinary enemies more health than the previous baseline", () => {
+    expect(ENEMY_CONFIGS.slime.hp).toBe(48);
+    expect(ENEMY_CONFIGS.finalBoss.hp).toBe(125550);
+  });
+
+  it("formats large boss health for the HUD", () => {
+    expect(formatCompactNumber(9315)).toBe("9.3k");
+    expect(formatCompactNumber(125550)).toBe("125.5k");
+  });
+
+  it("estimates weapon dps and boss time-to-defeat for balance checks", () => {
+    const dps = estimateWeaponDps("magicBolt", 1, 1);
+    expect(dps).toBeGreaterThan(20);
+    expect(estimateBossTimeToDefeat("minorBoss", "magicBolt", 1, 1)).toBeGreaterThan(200);
+  });
+
+  it("unlocks build paths after the first boss or level eight", () => {
+    const early = createState({ level: 3, bossDefeats: new Map() });
+    expect(isBuildPathUpgradeUnlocked(early)).toBe(false);
+    const afterBoss = createState({ level: 3, bossDefeats: new Map([["minorBoss", 1]]) });
+    expect(isBuildPathUpgradeUnlocked(afterBoss)).toBe(true);
+    const highLevel = createState({ level: 8, bossDefeats: new Map() });
+    expect(isBuildPathUpgradeUnlocked(highLevel)).toBe(true);
+  });
+
+  it("unlocks standalone manuals after the first minor boss", () => {
+    const beforeBoss = createState({ bossDefeats: new Map(), elapsedSec: 10 });
+    expect(isStandaloneSkillPoolUnlocked(beforeBoss)).toBe(false);
+    const afterMinorBoss = createState({ bossDefeats: new Map([["minorBoss", 1]]), elapsedSec: 10 });
+    expect(isStandaloneSkillPoolUnlocked(afterMinorBoss)).toBe(true);
   });
 
   it("reports potential ultimate arts when boss skills unlock", () => {

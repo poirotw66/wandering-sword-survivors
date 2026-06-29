@@ -16,10 +16,10 @@ export type BossScheduleEntry = {
 export const GAME_DURATION_SEC = 1800;
 
 export const SPAWN_DENSITY = {
-  intervalScale: 0.84,
+  intervalScale: 0.86,
   amountBonus: 1,
   timeAmountScaleStepSec: 300,
-  timeAmountScaleCap: 8
+  timeAmountScaleCap: 7
 };
 
 export const BOSS_SCHEDULE: BossScheduleEntry[] = [
@@ -56,7 +56,7 @@ export const BOSS_SCHEDULE: BossScheduleEntry[] = [
 ];
 
 export const SPAWN_WAVES: SpawnWave[] = [
-  { startTimeSec: 0, endTimeSec: 210, enemyId: "slime", spawnIntervalMs: 1050, amountPerSpawn: 2 },
+  { startTimeSec: 0, endTimeSec: 210, enemyId: "slime", spawnIntervalMs: 980, amountPerSpawn: 2 },
   { startTimeSec: 30, endTimeSec: 420, enemyId: "emeiDisciple", spawnIntervalMs: 1120, amountPerSpawn: 2 },
   { startTimeSec: 60, endTimeSec: 360, enemyId: "huashanSwordsman", spawnIntervalMs: 1180, amountPerSpawn: 2 },
   { startTimeSec: 90, endTimeSec: 480, enemyId: "wudangMonk", spawnIntervalMs: 1250, amountPerSpawn: 2 },
@@ -72,8 +72,8 @@ export const SPAWN_WAVES: SpawnWave[] = [
   { startTimeSec: 600, endTimeSec: 1320, enemyId: "medicineHeretic", spawnIntervalMs: 1420, amountPerSpawn: 2 },
   { startTimeSec: 720, endTimeSec: 1500, enemyId: "sunMoonCultist", spawnIntervalMs: 1180, amountPerSpawn: 3 },
   { startTimeSec: 900, endTimeSec: 1800, enemyId: "royalGuard", spawnIntervalMs: 1780, amountPerSpawn: 2 },
-  { startTimeSec: 600, endTimeSec: 1500, enemyId: "slime", spawnIntervalMs: 640, amountPerSpawn: 4 },
-  { startTimeSec: 780, endTimeSec: 1800, enemyId: "bat", spawnIntervalMs: 820, amountPerSpawn: 4 },
+  { startTimeSec: 600, endTimeSec: 1500, enemyId: "slime", spawnIntervalMs: 720, amountPerSpawn: 3 },
+  { startTimeSec: 780, endTimeSec: 1800, enemyId: "bat", spawnIntervalMs: 900, amountPerSpawn: 3 },
   { startTimeSec: 960, endTimeSec: 1800, enemyId: "emeiDisciple", spawnIntervalMs: 920, amountPerSpawn: 3 },
   { startTimeSec: 1020, endTimeSec: 1800, enemyId: "golem", spawnIntervalMs: 1480, amountPerSpawn: 2 },
   { startTimeSec: 1140, endTimeSec: 1800, enemyId: "northernRider", spawnIntervalMs: 1180, amountPerSpawn: 3 },

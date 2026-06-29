@@ -438,14 +438,30 @@ export class WeaponSystem {
   }
 
   private closestEnemies(limit: number): Enemy[] {
-    return this.enemySystem.enemies
-      .getChildren()
-      .filter((child): child is Enemy => child.active)
-      .sort((a, b) => {
-        const da = Phaser.Math.Distance.Squared(this.player.x, this.player.y, a.x, a.y);
-        const db = Phaser.Math.Distance.Squared(this.player.x, this.player.y, b.x, b.y);
-        return da - db;
-      })
-      .slice(0, limit);
+    const maxRadiusSq = 520 * 520;
+    const playerX = this.player.x;
+    const playerY = this.player.y;
+    const candidates: Enemy[] = [];
+
+    for (const child of this.enemySystem.enemies.getChildren()) {
+      const enemy = child as Enemy;
+      if (!enemy.active) {
+        continue;
+      }
+      const dx = enemy.x - playerX;
+      const dy = enemy.y - playerY;
+      if (dx * dx + dy * dy > maxRadiusSq) {
+        continue;
+      }
+      candidates.push(enemy);
+    }
+
+    candidates.sort((left, right) => {
+      const leftDistance = Phaser.Math.Distance.Squared(playerX, playerY, left.x, left.y);
+      const rightDistance = Phaser.Math.Distance.Squared(playerX, playerY, right.x, right.y);
+      return leftDistance - rightDistance;
+    });
+
+    return candidates.slice(0, limit);
   }
 }

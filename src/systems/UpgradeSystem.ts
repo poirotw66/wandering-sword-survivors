@@ -47,6 +47,8 @@ export class UpgradeSystem {
     this.state.pausedForUpgrade = false;
     this.scene.physics.world.resume();
     this.scene.scene.get("UIScene").events.emit("hide-upgrades");
+    this.scene.events.emit("sync-state", this.state);
+    this.scene.scene.get("UIScene").events.emit("loadout-changed", this.state);
   }
 
   private rollOptions(): UpgradeOption[] {

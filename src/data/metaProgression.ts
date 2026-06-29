@@ -38,21 +38,25 @@ export type DifficultyConfig = {
 
 export const DIFFICULTY_CONFIGS: DifficultyConfig[] = [
   { level: 1, renownRequired: 0, hpMultiplier: 1, damageMultiplier: 1, speedMultiplier: 1, rewardMultiplier: 1 },
-  { level: 2, renownRequired: 1000, hpMultiplier: 1.16, damageMultiplier: 1.08, speedMultiplier: 1.04, rewardMultiplier: 1.15 },
-  { level: 3, renownRequired: 3500, hpMultiplier: 1.34, damageMultiplier: 1.18, speedMultiplier: 1.08, rewardMultiplier: 1.35 },
-  { level: 4, renownRequired: 8000, hpMultiplier: 1.58, damageMultiplier: 1.3, speedMultiplier: 1.12, rewardMultiplier: 1.65 },
-  { level: 5, renownRequired: 15000, hpMultiplier: 1.9, damageMultiplier: 1.45, speedMultiplier: 1.16, rewardMultiplier: 2 }
+  { level: 2, renownRequired: 1000, hpMultiplier: 1.18, damageMultiplier: 1.1, speedMultiplier: 1.05, rewardMultiplier: 1.15 },
+  { level: 3, renownRequired: 3500, hpMultiplier: 1.36, damageMultiplier: 1.2, speedMultiplier: 1.09, rewardMultiplier: 1.35 },
+  { level: 4, renownRequired: 8000, hpMultiplier: 1.62, damageMultiplier: 1.32, speedMultiplier: 1.13, rewardMultiplier: 1.65 },
+  { level: 5, renownRequired: 15000, hpMultiplier: 1.95, damageMultiplier: 1.48, speedMultiplier: 1.17, rewardMultiplier: 2 }
 ];
 
 export function metaBonusesFor(totalRenown: number): MetaBonuses {
   const progress = titleProgressFor(totalRenown);
   return {
-    maxHp: totalRenown >= 500 ? 10 : 0,
-    moveSpeed: totalRenown >= 1500 ? 8 : 0,
-    pickupRange: totalRenown >= 3000 ? 12 : 0,
-    rerolls: totalRenown >= 5000 ? 1 : 0,
+    maxHp: 0,
+    moveSpeed: 0,
+    pickupRange: 0,
+    rerolls: 0,
     titleKey: progress.currentTitleKey
   };
+}
+
+export function activeBonusSummary(totalRenown: number): MetaBonuses {
+  return metaBonusesFor(totalRenown);
 }
 
 export function unlockedDifficulties(record: RunRecord): DifficultyConfig[] {
@@ -72,10 +76,6 @@ export function titleProgressFor(totalRenown: number): TitleProgress {
     nextRenownRequired: next?.renown,
     isMaxTitle: next === undefined
   };
-}
-
-export function activeBonusSummary(totalRenown: number): MetaBonuses {
-  return metaBonusesFor(totalRenown);
 }
 
 export function difficultyDisplays(record: RunRecord): DifficultyDisplay[] {

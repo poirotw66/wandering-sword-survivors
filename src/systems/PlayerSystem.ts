@@ -7,6 +7,7 @@ export class PlayerSystem {
 
   private cursors: Phaser.Types.Input.Keyboard.CursorKeys;
   private keys: Record<"w" | "a" | "s" | "d", Phaser.Input.Keyboard.Key>;
+  private readonly virtualDirection = new Phaser.Math.Vector2(0, 0);
 
   constructor(
     scene: Phaser.Scene,
@@ -21,13 +22,19 @@ export class PlayerSystem {
     };
   }
 
+  setVirtualDirection(x: number, y: number): void {
+    this.virtualDirection.set(x, y);
+  }
+
   update(deltaMs: number): void {
-    const x =
+    const keyboardX =
       Number(this.cursors.right.isDown || this.keys.d.isDown) -
       Number(this.cursors.left.isDown || this.keys.a.isDown);
-    const y =
+    const keyboardY =
       Number(this.cursors.down.isDown || this.keys.s.isDown) -
       Number(this.cursors.up.isDown || this.keys.w.isDown);
+    const x = this.virtualDirection.lengthSq() > 0.04 ? this.virtualDirection.x : keyboardX;
+    const y = this.virtualDirection.lengthSq() > 0.04 ? this.virtualDirection.y : keyboardY;
     const direction = new Phaser.Math.Vector2(x, y).normalize();
     const body = this.player.body as Phaser.Physics.Arcade.Body;
     const deltaSeconds = Math.min(deltaMs / 1000, 0.05);

@@ -6,6 +6,7 @@ import { AudioFeedbackSystem } from "../systems/AudioFeedbackSystem";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { EnemySystem } from "../systems/EnemySystem";
 import { ExpSystem } from "../systems/ExpSystem";
+import { expToNextForLevel } from "../data/expCurve";
 import { PlayerSystem } from "../systems/PlayerSystem";
 import { PickupSystem } from "../systems/PickupSystem";
 import { SpawnSystem } from "../systems/SpawnSystem";
@@ -77,7 +78,7 @@ export class GameScene extends Phaser.Scene {
       player: this.player,
       level: 1,
       exp: 0,
-      expToNext: 8,
+      expToNext: expToNextForLevel(1),
       score: 0,
       kills: 0,
       elapsedSec: 0,
@@ -131,7 +132,11 @@ export class GameScene extends Phaser.Scene {
       this.achievementSystem
     );
 
+    if (this.scene.isActive("UIScene")) {
+      this.scene.stop("UIScene");
+    }
     this.scene.launch("UIScene", this.state);
+    this.events.emit("sync-state", this.state);
     this.events.on("level-up", () => this.upgradeSystem.open());
     this.events.on("game-won", () => this.finish(true));
     this.events.on("player-damaged", () => {
@@ -141,6 +146,9 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.events.on("enemy-killed", (x: number, y: number, score: number) => this.showScorePop(x, y, score));
+    this.events.on("critical-hit", () => this.showCombatFeedback(this.player.x, this.player.y - 24, t("combatCrit"), "#ffe09a"));
+    this.events.on("combo-hit", () => this.showCombatFeedback(this.player.x, this.player.y - 36, t("combatCombo"), "#8ff4ff"));
+    this.events.on("virtual-move", (x: number, y: number) => this.playerSystem.setVirtualDirection(x, y));
     this.events.on("milestone-unlocked", (message: string) => this.showScorePop(this.player.x, this.player.y - 78, message, "#ffe09a"));
     this.events.on("player-healed", (amount: number) => this.showScorePop(this.player.x, this.player.y - 12, amount, "#84f7b2"));
     this.input.keyboard?.on("keydown-ESC", () => this.togglePause());
@@ -409,6 +417,19 @@ export class GameScene extends Phaser.Scene {
     this.devText.setText(
       t("devHud", { seconds: Math.floor(this.state.elapsedSec), scale: this.state.devMode.timeScale })
     );
+  }
+
+  private showCombatFeedback(x: number, y: number, label: string, color: string): void {
+    const flash = this.add.circle(x, y, 16, Phaser.Display.Color.HexStringToColor(color).color, 0.35).setDepth(38);
+    this.tweens.add({
+      targets: flash,
+      alpha: 0,
+      scale: 2.2,
+      duration: 180,
+      ease: "Sine.easeOut",
+      onComplete: () => flash.destroy()
+    });
+    this.showScorePop(x, y - 10, label, color);
   }
 
   private showScorePop(x: number, y: number, score: number | string, color = "#f7c66b"): void {

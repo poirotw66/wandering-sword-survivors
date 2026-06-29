@@ -35,7 +35,7 @@ export const SKILL_CONFIGS: Record<SkillId, SkillConfig> = {
     name: "Dugu Nine Swords",
     iconKey: "icon-dugu-sword",
     kind: "combo",
-    maxLevel: 6,
+    maxLevel: 5,
     describe: (_state, nextLevel) => t("duguDescription", { aura: nextLevel * 4 }),
     apply: ({ player }, nextLevel) => {
       player.stats.damageMultiplier += 0.16;

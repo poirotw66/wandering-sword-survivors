@@ -2,6 +2,9 @@ import Phaser from "phaser";
 import { ExpGem } from "../entities/ExpGem";
 import type { Player } from "../entities/Player";
 import type { GameState } from "../game/GameState";
+import { expToNextForLevel } from "../data/expCurve";
+
+export { expToNextForLevel } from "../data/expCurve";
 
 export class ExpSystem {
   readonly gems: Phaser.Physics.Arcade.Group;
@@ -56,7 +59,7 @@ export class ExpSystem {
     while (this.state.exp >= this.state.expToNext) {
       this.state.exp -= this.state.expToNext;
       this.state.level += 1;
-      this.state.expToNext = Math.floor(7 + this.state.level * 4.8 + this.state.level ** 1.32);
+      this.state.expToNext = expToNextForLevel(this.state.level);
       this.scene.events.emit("level-up");
     }
   }

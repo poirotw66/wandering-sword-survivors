@@ -128,7 +128,7 @@ export class CollisionSystem {
     this.state.score += score;
     this.scene.events.emit("enemy-killed", enemy.x, enemy.y, score);
     this.expSystem.drop(enemy.x, enemy.y, exp);
-    this.pickupSystem.maybeDropHealth(enemy.x, enemy.y, enemy.config.isBoss || enemy.enemyId === "golem" ? 0.16 : 0.055);
+    this.pickupSystem.maybeDropHealth(enemy.x, enemy.y, enemy.config.isBoss || enemy.enemyId === "golem" ? 0.16 : 0.065);
     const wonRun = Boolean(enemy.config.endsRunOnDefeat);
     if (enemy.config.isBoss) {
       this.scene.events.emit("boss-defeated");

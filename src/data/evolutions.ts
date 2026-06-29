@@ -2,6 +2,9 @@ import type { BuildPathId } from "./buildPaths";
 import { SKILL_CONFIGS, type SkillId } from "./skills";
 import type { WeaponId } from "./weapons";
 
+export const EVOLUTION_REQUIRED_WEAPON_LEVEL = 5;
+export const EVOLUTION_REQUIRED_SKILL_LEVEL = 5;
+
 export type EvolutionId =
   | "voidDuguSword"
   | "windClearSwordArray"
@@ -34,9 +37,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_voidDuguSwordDescription",
     iconKey: "icon-evolution-dugu",
     baseWeaponId: "magicBolt",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "duguNineSwords",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "swordSect",
     implemented: true
   },
@@ -46,9 +49,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_windClearSwordArrayDescription",
     iconKey: "icon-evolution-wind-array",
     baseWeaponId: "orbitBlade",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "huashanFootwork",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "footworkSect",
     implemented: true
   },
@@ -58,9 +61,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_starDrainingPalmDescription",
     iconKey: "icon-evolution-star-palm",
     baseWeaponId: "flameWave",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "starAbsorption",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "qiSect",
     implemented: true
   },
@@ -70,9 +73,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_drunkenShadowNineSwordsDescription",
     iconKey: "icon-evolution-drunken-sword",
     baseWeaponId: "thunderStrike",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "wineSwordHeart",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "wineSwordSect",
     implemented: true
   },
@@ -82,9 +85,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_starReturningOriginFieldDescription",
     iconKey: "icon-evolution-star-field",
     baseWeaponId: "starVortex",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "starAbsorption",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "qiSect",
     implemented: true
   },
@@ -94,9 +97,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_violetMistBlossomSwordDescription",
     iconKey: "icon-evolution-violet-blossom",
     baseWeaponId: "blossomBlade",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "zixiaDivineSkill",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "qiSect",
     implemented: true
   },
@@ -106,9 +109,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_shadowlessGaleSlashDescription",
     iconKey: "icon-evolution-gale",
     baseWeaponId: "galeSword",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "windChasingStep",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "footworkSect",
     implemented: true
   },
@@ -118,9 +121,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_taiyueMountainSealingFormDescription",
     iconKey: "icon-evolution-taiyue",
     baseWeaponId: "taiyuePeak",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "hunyuanQi",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "swordSect",
     implemented: true
   },
@@ -130,9 +133,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_coldPondMirrorSwordDescription",
     iconKey: "icon-evolution-cold-pond",
     baseWeaponId: "coldPondSword",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "iceHeart",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "footworkSect",
     implemented: true
   },
@@ -142,9 +145,9 @@ export const EVOLUTION_CONFIGS: Record<EvolutionId, EvolutionConfig> = {
     descriptionKey: "evolution_vajraHundredStepQuakeDescription",
     iconKey: "icon-evolution-vajra",
     baseWeaponId: "vajraFist",
-    requiredWeaponLevel: 5,
+    requiredWeaponLevel: EVOLUTION_REQUIRED_WEAPON_LEVEL,
     requiredSkillId: "vajraDemonSubduing",
-    requiredSkillLevel: 3,
+    requiredSkillLevel: EVOLUTION_REQUIRED_SKILL_LEVEL,
     preferredBuildPathId: "qiSect",
     implemented: true
   }

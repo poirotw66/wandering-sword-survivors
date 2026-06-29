@@ -25,7 +25,7 @@ export class SpawnSystem {
 
       const key = `${wave.enemyId}-${wave.startTimeSec}`;
       const last = this.lastSpawn.get(key) ?? -Infinity;
-      const pressureMultiplier = clamp(1 - elapsedSec / 1800 * 0.42, 0.58, 1);
+      const pressureMultiplier = clamp(1 - elapsedSec / 1800 * 0.4, 0.6, 1);
       const spawnInterval = wave.spawnIntervalMs * pressureMultiplier * SPAWN_DENSITY.intervalScale;
       if (this.scene.time.now - last < spawnInterval) {
         continue;
@@ -38,7 +38,7 @@ export class SpawnSystem {
         Math.min(SPAWN_DENSITY.timeAmountScaleCap, Math.floor(elapsedSec / SPAWN_DENSITY.timeAmountScaleStepSec));
       for (let i = 0; i < amount; i += 1) {
         const point = this.randomSpawnPoint();
-        const eliteChance = clamp(0.02 + elapsedSec / 1800 * 0.12, 0.02, 0.14);
+        const eliteChance = clamp(0.03 + elapsedSec / 1800 * 0.11, 0.03, 0.13);
         this.enemySystem.spawn(wave.enemyId, point.x, point.y, Math.random() < eliteChance);
       }
     }

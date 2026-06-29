@@ -1,11 +1,16 @@
 import { SKILL_CONFIGS, type SkillId } from "./skills";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 import { BUILD_PATH_CONFIGS, type BuildPathId } from "./buildPaths";
-import { EVOLUTION_CONFIGS, type EvolutionId } from "./evolutions";
+import { EVOLUTION_CONFIGS, EVOLUTION_REQUIRED_WEAPON_LEVEL, type EvolutionId } from "./evolutions";
 import { findProgressForSkill, findProgressForWeapon, trackedEvolutionProgress, type EvolutionProgress } from "./evolutionProgress";
-import { canLearnNewSkill, canLearnNewWeapon } from "./loadoutLimits";
+import { canLearnNewSkill, canLearnNewWeapon, isMartialLoadoutComplete } from "./loadoutLimits";
+import { isBuildPathUpgradeUnlocked, isStandaloneSkillPoolUnlocked } from "./upgradeUnlocks";
 import type { GameState } from "../game/GameState";
 import { buildPathName, skillName, t, weaponName } from "../i18n";
+
+export function isEndgameUpgradeUnlocked(state: GameState): boolean {
+  return state.devMode.enabled || isMartialLoadoutComplete(state);
+}
 
 export type UpgradeOption = {
   id: string;
@@ -87,7 +92,9 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     }
   ];
 
-  const options: UpgradeOption[] = statOptions.filter((option) => !state.banishedUpgradeIds.has(option.id));
+  const options: UpgradeOption[] = isEndgameUpgradeUnlocked(state)
+    ? statOptions.filter((option) => !state.banishedUpgradeIds.has(option.id))
+    : [];
 
   const nearRoutes = trackedEvolutionProgress(state, 4).filter((progress) => !progress.alreadyEvolved);
 
@@ -124,7 +131,7 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
   for (const weaponId of Object.keys(WEAPON_CONFIGS) as WeaponId[]) {
     const config = WEAPON_CONFIGS[weaponId];
     const level = state.weaponLevels.get(weaponId) ?? 0;
-    if (level >= 5) {
+    if (level >= EVOLUTION_REQUIRED_WEAPON_LEVEL) {
       continue;
     }
     if (!config.availableInUpgradePool) {
@@ -143,7 +150,7 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       iconKey: config.iconKey,
       title: level === 0 ? t("unlock", { name: label }) : t("weaponLevel", { name: label, level: level + 1 }),
       description: level === 0 ? t("addWeapon", { name: label }) : t("improveWeapon", { level }),
-      badgeText: progress ? t("comboBadge") : undefined,
+      badgeText: progress ? t("comboBadge") : t("forms"),
       recipeHint: progress ? recipeHint(state, progress.config.baseWeaponId, progress.config.requiredSkillId, progress.evolutionId) : undefined,
       progressText: progress
         ? t("recipeProgress", { current: progress.progressScore, total: progress.requiredWeaponLevel + progress.requiredSkillLevel })
@@ -156,38 +163,40 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
     });
   }
 
-  for (const buildPathId of Object.keys(BUILD_PATH_CONFIGS) as BuildPathId[]) {
-    const config = BUILD_PATH_CONFIGS[buildPathId];
-    const level = state.buildPathLevels.get(buildPathId) ?? 0;
-    if (level >= config.maxLevel) {
-      continue;
-    }
-
-    const nextLevel = level + 1;
-    const route = nearRoutes.find((progress) => EVOLUTION_CONFIGS[progress.evolutionId].preferredBuildPathId === buildPathId);
-    const artName = route ? t(route.config.nameKey as Parameters<typeof t>[0]) : "";
-    options.push({
-      id: `build-${buildPathId}`,
-      kind: "build",
-      iconKey: config.iconKey,
-      title:
-        level === 0
-          ? t("buildUnlock", { name: buildPathName(buildPathId) })
-          : t("buildLevel", { name: buildPathName(buildPathId), level: nextLevel }),
-      description: config.describe(state, nextLevel),
-      recommendedText: route ? t("recommendedBadge") : undefined,
-      recommendationReason: route ? t("recommendBuildPath", { path: buildPathName(buildPathId), art: artName }) : undefined,
-      apply: (gameState) => {
-        gameState.buildPathLevels.set(buildPathId, nextLevel);
-        config.apply(gameState, nextLevel);
+  if (isBuildPathUpgradeUnlocked(state)) {
+    for (const buildPathId of Object.keys(BUILD_PATH_CONFIGS) as BuildPathId[]) {
+      const config = BUILD_PATH_CONFIGS[buildPathId];
+      const level = state.buildPathLevels.get(buildPathId) ?? 0;
+      if (level >= config.maxLevel) {
+        continue;
       }
-    });
+
+      const nextLevel = level + 1;
+      const route = nearRoutes.find((progress) => EVOLUTION_CONFIGS[progress.evolutionId].preferredBuildPathId === buildPathId);
+      const artName = route ? t(route.config.nameKey as Parameters<typeof t>[0]) : "";
+      options.push({
+        id: `build-${buildPathId}`,
+        kind: "build",
+        iconKey: config.iconKey,
+        title:
+          level === 0
+            ? t("buildUnlock", { name: buildPathName(buildPathId) })
+            : t("buildLevel", { name: buildPathName(buildPathId), level: nextLevel }),
+        description: config.describe(state, nextLevel),
+        recommendedText: route ? t("recommendedBadge") : undefined,
+        recommendationReason: route ? t("recommendBuildPath", { path: buildPathName(buildPathId), art: artName }) : undefined,
+        apply: (gameState) => {
+          gameState.buildPathLevels.set(buildPathId, nextLevel);
+          config.apply(gameState, nextLevel);
+        }
+      });
+    }
   }
 
   for (const skillId of Object.keys(SKILL_CONFIGS) as SkillId[]) {
     const config = SKILL_CONFIGS[skillId];
     const level = state.skillLevels.get(skillId) ?? 0;
-    if (config.kind !== "combo" || level >= config.maxLevel || !state.unlockedSkills.has(skillId)) {
+    if (config.kind !== "combo" || level >= config.maxLevel) {
       continue;
     }
     if (level === 0 && !canLearnNewSkill(state)) {
@@ -204,7 +213,7 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       iconKey: config.iconKey,
       title: level === 0 ? t("learn", { name: label }) : t("skillLevel", { name: label, level: nextLevel }),
       description: config.describe(state, nextLevel),
-      badgeText: t("comboBadge"),
+      badgeText: t("martialSkills"),
       recipeHint: progress ? recipeHint(state, progress.config.baseWeaponId, progress.config.requiredSkillId, progress.evolutionId) : undefined,
       progressText: progress
         ? t("recipeProgress", { current: progress.progressScore, total: progress.requiredWeaponLevel + progress.requiredSkillLevel })
@@ -222,7 +231,7 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
   const learnedStandaloneCount = [...state.skillLevels.entries()].filter(
     ([skillId, level]) => level > 0 && SKILL_CONFIGS[skillId].kind === "standalone"
   ).length;
-  const standaloneUnlocked = state.devMode.enabled || state.elapsedSec >= 300 || state.bossDefeats.size > 0;
+  const standaloneUnlocked = isStandaloneSkillPoolUnlocked(state);
   if (standaloneUnlocked && learnedStandaloneCount < 2) {
     for (const skillId of Object.keys(SKILL_CONFIGS) as SkillId[]) {
       const config = SKILL_CONFIGS[skillId];

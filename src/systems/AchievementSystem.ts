@@ -55,6 +55,21 @@ const BOSS_ACHIEVEMENTS: Partial<Record<EnemyId, string>> = {
   finalBoss: "finalBoss"
 };
 
+export const ACHIEVEMENT_IDS = [
+  "firstRival",
+  "midBoss",
+  "greatBoss",
+  "megaBoss",
+  "finalBoss",
+  "renown10000",
+  "firstEvolution",
+  "voidDuguSword",
+  "threeEvolutions",
+  "fiveEvolutions",
+  "rareManual",
+  "mixedMastery"
+] as const;
+
 export class AchievementSystem {
   static readRecord(): RunRecord {
     const fallback: RunRecord = {

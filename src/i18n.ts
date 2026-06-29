@@ -1,5 +1,6 @@
 import type { EnemyId } from "./data/enemies";
 import type { BuildPathId } from "./data/buildPaths";
+import type { EvolutionId } from "./data/evolutions";
 import type { SkillId } from "./data/skills";
 import type { WeaponId } from "./data/weapons";
 
@@ -13,6 +14,13 @@ const messages = {
     playerName: "令狐沖",
     menuSubtitle: "令狐沖獨入江湖。",
     menuPitch: "斬破各派圍攻，收聚玉魄真氣，領悟失傳劍法。",
+    menuHubMetaSection: "聲望進度",
+    menuHubRunSection: "入局設定",
+    menuHubDifficultyRow: "江湖難度",
+    menuHubRunSummary: "難度 {difficulty} · {style} · {title}",
+    menuStartHint: "空白鍵快速開始",
+    menuDifficultyShort: "難度 {level}",
+    menuDifficultyReward: "獎 {reward}%",
     controls: "WASD / 方向鍵移動\n滑鼠或 1-3 領悟武學\nP 查看角色狀態",
     startRun: "踏入江湖",
     collectionButton: "武學圖鑑",
@@ -27,6 +35,7 @@ const messages = {
     collectionBuildLine: "常用流派 {favoriteBuild}   已得成就 {achievements}",
     legacyLine: "本場傳承：{unlocked}\n本場絕學：{runUltimates}\n難度 {difficulty}   獎勵倍率 {reward}%\n累積聲望 {totalRenown}   已悟絕學 {ultimates}   已破宿敵 {bosses}\n常用流派：{favoriteBuild}",
     metaBonusLine: "{title}  開局加成：氣血 +{hp} / 移速 +{speed} / 拾取 +{pickup} / 刷新 +{rerolls}",
+    metaBonusesShort: "開局加成：氣血 +{hp} / 移速 +{speed} / 拾取 +{pickup} / 刷新 +{rerolls}",
     metaProgressionLine: "{title}  聲望 {renown}\n{next}",
     titleProgressNext: "下一稱號：{title}（聲望 {renown}）",
     titleProgressMax: "已登江湖絕頂",
@@ -71,6 +80,25 @@ const messages = {
     paused: "暫停",
     pauseHint: "按 Esc 重返江湖",
     loadoutSlots: "{current}/{max}",
+    loadoutSectionLabel: "【{name}】{current}/{max}",
+    loadoutTier: "{tier}重",
+    loadoutAwaiting: "待悟",
+    hudDifficulty: "難度 {level} · 獎勵 {reward}%",
+    hudStatusHint: "P · 狀態",
+    hudControlsLine: "Esc · 暫停   P · 狀態   重抽 {rerolls}   封印 {banish}",
+    hudPlayerLevel: "Lv {level}",
+    combatCrit: "暴擊",
+    combatCombo: "連擊",
+    audioSettingsButton: "音效設定",
+    audioMutedLabel: "靜音",
+    audioActiveLabel: "音效 {sfx}% · 音樂 {music}%",
+    audioSfxDown: "音效-",
+    audioSfxUp: "音效+",
+    audioMusicDown: "音樂-",
+    audioMusicUp: "音樂+",
+    renownShopButton: "聲望商店",
+    renownShopTitle: "聲望商店",
+    achievementCodexTitle: "江湖成就",
     statusPanelTitle: "角色狀態",
     statusPanelHint: "按 P 關閉",
     statusSectionRun: "本局戰況",
@@ -93,6 +121,8 @@ const messages = {
     statusPickupLine: "拾取範圍 {value}",
     manualTitle: "秘笈展開",
     manualHint: "選擇一項領悟，推進令狐沖的武學道路",
+    upgradeKeyHint: "按 1 · 2 · 3 快速選擇",
+    upgradeCategoryStat: "根基",
     bossWarning: "五嶽風雲起：{name} 現身",
     bossTechniqueStatus: "施展：{name}",
     bossTechniqueDash: "疾影衝脈",
@@ -253,6 +283,13 @@ const messages = {
     playerName: "Linghu Chong",
     menuSubtitle: "Linghu Chong enters the jianghu alone.",
     menuPitch: "Cut through rival sects, gather jade qi, and master lost sword forms.",
+    menuHubMetaSection: "Renown Progress",
+    menuHubRunSection: "Run Setup",
+    menuHubDifficultyRow: "Difficulty",
+    menuHubRunSummary: "Difficulty {difficulty} · {style} · {title}",
+    menuStartHint: "Press Space to start quickly",
+    menuDifficultyShort: "Diff {level}",
+    menuDifficultyReward: "Reward {reward}%",
     controls: "WASD / Arrow keys to move\nChoose martial arts with mouse or 1-3\nP to view character status",
     startRun: "Start Run",
     collectionButton: "Martial Codex",
@@ -267,6 +304,7 @@ const messages = {
     collectionBuildLine: "Favorite Path {favoriteBuild}   Achievements {achievements}",
     legacyLine: "This run's legacy: {unlocked}\nRun ultimate arts: {runUltimates}\nDifficulty {difficulty}   Reward {reward}%\nTotal Renown {totalRenown}   Ultimate Arts {ultimates}   Rivals Broken {bosses}\nFavorite Path: {favoriteBuild}",
     metaBonusLine: "{title}  Start bonuses: HP +{hp} / Speed +{speed} / Pickup +{pickup} / Reroll +{rerolls}",
+    metaBonusesShort: "Start bonuses: HP +{hp} / Speed +{speed} / Pickup +{pickup} / Reroll +{rerolls}",
     metaProgressionLine: "{title}  Renown {renown}\n{next}",
     titleProgressNext: "Next title: {title} at {renown} renown",
     titleProgressMax: "Jianghu summit reached",
@@ -311,6 +349,25 @@ const messages = {
     paused: "Paused",
     pauseHint: "Press Esc to return to the jianghu",
     loadoutSlots: "{current}/{max}",
+    loadoutSectionLabel: "{name} {current}/{max}",
+    loadoutTier: "Tier {tier}",
+    loadoutAwaiting: "—",
+    hudDifficulty: "Diff {level} · Reward {reward}%",
+    hudStatusHint: "P · Status",
+    hudControlsLine: "Esc · Pause   P · Status   Reroll {rerolls}   Banish {banish}",
+    hudPlayerLevel: "Lv {level}",
+    combatCrit: "Crit",
+    combatCombo: "Combo",
+    audioSettingsButton: "Audio",
+    audioMutedLabel: "Muted",
+    audioActiveLabel: "SFX {sfx}% · Music {music}%",
+    audioSfxDown: "SFX-",
+    audioSfxUp: "SFX+",
+    audioMusicDown: "Music-",
+    audioMusicUp: "Music+",
+    renownShopButton: "Renown Shop",
+    renownShopTitle: "Renown Shop",
+    achievementCodexTitle: "Achievements",
     statusPanelTitle: "Character Status",
     statusPanelHint: "Press P to close",
     statusSectionRun: "Current Run",
@@ -333,6 +390,8 @@ const messages = {
     statusPickupLine: "Pickup Range {value}",
     manualTitle: "A Secret Manual Opens",
     manualHint: "Choose one insight to deepen Linghu Chong's path",
+    upgradeKeyHint: "Press 1 · 2 · 3 to choose quickly",
+    upgradeCategoryStat: "Foundation",
     bossWarning: "Wuyue storm rises: {name} appears",
     bossTechniqueStatus: "Casting: {name}",
     bossTechniqueDash: "Shadow Meridian Rush",
@@ -533,6 +592,10 @@ export function weaponName(id: WeaponId): string {
 
 export function skillName(id: SkillId): string {
   return t(`skill_${id}` as MessageKey);
+}
+
+export function evolutionName(id: EvolutionId): string {
+  return t(`evolution_${id}` as MessageKey);
 }
 
 export function enemyName(id: EnemyId): string {

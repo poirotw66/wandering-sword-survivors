@@ -5,8 +5,8 @@ import { EVOLUTION_CONFIGS, type EvolutionId } from "../data/evolutions";
 import { SKILL_CONFIGS, type SkillId } from "../data/skills";
 import { WEAPON_CONFIGS } from "../data/weapons";
 import { formatBossUnlockDetail, formatEvolutionRecipeDetail, type CodexDetail } from "../data/codexDetails";
-import { AchievementSystem, type RunRecord } from "../systems/AchievementSystem";
-import { buildPathName, enemyName, skillName, t, weaponName } from "../i18n";
+import { AchievementSystem, ACHIEVEMENT_IDS, type RunRecord } from "../systems/AchievementSystem";
+import { buildPathName, achievementName, enemyName, skillName, t, weaponName } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import { formatClock } from "../utils/math";
 
@@ -54,6 +54,7 @@ export class CollectionScene extends Phaser.Scene {
     this.content = this.add.container(0, this.contentTop);
     let y = 0;
     y = this.addRecords(record, listWidth, y);
+    y = this.addAchievementSection(record, listWidth, y);
     y = this.addMartialSection(record, listWidth, y);
     y = this.addBossSection(record, listWidth, y);
     this.maxScroll = Math.max(0, y - (height - this.contentTop - 26));
@@ -83,6 +84,21 @@ export class CollectionScene extends Phaser.Scene {
     ];
     this.addTextBlock(width / 2, y, lines.join("\n"), "#d8e2eb", 18, width - 80);
     return y + 96;
+  }
+
+  private addAchievementSection(record: RunRecord, width: number, y: number): number {
+    this.addSectionTitle(t("achievementCodexTitle"), width, y);
+    y += 44;
+    return this.addIconRows(
+      "",
+      ACHIEVEMENT_IDS.map((achievementId) => ({
+        iconKey: "icon-upgrade-default",
+        label: achievementName(achievementId),
+        unlocked: record.achievements.includes(achievementId)
+      })),
+      width,
+      y
+    );
   }
 
   private addMartialSection(record: RunRecord, width: number, y: number): number {
@@ -165,8 +181,10 @@ export class CollectionScene extends Phaser.Scene {
     width: number,
     y: number
   ): number {
-    this.addTextBlock(52, y, title, "#f7c66b", 18, 220, 0);
-    y += 34;
+    if (title) {
+      this.addTextBlock(52, y, title, "#f7c66b", 18, 220, 0);
+      y += 34;
+    }
     const columns = width >= 980 ? 4 : width >= 720 ? 3 : 2;
     const cellWidth = Math.min(230, (width - 86) / columns);
     const startX = (width - cellWidth * columns) / 2 + 28;

@@ -9,6 +9,8 @@ import { TimerText } from "../ui/TimerText";
 import { UpgradePanel } from "../ui/UpgradePanel";
 import { enemyName, t } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
+import { VirtualJoystick } from "../ui/VirtualJoystick";
+import { formatCompactNumber } from "../utils/math";
 import type { BossLegacySummary } from "../data/bossLegacy";
 
 export class UIScene extends Phaser.Scene {
@@ -19,6 +21,8 @@ export class UIScene extends Phaser.Scene {
   private loadoutBar!: LoadoutBar;
   private statusPanel!: StatusPanel;
   private levelText!: Phaser.GameObjects.Text;
+  private difficultyText!: Phaser.GameObjects.Text;
+  private hudHintText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
   private bossText!: Phaser.GameObjects.Text;
   private bossBar!: Phaser.GameObjects.Container;
@@ -28,25 +32,45 @@ export class UIScene extends Phaser.Scene {
   private legacyPanel?: Phaser.GameObjects.Container;
   private pauseOverlay!: Phaser.GameObjects.Container;
   private upgradePanel!: UpgradePanel;
+  private virtualJoystick?: VirtualJoystick;
 
   constructor() {
     super("UIScene");
   }
 
-  create(state: GameState): void {
+  init(state: GameState): void {
     this.state = state;
+  }
+
+  create(state: GameState): void {
+    if (state) {
+      this.state = state;
+    }
     this.events.removeAllListeners("show-upgrades");
     this.events.removeAllListeners("hide-upgrades");
     this.events.removeAllListeners("upgrade-picked");
     this.events.removeAllListeners("status-changed");
+    this.events.removeAllListeners("loadout-changed");
     this.expBar = new ExpBar(this);
     this.healthBar = new HealthBar(this, 24, 34);
     this.timerText = new TimerText(this, this.scale.width / 2, 18);
     this.levelText = this.add
-      .text(0, 0, "", { fontFamily: UI_FONT, fontSize: "16px", color: "#f7efd8" })
+      .text(0, 0, "", { fontFamily: UI_FONT, fontSize: "14px", color: "#f7efd8", fontStyle: "700" })
       .setPadding(0, 2, 0, 2)
       .setScrollFactor(0)
       .setDepth(830);
+    this.difficultyText = this.add
+      .text(0, 0, "", { fontFamily: UI_FONT, fontSize: "12px", color: "#aac7d8" })
+      .setPadding(0, 2, 0, 2)
+      .setOrigin(0.5, 0)
+      .setScrollFactor(0)
+      .setDepth(830);
+    this.hudHintText = this.add
+      .text(0, 0, "", { fontFamily: UI_FONT, fontSize: "11px", color: "#6f8296" })
+      .setPadding(0, 1, 0, 1)
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(820);
     this.scoreText = this.add
       .text(this.scale.width - 24, 26, "", { fontFamily: UI_FONT, fontSize: "18px", color: "#d8e2eb" })
       .setPadding(0, 4, 0, 4)
@@ -54,7 +78,7 @@ export class UIScene extends Phaser.Scene {
       .setScrollFactor(0);
     this.loadoutBar = new LoadoutBar(this, 24, 0);
     this.statusPanel = new StatusPanel(this);
-    this.levelText.setText(`${t("playerName")} Lv ${state.level}`);
+    this.levelText.setText(t("hudPlayerLevel", { level: state.level }));
     this.bossText = this.add
       .text(this.scale.width / 2, 62, "", { fontFamily: UI_FONT, fontSize: "21px", color: "#ff7687", fontStyle: "700" })
       .setPadding(0, 6, 0, 6)
@@ -63,6 +87,10 @@ export class UIScene extends Phaser.Scene {
     this.bossBar = this.createBossBar();
     this.pauseOverlay = this.createPauseOverlay();
     this.upgradePanel = new UpgradePanel(this);
+    this.virtualJoystick = new VirtualJoystick(this, 88, this.scale.height - 108, (x, y) => {
+      this.scene.get("GameScene").events.emit("virtual-move", x, y);
+    });
+    this.events.once("shutdown", () => this.virtualJoystick?.destroy());
     this.resize();
 
     this.scale.on("resize", () => this.resize());
@@ -80,6 +108,15 @@ export class UIScene extends Phaser.Scene {
     this.events.on("pause-changed", (paused: boolean) => this.pauseOverlay.setVisible(paused));
     this.events.on("status-changed", (visible: boolean) => {
       this.statusPanel.setVisible(visible, this.state);
+    });
+    this.events.on("loadout-changed", (state: GameState) => {
+      this.state = state;
+      this.loadoutBar?.update(this.state);
+    });
+    const gameScene = this.scene.get("GameScene");
+    gameScene.events.off("sync-state");
+    gameScene.events.on("sync-state", (state: GameState) => {
+      this.state = state;
     });
     this.scene.get("GameScene").events.on("boss-spawned", (name: string, markSec: number) => this.showBossWarning(name, markSec));
     this.scene.get("GameScene").events.on("boss-health-changed", (hp: number, maxHp: number, name: string) => {
@@ -101,9 +138,25 @@ export class UIScene extends Phaser.Scene {
     this.healthBar.update(this.state.player);
     this.expBar.update(this.state);
     this.timerText.update(this.state);
-    this.levelText.setText(`${t("playerName")} Lv ${this.state.level}`);
+    this.levelText.setText(t("hudPlayerLevel", { level: this.state.level }));
+    this.difficultyText.setText(
+      t("hudDifficulty", {
+        level: this.state.selectedDifficulty,
+        reward: Math.round(this.state.difficultyRewardMultiplier * 100)
+      })
+    );
     this.layoutLeftHud();
-    this.scoreText.setText(`${t("renown")} ${this.state.score}  ${t("defeated")} ${this.state.kills}`);
+    const rewardSuffix =
+      this.state.difficultyRewardMultiplier > 1
+        ? `  ×${Math.round(this.state.difficultyRewardMultiplier * 100)}%`
+        : "";
+    this.scoreText.setText(`${t("renown")} ${this.state.score}${rewardSuffix}  ${t("defeated")} ${this.state.kills}`);
+    this.hudHintText.setText(
+      t("hudControlsLine", {
+        rerolls: this.state.rerolls,
+        banish: this.state.banishCharges
+      })
+    );
     this.loadoutBar.update(this.state);
     this.statusPanel.refresh(this.state);
   }
@@ -112,9 +165,16 @@ export class UIScene extends Phaser.Scene {
     const width = this.scale.width;
     this.expBar.resize(width);
     this.timerText.setPosition(width / 2, 18);
+    this.difficultyText.setPosition(width / 2, 46);
     this.layoutLeftHud();
     if (this.scoreText) {
       this.scoreText.setPosition(width - 24, 26);
+    }
+    if (this.hudHintText) {
+      this.hudHintText.setPosition(width - 24, 48);
+    }
+    if (this.virtualJoystick) {
+      this.virtualJoystick.setPosition(88, this.scale.height - 108);
     }
     if (this.pauseOverlay) {
       this.pauseOverlay.setPosition(width / 2, this.scale.height / 2);
@@ -130,10 +190,13 @@ export class UIScene extends Phaser.Scene {
   }
 
   private layoutLeftHud(): void {
-    const hpBarBottom = 43;
-    const loadoutTop = hpBarBottom + 12;
-    this.levelText.setPosition(292, 25);
-    this.loadoutBar.setPosition(24, loadoutTop);
+    const hpLeft = 24;
+    const hpTop = 34;
+    const loadoutLeft = 24;
+    const loadoutTop = 58;
+    this.healthBar.setPosition(hpLeft, hpTop);
+    this.levelText.setPosition(hpLeft + this.healthBar.getWidth() + 10, hpTop - 1);
+    this.loadoutBar.setPosition(loadoutLeft, loadoutTop);
   }
 
   private createPauseOverlay(): Phaser.GameObjects.Container {
@@ -190,7 +253,10 @@ export class UIScene extends Phaser.Scene {
     const ratio = Phaser.Math.Clamp(hp / maxHp, 0, 1);
     this.bossBar.setVisible(ratio > 0);
     this.bossBarFill.width = 416 * ratio;
-    this.bossBarLabel.setText(`${name}  ${Math.ceil(hp)} / ${maxHp}`);
+    const percent = Math.round(ratio * 100);
+    this.bossBarLabel.setText(
+      `${name}  ${percent}%  ${formatCompactNumber(hp)} / ${formatCompactNumber(maxHp)}`
+    );
     if (ratio <= 0) {
       this.clearBossTechnique();
     }

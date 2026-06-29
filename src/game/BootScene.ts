@@ -259,10 +259,10 @@ export class BootScene extends Phaser.Scene {
     this.createSwordGlyph("icon-evolution-cold-pond", 0xffe09a, 0x20384a);
     this.createHeartGlyph("icon-evolution-vajra", 0xffe09a, 0x4a2f20);
 
-    this.createSectGlyph("icon-build-sword", 0xf7c66b, 0x2f2636, "劍");
-    this.createSectGlyph("icon-build-qi", 0x8ff4ff, 0x22384b, "氣");
-    this.createSectGlyph("icon-build-footwork", 0x92f5bd, 0x203d35, "身");
-    this.createSectGlyph("icon-build-wine", 0xf7a55f, 0x4d2634, "酒");
+    this.createSwordGlyph("icon-build-sword", 0xf7c66b, 0x2f2636);
+    this.createSwirlGlyph("icon-build-qi", 0x8ff4ff, 0x22384b);
+    this.createStepGlyph("icon-build-footwork", 0x92f5bd, 0x203d35);
+    this.createGourdGlyph("icon-build-wine", 0xf7a55f, 0x4d2634);
     this.createSectGlyph("icon-upgrade-default", 0xd8e2eb, 0x2b2036, "武");
   }
 
