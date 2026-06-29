@@ -4,6 +4,7 @@ import type { ExpGem } from "../entities/ExpGem";
 import type { HealthPickup } from "../entities/HealthPickup";
 import type { Player } from "../entities/Player";
 import type { Projectile } from "../entities/Projectile";
+import type { EnemyProjectile } from "../entities/EnemyProjectile";
 import type { GameState } from "../game/GameState";
 import type { EnemySystem } from "./EnemySystem";
 import type { ExpSystem } from "./ExpSystem";
@@ -34,6 +35,7 @@ export class CollisionSystem {
       this
     );
     scene.physics.add.overlap(player, enemySystem.enemies, this.enemyHitsPlayer, undefined, this);
+    scene.physics.add.overlap(player, enemySystem.enemyProjectiles, this.enemyProjectileHitsPlayer, undefined, this);
     scene.physics.add.overlap(player, expSystem.gems, this.playerCollectsGem, undefined, this);
     scene.physics.add.overlap(player, pickupSystem.healthPickups, this.playerCollectsHealth, undefined, this);
   }
@@ -69,6 +71,18 @@ export class CollisionSystem {
     if (tookDamage) {
       this.scene.events.emit("player-damaged");
     }
+  }
+
+  private enemyProjectileHitsPlayer(_playerObject: ArcadeOverlapObject, projectileObject: ArcadeOverlapObject): void {
+    const projectile = projectileObject as EnemyProjectile;
+    if (!projectile.active) {
+      return;
+    }
+    const tookDamage = this.player.takeDamage(projectile.damage, this.scene.time.now);
+    if (tookDamage) {
+      this.scene.events.emit("player-damaged");
+    }
+    projectile.expire();
   }
 
   private playerCollectsGem(_playerObject: ArcadeOverlapObject, gemObject: ArcadeOverlapObject): void {

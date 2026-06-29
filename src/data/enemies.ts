@@ -21,6 +21,8 @@ export type EnemyId =
   | "megaBoss"
   | "finalBoss";
 
+import type { EnemyBehaviorArchetype } from "./minionBehaviors";
+
 export type EnemyConfig = {
   id: EnemyId;
   name: string;
@@ -32,6 +34,7 @@ export type EnemyConfig = {
   tint: number;
   score: number;
   spriteKey: string;
+  behaviorArchetype?: EnemyBehaviorArchetype;
   isBoss?: boolean;
   endsRunOnDefeat?: boolean;
   canDash?: boolean;
@@ -50,7 +53,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 14,
     tint: 0x61d394,
     score: 10,
-    spriteKey: "enemy-green"
+    spriteKey: "enemy-green",
+    behaviorArchetype: "chaser"
   },
   bat: {
     id: "bat",
@@ -62,7 +66,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 10,
     tint: 0xd17de8,
     score: 15,
-    spriteKey: "enemy-purple"
+    spriteKey: "enemy-purple",
+    behaviorArchetype: "dasher"
   },
   golem: {
     id: "golem",
@@ -74,7 +79,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 20,
     tint: 0xc0a46b,
     score: 40,
-    spriteKey: "enemy-red"
+    spriteKey: "enemy-red",
+    behaviorArchetype: "tank"
   },
   huashanSwordsman: {
     id: "huashanSwordsman",
@@ -86,7 +92,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 13,
     tint: 0x9ee7ff,
     score: 18,
-    spriteKey: "enemy-huashan"
+    spriteKey: "enemy-huashan",
+    behaviorArchetype: "chaser"
   },
   hengshanNun: {
     id: "hengshanNun",
@@ -98,7 +105,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 14,
     tint: 0xb8f7ff,
     score: 20,
-    spriteKey: "enemy-hengshan"
+    spriteKey: "enemy-hengshan",
+    behaviorArchetype: "tank"
   },
   taishanAcolyte: {
     id: "taishanAcolyte",
@@ -110,7 +118,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 17,
     tint: 0xd9b45f,
     score: 28,
-    spriteKey: "enemy-taishan"
+    spriteKey: "enemy-taishan",
+    behaviorArchetype: "tank"
   },
   riverBandit: {
     id: "riverBandit",
@@ -122,7 +131,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 12,
     tint: 0xb9824d,
     score: 18,
-    spriteKey: "enemy-river-bandit"
+    spriteKey: "enemy-river-bandit",
+    behaviorArchetype: "dasher"
   },
   medicineHeretic: {
     id: "medicineHeretic",
@@ -134,7 +144,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 14,
     tint: 0x84f7b2,
     score: 30,
-    spriteKey: "enemy-medicine-heretic"
+    spriteKey: "enemy-medicine-heretic",
+    behaviorArchetype: "ranger"
   },
   sunMoonCultist: {
     id: "sunMoonCultist",
@@ -146,7 +157,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 16,
     tint: 0xff73d2,
     score: 36,
-    spriteKey: "enemy-sun-moon"
+    spriteKey: "enemy-sun-moon",
+    behaviorArchetype: "dasher"
   },
   royalGuard: {
     id: "royalGuard",
@@ -158,7 +170,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 21,
     tint: 0x6aa8ff,
     score: 55,
-    spriteKey: "enemy-royal-guard"
+    spriteKey: "enemy-royal-guard",
+    behaviorArchetype: "tank"
   },
   wudangMonk: {
     id: "wudangMonk",
@@ -170,7 +183,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 15,
     tint: 0x7ec8e3,
     score: 22,
-    spriteKey: "enemy-wudang"
+    spriteKey: "enemy-wudang",
+    behaviorArchetype: "ranger"
   },
   shaolinMonk: {
     id: "shaolinMonk",
@@ -182,7 +196,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 18,
     tint: 0xffb347,
     score: 34,
-    spriteKey: "enemy-shaolin"
+    spriteKey: "enemy-shaolin",
+    behaviorArchetype: "tank"
   },
   emeiDisciple: {
     id: "emeiDisciple",
@@ -194,7 +209,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 12,
     tint: 0xf4b8ff,
     score: 19,
-    spriteKey: "enemy-emei"
+    spriteKey: "enemy-emei",
+    behaviorArchetype: "ranger"
   },
   beggarSect: {
     id: "beggarSect",
@@ -206,7 +222,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 14,
     tint: 0x8b7355,
     score: 21,
-    spriteKey: "enemy-beggar"
+    spriteKey: "enemy-beggar",
+    behaviorArchetype: "chaser"
   },
   northernRider: {
     id: "northernRider",
@@ -218,7 +235,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 13,
     tint: 0xc67b4e,
     score: 24,
-    spriteKey: "enemy-northern-rider"
+    spriteKey: "enemy-northern-rider",
+    behaviorArchetype: "dasher"
   },
   poisonMaster: {
     id: "poisonMaster",
@@ -230,7 +248,8 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     radius: 14,
     tint: 0x6ecf4a,
     score: 32,
-    spriteKey: "enemy-poison-cult"
+    spriteKey: "enemy-poison-cult",
+    behaviorArchetype: "ranger"
   },
   minorBoss: {
     id: "minorBoss",

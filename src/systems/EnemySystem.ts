@@ -1,18 +1,24 @@
 import Phaser from "phaser";
 import { type EnemyId } from "../data/enemies";
+import { archetypeConfigFor, minionBehaviorFor, type MinionArchetypeConfig } from "../data/minionBehaviors";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor, type BossSkillConfig } from "../data/bossSkills";
 import type { DifficultyConfig } from "../data/metaProgression";
 import { Enemy } from "../entities/Enemy";
+import { EnemyProjectile } from "../entities/EnemyProjectile";
 import type { Player } from "../entities/Player";
 import { t } from "../i18n";
 
 export class EnemySystem {
   readonly enemies: Phaser.Physics.Arcade.Group;
+  readonly enemyProjectiles: Phaser.Physics.Arcade.Group;
   private readonly nextDashAt = new WeakMap<Enemy, number>();
   private readonly dashUntil = new WeakMap<Enemy, number>();
   private readonly nextFanAt = new WeakMap<Enemy, number>();
   private readonly nextSummonAt = new WeakMap<Enemy, number>();
   private readonly finalPhaseActive = new WeakSet<Enemy>();
+  private readonly minionNextActionAt = new WeakMap<Enemy, number>();
+  private readonly minionLockedUntil = new WeakMap<Enemy, number>();
+  private readonly minionWindupPending = new WeakSet<Enemy>();
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -20,38 +26,234 @@ export class EnemySystem {
     private readonly difficulty: DifficultyConfig
   ) {
     this.enemies = scene.physics.add.group({ classType: Enemy, runChildUpdate: false });
+    this.enemyProjectiles = scene.physics.add.group({ classType: EnemyProjectile, runChildUpdate: false });
   }
 
   spawn(enemyId: EnemyId, x: number, y: number, elite = false): Enemy {
     const enemy = this.enemies.get(x, y, enemyId) as Enemy | null;
-    if (enemy) {
-      enemy.spawnAs(enemyId, x, y, elite, this.difficultyScale());
-      return enemy;
-    }
-
-    const created = new Enemy(this.scene, x, y, enemyId);
-    created.spawnAs(enemyId, x, y, elite, this.difficultyScale());
-    return created;
+    const spawned = enemy ?? new Enemy(this.scene, x, y, enemyId);
+    spawned.spawnAs(enemyId, x, y, elite, this.difficultyScale());
+    this.resetMinionState(spawned);
+    return spawned;
   }
 
   update(): void {
+    const now = this.scene.time.now;
     this.enemies.children.each((child) => {
       const enemy = child as Enemy;
       if (!enemy.active) {
         return true;
       }
 
-      this.updateBossSkills(enemy);
-      if ((this.dashUntil.get(enemy) ?? 0) < this.scene.time.now) {
-        this.scene.physics.moveToObject(enemy, this.player, enemy.config.moveSpeed * enemy.moveSpeedMultiplier);
+      if (enemy.config.isBoss) {
+        this.updateBossSkills(enemy);
+        if ((this.dashUntil.get(enemy) ?? 0) < now) {
+          this.chasePlayer(enemy, 1);
+        }
+      } else {
+        this.updateOrdinaryBehavior(enemy);
       }
       enemy.updateStatusUi();
       return true;
     });
+    this.updateEnemyProjectiles(now);
   }
 
   activeCount(): number {
     return this.enemies.countActive(true);
+  }
+
+  private updateOrdinaryBehavior(enemy: Enemy): void {
+    const now = this.scene.time.now;
+    const archetype = minionBehaviorFor(enemy.enemyId);
+    const config = archetypeConfigFor(archetype, enemy.isElite);
+
+    if ((this.dashUntil.get(enemy) ?? 0) >= now) {
+      return;
+    }
+
+    if ((this.minionLockedUntil.get(enemy) ?? 0) >= now) {
+      enemy.setVelocity(0, 0);
+      return;
+    }
+
+    switch (archetype) {
+      case "chaser":
+        this.chasePlayer(enemy, config.speedMultiplier);
+        break;
+      case "dasher":
+        this.updateDasher(enemy, config, now);
+        break;
+      case "tank":
+        this.updateTank(enemy, config, now);
+        break;
+      case "ranger":
+        this.updateRanger(enemy, config, now);
+        break;
+    }
+  }
+
+  private updateDasher(enemy: Enemy, config: MinionArchetypeConfig, now: number): void {
+    const nextActionAt = this.minionNextActionAt.get(enemy) ?? 0;
+    if (now >= nextActionAt && !this.minionWindupPending.has(enemy)) {
+      this.startDasherLunge(enemy, config, now);
+      return;
+    }
+    this.chasePlayer(enemy, config.speedMultiplier);
+  }
+
+  private updateTank(enemy: Enemy, config: MinionArchetypeConfig, now: number): void {
+    const nextActionAt = this.minionNextActionAt.get(enemy) ?? 0;
+    if (now >= nextActionAt && !this.minionWindupPending.has(enemy)) {
+      this.startTankPlant(enemy, config, now);
+      return;
+    }
+    this.chasePlayer(enemy, config.speedMultiplier);
+  }
+
+  private updateRanger(enemy: Enemy, config: MinionArchetypeConfig, now: number): void {
+    const distance = Phaser.Math.Distance.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+    const nextActionAt = this.minionNextActionAt.get(enemy) ?? 0;
+    const speed = enemy.config.moveSpeed * enemy.moveSpeedMultiplier * config.speedMultiplier;
+
+    if (distance < config.range * 0.72) {
+      this.moveAwayFromPlayer(enemy, speed);
+    } else if (distance > config.range * 1.08) {
+      this.chasePlayer(enemy, config.speedMultiplier);
+    } else {
+      enemy.setVelocity(0, 0);
+      if (now >= nextActionAt && !this.minionWindupPending.has(enemy)) {
+        this.startRangerShot(enemy, config, now);
+      }
+    }
+  }
+
+  private startDasherLunge(enemy: Enemy, config: MinionArchetypeConfig, now: number): void {
+    const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+    this.minionWindupPending.add(enemy);
+    this.minionLockedUntil.set(enemy, now + config.windupMs);
+    this.minionNextActionAt.set(enemy, now + config.cooldownMs);
+    this.showLineTelegraph(enemy.x, enemy.y, angle, config.range * 0.42, 10, enemy.config.tint, config.windupMs);
+
+    this.scene.time.delayedCall(config.windupMs, () => {
+      this.minionWindupPending.delete(enemy);
+      if (!enemy.active) {
+        return;
+      }
+      const dashSpeed = enemy.config.moveSpeed * enemy.moveSpeedMultiplier * config.dashSpeedMultiplier;
+      enemy.setVelocity(Math.cos(angle) * dashSpeed, Math.sin(angle) * dashSpeed);
+      this.dashUntil.set(enemy, this.scene.time.now + config.actionMs);
+    });
+  }
+
+  private startTankPlant(enemy: Enemy, config: MinionArchetypeConfig, now: number): void {
+    this.minionWindupPending.add(enemy);
+    this.minionLockedUntil.set(enemy, now + config.windupMs + config.actionMs);
+    this.minionNextActionAt.set(enemy, now + config.cooldownMs);
+    enemy.setVelocity(0, 0);
+    this.showRingTelegraph(enemy.x, enemy.y, enemy.config.radius + 18, enemy.config.tint, config.windupMs + config.actionMs);
+
+    this.scene.time.delayedCall(config.windupMs + config.actionMs, () => {
+      this.minionWindupPending.delete(enemy);
+    });
+  }
+
+  private startRangerShot(enemy: Enemy, config: MinionArchetypeConfig, now: number): void {
+    const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
+    this.minionWindupPending.add(enemy);
+    this.minionLockedUntil.set(enemy, now + config.windupMs);
+    this.minionNextActionAt.set(enemy, now + config.cooldownMs);
+    this.showRingTelegraph(enemy.x, enemy.y, 16, enemy.config.tint, config.windupMs);
+
+    this.scene.time.delayedCall(config.windupMs, () => {
+      this.minionWindupPending.delete(enemy);
+      if (!enemy.active) {
+        return;
+      }
+      this.fireEnemyProjectile(enemy, angle, config);
+    });
+  }
+
+  private fireEnemyProjectile(enemy: Enemy, angle: number, config: MinionArchetypeConfig): void {
+    const pooled = this.enemyProjectiles.get(enemy.x, enemy.y, "bolt") as EnemyProjectile | null;
+    const projectile = pooled ?? new EnemyProjectile(this.scene, enemy.x, enemy.y);
+    projectile.fire({
+      x: enemy.x,
+      y: enemy.y,
+      damage: Math.round(enemy.config.damage * enemy.damageMultiplier * config.projectileDamageMultiplier),
+      velocityX: Math.cos(angle) * config.projectileSpeed,
+      velocityY: Math.sin(angle) * config.projectileSpeed,
+      tint: enemy.config.tint,
+      durationMs: config.actionMs
+    });
+    if (!pooled) {
+      this.enemyProjectiles.add(projectile);
+    }
+  }
+
+  private chasePlayer(enemy: Enemy, speedMultiplier: number): void {
+    const speed = enemy.config.moveSpeed * enemy.moveSpeedMultiplier * speedMultiplier;
+    this.scene.physics.moveToObject(enemy, this.player, speed);
+  }
+
+  private moveAwayFromPlayer(enemy: Enemy, speed: number): void {
+    const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, enemy.x, enemy.y);
+    enemy.setVelocity(Math.cos(angle) * speed, Math.sin(angle) * speed);
+  }
+
+  private showLineTelegraph(
+    x: number,
+    y: number,
+    angle: number,
+    length: number,
+    width: number,
+    color: number,
+    durationMs: number
+  ): void {
+    const warning = this.scene.add
+      .rectangle(x, y, length, width, color, 0.28)
+      .setRotation(angle)
+      .setDepth(9);
+    this.scene.tweens.add({
+      targets: warning,
+      alpha: { from: 0.32, to: 0.06 },
+      duration: durationMs,
+      onComplete: () => warning.destroy()
+    });
+  }
+
+  private showRingTelegraph(x: number, y: number, radius: number, color: number, durationMs: number): void {
+    const ring = this.scene.add.circle(x, y, radius, color, 0.2).setDepth(9);
+    this.scene.tweens.add({
+      targets: ring,
+      alpha: { from: 0.28, to: 0.04 },
+      scale: { from: 0.85, to: 1.15 },
+      duration: durationMs,
+      onComplete: () => ring.destroy()
+    });
+  }
+
+  private updateEnemyProjectiles(now: number): void {
+    this.enemyProjectiles.children.each((child) => {
+      const projectile = child as EnemyProjectile;
+      if (!projectile.active) {
+        return true;
+      }
+      if (now >= projectile.expiresAt) {
+        projectile.expire();
+      }
+      return true;
+    });
+  }
+
+  private resetMinionState(enemy: Enemy): void {
+    if (enemy.config.isBoss) {
+      return;
+    }
+    this.minionWindupPending.delete(enemy);
+    this.minionLockedUntil.delete(enemy);
+    this.dashUntil.delete(enemy);
+    this.minionNextActionAt.set(enemy, this.scene.time.now + Phaser.Math.Between(500, 1400));
   }
 
   private updateBossSkills(enemy: Enemy): void {

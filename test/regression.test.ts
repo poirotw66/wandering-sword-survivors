@@ -13,6 +13,7 @@ import { buildBossLegacySummary } from "../src/data/bossLegacy";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor } from "../src/data/bossSkills";
 import { eliteTraitFor } from "../src/data/eliteTraits";
 import { ENEMY_CONFIGS } from "../src/data/enemies";
+import { archetypeConfigFor, ordinaryEnemyBehaviorMap } from "../src/data/minionBehaviors";
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows, startStyleOptions } from "../src/data/metaChoices";
 import { SPAWN_WAVES } from "../src/data/waves";
@@ -601,6 +602,45 @@ describe("game regression rules", () => {
     const waveEnemyIds = new Set(SPAWN_WAVES.map((wave) => wave.enemyId));
 
     expect(ordinaryEnemyIds.every((enemyId) => waveEnemyIds.has(enemyId))).toBe(true);
+  });
+
+  it("maps every ordinary enemy to a minion behavior archetype", () => {
+    const behaviorMap = ordinaryEnemyBehaviorMap();
+    const ordinaryEnemies = Object.values(ENEMY_CONFIGS).filter((enemy) => !enemy.isBoss);
+    const archetypes = new Set(["chaser", "dasher", "tank", "ranger"]);
+
+    expect(Object.keys(behaviorMap)).toHaveLength(16);
+    expect(ordinaryEnemies.every((enemy) => archetypes.has(behaviorMap[enemy.id] ?? ""))).toBe(true);
+    expect(ordinaryEnemies.every((enemy) => enemy.behaviorArchetype === behaviorMap[enemy.id])).toBe(true);
+  });
+
+  it("defines positive minion behavior tuning for action archetypes", () => {
+    for (const archetype of ["dasher", "tank", "ranger"] as const) {
+      const config = archetypeConfigFor(archetype, false);
+      expect(config.cooldownMs).toBeGreaterThan(0);
+      expect(config.windupMs).toBeGreaterThan(0);
+      expect(config.actionMs).toBeGreaterThan(0);
+    }
+
+    const ranger = archetypeConfigFor("ranger", false);
+    expect(ranger.projectileSpeed).toBeGreaterThan(0);
+    expect(ranger.projectileDamageMultiplier).toBeGreaterThan(0);
+    expect(ranger.range).toBeGreaterThan(0);
+  });
+
+  it("amplifies elite minion behavior cooldowns and plant duration", () => {
+    const normalDasher = archetypeConfigFor("dasher", false);
+    const eliteDasher = archetypeConfigFor("dasher", true);
+    const normalTank = archetypeConfigFor("tank", false);
+    const eliteTank = archetypeConfigFor("tank", true);
+    const normalRanger = archetypeConfigFor("ranger", false);
+    const eliteRanger = archetypeConfigFor("ranger", true);
+
+    expect(eliteDasher.cooldownMs).toBeLessThan(normalDasher.cooldownMs);
+    expect(eliteTank.windupMs).toBeGreaterThan(normalTank.windupMs);
+    expect(eliteTank.actionMs).toBeGreaterThan(normalTank.actionMs);
+    expect(eliteRanger.cooldownMs).toBeLessThan(normalRanger.cooldownMs);
+    expect(archetypeConfigFor("chaser", true).speedMultiplier).toBe(1);
   });
 
   it("reports potential ultimate arts when boss skills unlock", () => {
