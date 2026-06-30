@@ -72,7 +72,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   golem: {
     id: "golem",
     name: "Songshan Expert",
-    hp: 194,
+    hp: 300,
     damage: 20,
     moveSpeed: 48,
     exp: 7,
@@ -98,7 +98,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   hengshanNun: {
     id: "hengshanNun",
     name: "Hengshan Guard Nun",
-    hp: 82,
+    hp: 100,
     damage: 10,
     moveSpeed: 64,
     exp: 4,
@@ -111,7 +111,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   taishanAcolyte: {
     id: "taishanAcolyte",
     name: "Taishan Acolyte",
-    hp: 124,
+    hp: 185,
     damage: 16,
     moveSpeed: 58,
     exp: 5,
@@ -137,7 +137,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   medicineHeretic: {
     id: "medicineHeretic",
     name: "Medicine Valley Heretic",
-    hp: 92,
+    hp: 138,
     damage: 14,
     moveSpeed: 70,
     exp: 5,
@@ -150,7 +150,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   sunMoonCultist: {
     id: "sunMoonCultist",
     name: "Sun Moon Cultist",
-    hp: 114,
+    hp: 170,
     damage: 18,
     moveSpeed: 88,
     exp: 6,
@@ -163,7 +163,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   royalGuard: {
     id: "royalGuard",
     name: "Imperial Brocade Guard",
-    hp: 238,
+    hp: 360,
     damage: 24,
     moveSpeed: 54,
     exp: 8,
@@ -176,7 +176,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   wudangMonk: {
     id: "wudangMonk",
     name: "Wudang Taoist",
-    hp: 102,
+    hp: 125,
     damage: 13,
     moveSpeed: 62,
     exp: 4,
@@ -189,7 +189,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   shaolinMonk: {
     id: "shaolinMonk",
     name: "Shaolin Monk",
-    hp: 156,
+    hp: 235,
     damage: 18,
     moveSpeed: 52,
     exp: 6,
@@ -215,7 +215,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   beggarSect: {
     id: "beggarSect",
     name: "Beggar Sect Scout",
-    hp: 76,
+    hp: 92,
     damage: 12,
     moveSpeed: 78,
     exp: 4,
@@ -228,7 +228,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   northernRider: {
     id: "northernRider",
     name: "Northern Steppe Raider",
-    hp: 70,
+    hp: 105,
     damage: 14,
     moveSpeed: 112,
     exp: 4,
@@ -241,7 +241,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   poisonMaster: {
     id: "poisonMaster",
     name: "Five Poisons Cultist",
-    hp: 98,
+    hp: 145,
     damage: 16,
     moveSpeed: 68,
     exp: 5,
@@ -254,7 +254,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   minorBoss: {
     id: "minorBoss",
     name: "Rival Sect Captain",
-    hp: 9315,
+    hp: 13500,
     damage: 24,
     moveSpeed: 72,
     exp: 26,
@@ -268,7 +268,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   midBoss: {
     id: "midBoss",
     name: "Renegade Master",
-    hp: 21270,
+    hp: 31000,
     damage: 32,
     moveSpeed: 66,
     exp: 50,
@@ -283,7 +283,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   greatBoss: {
     id: "greatBoss",
     name: "Grand Sword Elder",
-    hp: 42525,
+    hp: 62000,
     damage: 42,
     moveSpeed: 58,
     exp: 95,
@@ -299,7 +299,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   megaBoss: {
     id: "megaBoss",
     name: "Demonic Sect Overlord",
-    hp: 72900,
+    hp: 106000,
     damage: 54,
     moveSpeed: 54,
     exp: 150,
@@ -315,7 +315,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   finalBoss: {
     id: "finalBoss",
     name: "Eastern Invincible",
-    hp: 125550,
+    hp: 182000,
     damage: 68,
     moveSpeed: 60,
     exp: 300,

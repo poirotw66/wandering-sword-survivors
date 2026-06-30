@@ -1,12 +1,20 @@
 import Phaser from "phaser";
 import type { GameState } from "../game/GameState";
 import {
+  buildBuildPathLoadoutSlots,
   buildSkillLoadoutSlots,
   buildWeaponLoadoutSlots,
   resolveLoadoutIconKey,
   type LoadoutSlotEntry
 } from "../data/loadoutEntries";
-import { MAX_SKILL_SLOTS, MAX_WEAPON_SLOTS, learnedSkillCount, learnedWeaponCount } from "../data/loadoutLimits";
+import {
+  MAX_BUILD_PATH_SLOTS,
+  MAX_SKILL_SLOTS,
+  MAX_WEAPON_SLOTS,
+  learnedBuildPathCount,
+  learnedSkillCount,
+  learnedWeaponCount
+} from "../data/loadoutLimits";
 import { t } from "../i18n";
 import { TITLE_FONT } from "./textStyle";
 
@@ -48,14 +56,27 @@ const SKILL_THEME: SlotTheme = {
   sealColor: "#ffe9c2"
 };
 
+const BUILD_THEME: SlotTheme = {
+  accent: 0xb86bff,
+  accentDim: 0x3a2848,
+  fill: 0x14101a,
+  fillEmpty: 0x0a080e,
+  headerColor: "#d8b4ff",
+  sealBg: "#2a1840cc",
+  sealColor: "#f0e0ff"
+};
+
 export class LoadoutBar {
   private readonly root: Phaser.GameObjects.Container;
   private readonly weaponSection: Phaser.GameObjects.Container;
   private readonly skillSection: Phaser.GameObjects.Container;
+  private readonly buildSection: Phaser.GameObjects.Container;
   private readonly weaponLabel: Phaser.GameObjects.Text;
   private readonly skillLabel: Phaser.GameObjects.Text;
+  private readonly buildLabel: Phaser.GameObjects.Text;
   private readonly weaponSlots: Phaser.GameObjects.Container[] = [];
   private readonly skillSlots: Phaser.GameObjects.Container[] = [];
+  private readonly buildSlots: Phaser.GameObjects.Container[] = [];
   private readonly tooltip: Phaser.GameObjects.Text;
 
   constructor(private readonly scene: Phaser.Scene, x: number, y: number) {
@@ -75,14 +96,18 @@ export class LoadoutBar {
 
     this.weaponSection = this.createSection(0, WEAPON_THEME);
     this.skillSection = this.createSection(this.sectionHeight() + SECTION_GAP, SKILL_THEME);
+    this.buildSection = this.createSection((this.sectionHeight() + SECTION_GAP) * 2, BUILD_THEME);
 
     this.weaponLabel = this.createSectionLabel(this.weaponSection, WEAPON_THEME);
     this.skillLabel = this.createSectionLabel(this.skillSection, SKILL_THEME);
+    this.buildLabel = this.createSectionLabel(this.buildSection, BUILD_THEME);
 
     const weaponRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
     const skillRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
+    const buildRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
     this.weaponSection.add(weaponRow);
     this.skillSection.add(skillRow);
+    this.buildSection.add(buildRow);
 
     for (let index = 0; index < MAX_WEAPON_SLOTS; index += 1) {
       this.weaponSlots.push(this.createSlot(weaponRow, index, WEAPON_THEME));
@@ -90,8 +115,11 @@ export class LoadoutBar {
     for (let index = 0; index < MAX_SKILL_SLOTS; index += 1) {
       this.skillSlots.push(this.createSlot(skillRow, index, SKILL_THEME));
     }
+    for (let index = 0; index < MAX_BUILD_PATH_SLOTS; index += 1) {
+      this.buildSlots.push(this.createSlot(buildRow, index, BUILD_THEME));
+    }
 
-    this.root.add([this.weaponSection, this.skillSection]);
+    this.root.add([this.weaponSection, this.skillSection, this.buildSection]);
   }
 
   setPosition(x: number, y: number): void {
@@ -103,7 +131,7 @@ export class LoadoutBar {
   }
 
   getHeight(): number {
-    return this.sectionHeight() * 2 + SECTION_GAP;
+    return this.sectionHeight() * 3 + SECTION_GAP * 2;
   }
 
   update(state: GameState): void {
@@ -121,12 +149,21 @@ export class LoadoutBar {
         max: MAX_SKILL_SLOTS
       })
     );
+    this.buildLabel.setText(
+      t("loadoutSectionLabel", {
+        name: t("buildPaths"),
+        current: learnedBuildPathCount(state),
+        max: MAX_BUILD_PATH_SLOTS
+      })
+    );
 
     const weapons = buildWeaponLoadoutSlots(state);
     const skills = buildSkillLoadoutSlots(state);
+    const builds = buildBuildPathLoadoutSlots(state);
 
     this.weaponSlots.forEach((slot, index) => this.renderSlot(slot, weapons[index], WEAPON_THEME));
     this.skillSlots.forEach((slot, index) => this.renderSlot(slot, skills[index], SKILL_THEME));
+    this.buildSlots.forEach((slot, index) => this.renderSlot(slot, builds[index], BUILD_THEME));
   }
 
   private sectionHeight(): number {
@@ -229,7 +266,9 @@ export class LoadoutBar {
 
     const tooltipText =
       filled && entry.label
-        ? `${entry.label} · ${t("loadoutTier", { tier: entry.level ?? 1 })}`
+        ? entry.evolved
+          ? `${entry.label} · ${t("loadoutEvolvedTier")}`
+          : `${entry.label} · ${t("loadoutTier", { tier: entry.level ?? 1 })}`
         : "";
     slot.setData("tooltip", tooltipText);
 
@@ -238,7 +277,7 @@ export class LoadoutBar {
       icon.setDisplaySize(ICON_SIZE, ICON_SIZE);
       icon.setTint(entry.tint ?? 0xffffff);
       icon.setVisible(true);
-      levelSeal.setText(t("loadoutTier", { tier: entry.level ?? 1 }));
+      levelSeal.setText(entry.evolved ? t("loadoutEvolvedTier") : t("loadoutTier", { tier: entry.level ?? 1 }));
       levelSeal.setVisible(true);
       if (entry.evolved) {
         levelSeal.setColor("#ffe9a8");

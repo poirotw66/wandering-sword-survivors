@@ -4,6 +4,7 @@ import type { GameState } from "../game/GameState";
 
 export const MAX_WEAPON_SLOTS = 6;
 export const MAX_SKILL_SLOTS = 6;
+export const MAX_BUILD_PATH_SLOTS = 4;
 
 export function learnedWeaponCount(state: GameState): number {
   return [...state.weaponLevels.values()].filter((level) => level > 0).length;
@@ -11,6 +12,10 @@ export function learnedWeaponCount(state: GameState): number {
 
 export function learnedSkillCount(state: GameState): number {
   return [...state.skillLevels.values()].filter((level) => level > 0).length;
+}
+
+export function learnedBuildPathCount(state: GameState): number {
+  return [...state.buildPathLevels.values()].filter((level) => level > 0).length;
 }
 
 export function canLearnNewWeapon(state: GameState): boolean {
@@ -30,11 +35,11 @@ export function weaponsLoadoutFullAndMastered(state: GameState): boolean {
 }
 
 export function skillsLoadoutFullAndMastered(state: GameState): boolean {
-  const learned = [...state.skillLevels.entries()].filter(([, level]) => level > 0);
-  if (learned.length < MAX_SKILL_SLOTS) {
+  const active = [...state.skillLevels.entries()].filter(([, level]) => level > 0);
+  if (active.length < MAX_SKILL_SLOTS) {
     return false;
   }
-  return learned.every(([skillId, level]) => level >= SKILL_CONFIGS[skillId].maxLevel);
+  return active.every(([skillId, level]) => level >= SKILL_CONFIGS[skillId].maxLevel);
 }
 
 export function eligibleEvolutionsMastered(state: GameState): boolean {

@@ -3,6 +3,7 @@ import { type EnemyId } from "../data/enemies";
 import { archetypeConfigFor, minionBehaviorFor, type MinionArchetypeConfig } from "../data/minionBehaviors";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor, type BossSkillConfig } from "../data/bossSkills";
 import type { DifficultyConfig } from "../data/metaProgression";
+import { timeCombatScale } from "../data/timeCombatScale";
 import { Enemy } from "../entities/Enemy";
 import { EnemyProjectile } from "../entities/EnemyProjectile";
 import type { Player } from "../entities/Player";
@@ -19,6 +20,7 @@ export class EnemySystem {
   private readonly minionNextActionAt = new WeakMap<Enemy, number>();
   private readonly minionLockedUntil = new WeakMap<Enemy, number>();
   private readonly minionWindupPending = new WeakSet<Enemy>();
+  private elapsedSec = 0;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -27,6 +29,10 @@ export class EnemySystem {
   ) {
     this.enemies = scene.physics.add.group({ classType: Enemy, runChildUpdate: false });
     this.enemyProjectiles = scene.physics.add.group({ classType: EnemyProjectile, runChildUpdate: false });
+  }
+
+  setElapsedSec(elapsedSec: number): void {
+    this.elapsedSec = elapsedSec;
   }
 
   spawn(enemyId: EnemyId, x: number, y: number, elite = false): Enemy {
@@ -447,9 +453,10 @@ export class EnemySystem {
   }
 
   private difficultyScale(): { hp: number; damage: number; speed: number; reward: number } {
+    const time = timeCombatScale(this.elapsedSec);
     return {
-      hp: this.difficulty.hpMultiplier,
-      damage: this.difficulty.damageMultiplier,
+      hp: this.difficulty.hpMultiplier * time.hp,
+      damage: this.difficulty.damageMultiplier * time.damage,
       speed: this.difficulty.speedMultiplier,
       reward: this.difficulty.rewardMultiplier
     };

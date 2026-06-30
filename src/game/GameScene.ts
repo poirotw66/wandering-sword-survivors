@@ -202,6 +202,7 @@ export class GameScene extends Phaser.Scene {
     this.state.elapsedSec += (delta / 1000) * this.state.devMode.timeScale;
     this.playerSystem.update(delta);
     this.updatePlayerGroundingEffects(time);
+    this.enemySystem.setElapsedSec(this.state.elapsedSec);
     this.spawnSystem.update(this.state.elapsedSec);
     this.enemySystem.update();
     this.weaponSystem.update();

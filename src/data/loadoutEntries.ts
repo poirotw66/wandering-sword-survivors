@@ -1,7 +1,8 @@
 import { EVOLUTION_CONFIGS } from "./evolutions";
 import type { GameState } from "../game/GameState";
-import { evolutionName, skillName, weaponName } from "../i18n";
-import { MAX_SKILL_SLOTS, MAX_WEAPON_SLOTS } from "./loadoutLimits";
+import { evolutionName, skillName, weaponName, buildPathName } from "../i18n";
+import { MAX_BUILD_PATH_SLOTS, MAX_SKILL_SLOTS, MAX_WEAPON_SLOTS } from "./loadoutLimits";
+import { BUILD_PATH_CONFIGS, type BuildPathId } from "./buildPaths";
 import { SKILL_CONFIGS } from "./skills";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 
@@ -40,6 +41,20 @@ export function buildSkillLoadoutSlots(state: GameState): LoadoutSlotEntry[] {
     }));
 
   return padSlots(equipped, MAX_SKILL_SLOTS);
+}
+
+export function buildBuildPathLoadoutSlots(state: GameState): LoadoutSlotEntry[] {
+  const equipped = (Object.keys(BUILD_PATH_CONFIGS) as BuildPathId[])
+    .map((pathId) => ({ pathId, level: state.buildPathLevels.get(pathId) ?? 0 }))
+    .filter(({ level }) => level > 0)
+    .map(({ pathId, level }) => ({
+      iconKey: BUILD_PATH_CONFIGS[pathId].iconKey,
+      label: buildPathName(pathId),
+      level,
+      tint: 0xe8d4ff
+    }));
+
+  return padSlots(equipped, MAX_BUILD_PATH_SLOTS);
 }
 
 function weaponSlotLabel(state: GameState, weaponId: WeaponId): string {

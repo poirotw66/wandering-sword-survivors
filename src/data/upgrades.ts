@@ -122,8 +122,8 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
       recipeHint: recipeHint(state, config.baseWeaponId, config.requiredSkillId, evolutionId),
       progressText: t("readyToEvolve"),
       evolutionId,
-      apply: ({ evolvedWeapons }) => {
-        evolvedWeapons.set(config.baseWeaponId, evolutionId);
+      apply: (gameState) => {
+        gameState.evolvedWeapons.set(config.baseWeaponId, evolutionId);
       }
     });
   }

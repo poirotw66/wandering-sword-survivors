@@ -1,8 +1,8 @@
 import type { GameState } from "../game/GameState";
-import { isMartialLoadoutComplete } from "./loadoutLimits";
+import { weaponsLoadoutFullAndMastered, skillsLoadoutFullAndMastered } from "./loadoutLimits";
 
 export function isBuildPathUpgradeUnlocked(state: GameState): boolean {
-  return state.devMode.enabled || isMartialLoadoutComplete(state) || state.level >= 8 || state.bossDefeats.size > 0;
+  return state.devMode.enabled || (weaponsLoadoutFullAndMastered(state) && skillsLoadoutFullAndMastered(state));
 }
 
 export function isStandaloneSkillPoolUnlocked(state: GameState): boolean {

@@ -1,3 +1,3 @@
 export function expToNextForLevel(level: number): number {
-  return Math.floor(8 + level * 5.5 + level ** 1.5);
+  return Math.floor((12 + level * 7 + level ** 1.52) * 10);
 }
