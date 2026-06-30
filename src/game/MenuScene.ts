@@ -28,7 +28,9 @@ import {
 import { readAudioSettings, writeAudioSettings, type AudioSettings } from "../data/audioSettings";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
-import { drawGoalRibbon, drawScrollPanel, drawSectionTab, HUB, paintMenuBackdrop } from "../ui/menuHubTheme";
+import { drawGoalRibbon, drawScrollPanel, drawSectionTab, drawHubBorderFrame, drawVerticalCouplet, drawInkSwordStrokes, spawnHubPetals, paintHubMapLayer, HUB, paintMenuBackdrop } from "../ui/menuHubTheme";
+import { mountHubBgm } from "../audio/mountHubBgm";
+import { titleProgressFor } from "../data/metaProgression";
 
 const START_STYLE_ICONS: Record<StartStyleId, string> = {
   swordSect: "icon-build-sword",
@@ -101,7 +103,7 @@ export class MenuScene extends Phaser.Scene {
 
     const layout = this.computeLayout(width, height);
     this.paintBackground(width, height, layout);
-    this.createTopBar(width, layout);
+    this.createTopBar(width, layout, record, bonuses);
     this.paintHeader(width, layout);
     drawGoalRibbon(this, width / 2, layout.goal.y, layout.goal.height, Math.min(layout.panelWidth - 48, 640));
     const goalTextY = layout.showDifficultyHint ? layout.goal.y + 8 : this.zoneCenter(layout.goal);
@@ -131,6 +133,7 @@ export class MenuScene extends Phaser.Scene {
     this.createSelectionSummary(bonuses, width, layout);
     this.createActionFooter(width, layout, record);
 
+    mountHubBgm(this);
     this.scale.off("resize", this.onResize, this);
     this.scale.on("resize", this.onResize, this);
   }
@@ -291,6 +294,14 @@ export class MenuScene extends Phaser.Scene {
 
   private paintBackground(width: number, height: number, layout: HubLayout): void {
     paintMenuBackdrop(this, width, height);
+    paintHubMapLayer(this, width, height, 1, 0.08);
+    drawHubBorderFrame(this, width, height, 3);
+    drawInkSwordStrokes(this, width, height, 2);
+    spawnHubPetals(this, width, height, layout.compact ? 6 : 10);
+    if (!layout.tight && width >= 720) {
+      drawVerticalCouplet(this, 42, height * 0.42, t("menuHubCoupletLeft").split(""), 4);
+      drawVerticalCouplet(this, width - 42, height * 0.42, t("menuHubCoupletRight").split(""), 4);
+    }
     const heroX = width * 0.78;
     const heroY = this.zoneCenter(layout.run);
     if (this.textures.exists("player")) {
@@ -311,12 +322,30 @@ export class MenuScene extends Phaser.Scene {
     }
   }
 
-  private createTopBar(width: number, layout: HubLayout): void {
+  private createTopBar(
+    width: number,
+    layout: HubLayout,
+    record: ReturnType<typeof AchievementSystem.readRecord>,
+    bonuses: ReturnType<typeof metaBonusesFromShop>
+  ): void {
     const barCenterY = this.zoneCenter(layout.topBar);
     this.add
       .rectangle(width / 2, barCenterY, width, layout.topBar.height, HUB.inkMid, 0.72)
       .setDepth(10)
       .setStrokeStyle(1, HUB.goldDim, 0.35);
+    const progress = titleProgressFor(record.totalRenown);
+    const nextLine = progress.isMaxTitle
+      ? t("titleProgressMax")
+      : t("titleProgressNext", { title: t(progress.nextTitleKey!), renown: progress.nextRenownRequired ?? 0 });
+    this.add
+      .text(width / 2, barCenterY, t("metaProgressionLine", { title: t(bonuses.titleKey), renown: record.totalRenown, next: nextLine }), {
+        fontFamily: UI_FONT,
+        fontSize: layout.compact ? "10px" : "11px",
+        color: "#9eb4c8",
+        align: "center"
+      })
+      .setDepth(11)
+      .setOrigin(0.5);
     this.createLanguageToggle(width, layout.topBar.y + 10);
     this.createAudioControls(width, layout.topBar.y + 8, layout.compact);
   }
@@ -783,8 +812,8 @@ export class MenuScene extends Phaser.Scene {
     const panelWidth = Math.min(560, width - 48);
     const panelHeight = Math.min(420, height - 120);
     const panel = this.add
-      .rectangle(width / 2, height / 2, panelWidth, panelHeight, 0x111421, 0.96)
-      .setStrokeStyle(2, 0xf7c66b, 0.85);
+      .rectangle(width / 2, height / 2, panelWidth, panelHeight, HUB.scrollFill, 0.96)
+      .setStrokeStyle(2, HUB.goldBright, 0.85);
     const title = this.add
       .text(width / 2, height / 2 - panelHeight / 2 + 22, t("renownShopTitle"), {
         fontFamily: TITLE_FONT,

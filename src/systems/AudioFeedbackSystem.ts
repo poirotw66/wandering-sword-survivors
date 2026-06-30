@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { readAudioSettings } from "../data/audioSettings";
 import type { EvolutionId } from "../data/evolutions";
 import { evolutionVfxFor } from "../data/evolutionVfxProfiles";
+import { WuxiaBgmSystem } from "../audio/WuxiaBgmSystem";
 
 type TonePreset = {
   frequency: number;
@@ -29,19 +30,32 @@ export class AudioFeedbackSystem {
   private scene: Phaser.Scene;
   private context?: AudioContext;
   private unlocked = false;
-  private bgmGain?: GainNode;
-  private bgmOscillators: OscillatorNode[] = [];
-  private bgmDuckTimer?: Phaser.Time.TimerEvent;
+  private readonly bgm = WuxiaBgmSystem.shared();
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
-    scene.input.once("pointerdown", () => this.unlock());
-    scene.input.keyboard?.once("keydown", () => this.unlock());
-    scene.events.once("shutdown", () => this.stopBgm());
+    this.bgm.setMode("combat");
+
+    if (this.bgm.isUnlocked()) {
+      this.unlocked = true;
+      if (this.scene.sound.locked) {
+        this.scene.sound.unlock();
+      }
+      const AudioContextCtor = window.AudioContext ?? window.webkitAudioContext;
+      if (AudioContextCtor) {
+        this.context ??= new AudioContextCtor();
+        void this.context.resume();
+      }
+    } else {
+      scene.input.once("pointerdown", () => this.unlock());
+      scene.input.keyboard?.once("keydown", () => this.unlock());
+    }
 
     scene.events.on("weapon-fired", (weaponId: string) => this.playWeapon(weaponId));
     scene.events.on("evolution-fired", (evolutionId: EvolutionId) => this.playEvolutionFired(evolutionId));
     scene.events.on("evolution-learned", (evolutionId: EvolutionId) => this.playEvolutionLearned(evolutionId));
+    scene.events.on("boss-spawned", () => this.bgm.setMode("boss"));
+    scene.events.on("boss-defeated", () => this.bgm.setMode("combat"));
     scene.events.on("boss-defeated", () => this.playSfx(SFX_KEYS.boss, 0.55));
     scene.events.on("projectile-hit", () => this.playSfx(SFX_KEYS.hit, 0.42));
     scene.events.on("exp-collected", () => this.playSfx(SFX_KEYS.pickup, 0.34));
@@ -52,7 +66,7 @@ export class AudioFeedbackSystem {
     });
     scene.events.on("critical-hit", () => this.playSfx(SFX_KEYS.crit, 0.5));
     scene.events.on("combo-hit", () => this.playSfx(SFX_KEYS.combo, 0.44));
-    scene.events.on("bgm-duck", (durationMs: number, ratio = 0.16) => this.duckBgm(durationMs, ratio));
+    scene.events.on("bgm-duck", (durationMs: number, ratio = 0.16) => this.bgm.duck(durationMs, ratio));
   }
 
   private unlock(): void {
@@ -67,17 +81,13 @@ export class AudioFeedbackSystem {
     }
 
     this.unlocked = true;
-    this.startBgm();
+    this.bgm.unlock();
+    this.bgm.setMode("combat");
   }
 
   private sfxVolume(): number {
     const settings = readAudioSettings();
     return settings.muted ? 0 : settings.sfxVolume;
-  }
-
-  private musicVolume(): number {
-    const settings = readAudioSettings();
-    return settings.muted ? 0 : settings.musicVolume;
   }
 
   private playSfx(key: string, volume = 0.45): void {
@@ -115,7 +125,7 @@ export class AudioFeedbackSystem {
   private playEvolutionLearned(evolutionId: EvolutionId): void {
     const profile = evolutionVfxFor(evolutionId);
     const pitch = profile.burstStyle === "vajra" || profile.burstStyle === "quake" ? 0.88 : profile.burstStyle === "gale" ? 1.12 : 1;
-    this.duckBgm(1650, 0.14);
+    this.bgm.duck(1650, 0.14);
     this.playSfx(SFX_KEYS.evolution, 0.55);
     this.playTone(330 * pitch, 1180 * pitch, 280, 0.045);
     this.playTone(660 * pitch, 990 * pitch, 220, 0.03);
@@ -165,77 +175,6 @@ export class AudioFeedbackSystem {
     gain.connect(this.context.destination);
     oscillator.start(now);
     oscillator.stop(now + preset.durationMs / 1000 + 0.02);
-  }
-
-  private startBgm(): void {
-    if (!this.context || this.bgmGain) {
-      return;
-    }
-
-    this.bgmGain = this.context.createGain();
-    this.bgmGain.gain.value = 0.0001;
-    this.bgmGain.connect(this.context.destination);
-
-    const droneFrequencies = [110, 165, 220];
-    for (const frequency of droneFrequencies) {
-      const oscillator = this.context.createOscillator();
-      oscillator.type = "sine";
-      oscillator.frequency.value = frequency;
-      const voiceGain = this.context.createGain();
-      voiceGain.gain.value = frequency === 110 ? 0.08 : frequency === 165 ? 0.05 : 0.03;
-      oscillator.connect(voiceGain);
-      voiceGain.connect(this.bgmGain);
-      oscillator.start();
-      this.bgmOscillators.push(oscillator);
-    }
-
-    const targetGain = 0.12 * this.musicVolume();
-    const now = this.context.currentTime;
-    this.bgmGain.gain.exponentialRampToValueAtTime(Math.max(targetGain, 0.0001), now + 1.8);
-  }
-
-  private duckBgm(durationMs: number, ratio: number): void {
-    if (!this.context || !this.bgmGain) {
-      return;
-    }
-
-    const now = this.context.currentTime;
-    const duckedGain = Math.max(0.12 * this.musicVolume() * ratio, 0.0001);
-    this.bgmGain.gain.cancelScheduledValues(now);
-    this.bgmGain.gain.setValueAtTime(Math.max(this.bgmGain.gain.value, 0.0001), now);
-    this.bgmGain.gain.exponentialRampToValueAtTime(duckedGain, now + 0.14);
-
-    this.bgmDuckTimer?.remove(false);
-    this.bgmDuckTimer = this.scene.time.delayedCall(durationMs, () => this.restoreBgm());
-  }
-
-  private restoreBgm(): void {
-    if (!this.context || !this.bgmGain) {
-      return;
-    }
-
-    const now = this.context.currentTime;
-    const targetGain = Math.max(0.12 * this.musicVolume(), 0.0001);
-    this.bgmGain.gain.cancelScheduledValues(now);
-    this.bgmGain.gain.setValueAtTime(Math.max(this.bgmGain.gain.value, 0.0001), now);
-    this.bgmGain.gain.exponentialRampToValueAtTime(targetGain, now + 0.45);
-    this.bgmDuckTimer = undefined;
-  }
-
-  private stopBgm(): void {
-    this.bgmDuckTimer?.remove(false);
-    this.bgmDuckTimer = undefined;
-    for (const oscillator of this.bgmOscillators) {
-      try {
-        oscillator.stop();
-        oscillator.disconnect();
-      } catch {
-        // ponytail: oscillator may already be stopped when scene shuts down
-      }
-    }
-    this.bgmOscillators = [];
-    this.bgmGain?.disconnect();
-    this.bgmGain = undefined;
   }
 }
 

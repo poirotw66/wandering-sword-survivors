@@ -9,7 +9,7 @@ const STORAGE_KEY = "sword-survivors-audio";
 const DEFAULT_SETTINGS: AudioSettings = {
   muted: false,
   sfxVolume: 0.72,
-  musicVolume: 0.38
+  musicVolume: 0.55
 };
 
 export function readAudioSettings(): AudioSettings {

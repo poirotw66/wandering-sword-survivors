@@ -9,6 +9,16 @@ import { AchievementSystem, ACHIEVEMENT_IDS, type RunRecord } from "../systems/A
 import { buildPathName, achievementName, enemyName, skillName, t, weaponName } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import { formatClock } from "../utils/math";
+import {
+  drawHubBorderFrame,
+  drawHubSectionTitle,
+  drawInkSwordStrokes,
+  drawScrollPanel,
+  paintHubMapLayer,
+  paintMenuBackdrop,
+  spawnHubPetals
+} from "../ui/menuHubTheme";
+import { mountHubBgm } from "../audio/mountHubBgm";
 
 const BOSS_IDS: EnemyId[] = ["minorBoss", "midBoss", "greatBoss", "megaBoss", "finalBoss"];
 
@@ -27,24 +37,32 @@ export class CollectionScene extends Phaser.Scene {
   create(): void {
     const record = AchievementSystem.readRecord();
     const { width, height } = this.scale;
-    this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17);
+    paintMenuBackdrop(this, width, height);
+    paintHubMapLayer(this, width, height, 1, 0.06);
+    drawHubBorderFrame(this, width, height, 2);
+    drawInkSwordStrokes(this, width, height, 2);
+    spawnHubPetals(this, width, height, 6);
+
+    drawHubSectionTitle(this, width / 2, 24, t("collectionTitle"), TITLE_FONT, 8, 32);
     this.add
-      .text(width / 2, 34, t("collectionTitle"), {
-        fontFamily: TITLE_FONT,
-        fontSize: "34px",
-        color: "#f7efd8"
+      .text(width / 2, 58, t("collectionSubtitle"), {
+        fontFamily: UI_FONT,
+        fontSize: "14px",
+        color: "#9eb4c8",
+        align: "center"
       })
-      .setPadding(0, 8, 0, 8)
-      .setOrigin(0.5, 0);
+      .setOrigin(0.5, 0)
+      .setDepth(8);
 
     const back = this.add
       .text(24, 22, t("backToMenu"), {
-        fontFamily: UI_FONT,
+        fontFamily: TITLE_FONT,
         fontSize: "16px",
-        color: "#10121f",
-        backgroundColor: "#84f7b2",
+        color: "#1a1208",
+        backgroundColor: "#f7c66b",
         padding: { left: 12, right: 12, top: 8, bottom: 8 }
       })
+      .setDepth(12)
       .setInteractive({ useHandCursor: true });
     back.on("pointerdown", () => this.scene.start("MenuScene"));
     this.createDetailPanel(record, width);
@@ -63,6 +81,7 @@ export class CollectionScene extends Phaser.Scene {
     this.input.keyboard?.on("keydown-UP", () => this.scrollBy(-48));
     this.input.keyboard?.on("keydown-DOWN", () => this.scrollBy(48));
     this.input.keyboard?.once("keydown-ESC", () => this.scene.start("MenuScene"));
+    mountHubBgm(this);
   }
 
   private addRecords(record: RunRecord, width: number, y: number): number {
@@ -236,10 +255,12 @@ export class CollectionScene extends Phaser.Scene {
     const panelWidth = Math.min(430, width - 64);
     const x = width >= 980 ? width - panelWidth / 2 - 24 : width / 2;
     const y = 92;
-    this.add.rectangle(x, y + 78, panelWidth, 156, 0x111421, 0.88).setStrokeStyle(1, 0x5f4a2a, 0.9).setScrollFactor(0);
+    const panelTop = y;
+    const panelHeight = 156;
+    drawScrollPanel(this, x, panelTop, panelHeight, panelWidth, 18);
     this.detailTitle = this.add
       .text(x, y + 14, t("codexDetailHint"), {
-        fontFamily: UI_FONT,
+        fontFamily: TITLE_FONT,
         fontSize: "17px",
         color: "#ffe09a",
         wordWrap: { width: panelWidth - 32 }

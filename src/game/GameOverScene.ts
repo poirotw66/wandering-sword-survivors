@@ -9,6 +9,16 @@ import type { EnemyId } from "../data/enemies";
 import type { BuildPathId } from "../data/buildPaths";
 import { formatNextGoalLine, nextRunGoal } from "../data/metaChoices";
 import { formatSpendableRenownGained } from "../data/renownShop";
+import {
+  drawHubBorderFrame,
+  drawHubSeal,
+  drawInkSwordStrokes,
+  drawScrollPanel,
+  paintHubMapLayer,
+  paintMenuBackdrop,
+  spawnHubPetals
+} from "../ui/menuHubTheme";
+import { mountHubBgm } from "../audio/mountHubBgm";
 
 export type GameOverData = {
   won: boolean;
@@ -54,16 +64,35 @@ export class GameOverScene extends Phaser.Scene {
       (previousRecord.fastestClearSec === undefined || record.fastestClearSec < previousRecord.fastestClearSec);
 
     const { width, height } = this.scale;
-    this.add.rectangle(width / 2, height / 2, width, height, 0x0d0f17, 0.96);
-    this.add.image(width / 2, height * 0.54, data.won ? "strike" : "boss-master").setScale(data.won ? 1.1 : 0.34).setAlpha(0.25);
+    paintMenuBackdrop(this, width, height);
+    paintHubMapLayer(this, width, height, 1, 0.05);
+    drawHubBorderFrame(this, width, height, 2);
+    drawInkSwordStrokes(this, width, height, 2);
+    spawnHubPetals(this, width, height, 5);
+
+    const panelWidth = Math.min(760, width - 56);
+    const panelHeight = Math.min(560, height - 100);
+    const panelTop = height * 0.5 - panelHeight / 2;
+    drawScrollPanel(this, width / 2, panelTop, panelHeight, panelWidth, 4);
+
+    if (data.won) {
+      drawHubSeal(this, width / 2, panelTop + 36, t("gameOverSealVictory"), 10);
+    } else {
+      drawHubSeal(this, width / 2, panelTop + 36, t("gameOverSealDefeat"), 10);
+    }
+
+    this.add.image(width / 2, height * 0.54, data.won ? "strike" : "boss-master").setScale(data.won ? 1.1 : 0.34).setAlpha(0.18).setDepth(3);
     this.add
       .text(width / 2, height * 0.25, data.won ? t("victoryTitle") : t("defeatTitle"), {
         fontFamily: TITLE_FONT,
         fontSize: "52px",
-        color: data.won ? "#f7c66b" : "#ff7687"
+        color: data.won ? "#f7c66b" : "#ff7687",
+        stroke: "#120d18",
+        strokeThickness: 4
       })
       .setPadding(0, 10, 0, 10)
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(8);
     this.add
       .text(
         width / 2,
@@ -83,7 +112,8 @@ export class GameOverScene extends Phaser.Scene {
         }
       )
       .setPadding(0, 8, 0, 8)
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(8);
 
     this.add
       .text(
@@ -103,7 +133,8 @@ export class GameOverScene extends Phaser.Scene {
         }
       )
       .setPadding(0, 8, 0, 8)
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(8);
 
     this.add
       .text(width / 2, height * 0.63, this.formatLegacy(data, record), {
@@ -115,7 +146,8 @@ export class GameOverScene extends Phaser.Scene {
         wordWrap: { width: Math.min(780, width - 72) }
       })
       .setPadding(0, 8, 0, 8)
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(8);
 
     this.add
       .text(
@@ -137,7 +169,8 @@ export class GameOverScene extends Phaser.Scene {
           wordWrap: { width: Math.min(760, width - 72) }
         }
       )
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(8);
 
     this.add
       .text(width / 2, height * 0.786, formatSpendableRenownGained(data.score, record.spendableRenown), {
@@ -147,7 +180,8 @@ export class GameOverScene extends Phaser.Scene {
         align: "center",
         wordWrap: { width: Math.min(760, width - 72) }
       })
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(8);
 
     this.add
       .text(width / 2, height * 0.83, formatNextGoalLine(nextRunGoal(record)), {
@@ -158,24 +192,27 @@ export class GameOverScene extends Phaser.Scene {
         wordWrap: { width: Math.min(760, width - 72) }
       })
       .setPadding(0, 6, 0, 6)
-      .setOrigin(0.5);
+      .setOrigin(0.5)
+      .setDepth(8);
 
     const restart = this.add
       .text(width / 2, height * 0.9, t("restart"), {
-        fontFamily: UI_FONT,
+        fontFamily: TITLE_FONT,
         fontSize: "24px",
-        color: "#10121f",
-        backgroundColor: "#84f7b2",
+        color: "#1a1208",
+        backgroundColor: "#f7c66b",
         padding: { left: 28, right: 28, top: 12, bottom: 12 }
       })
       .setOrigin(0.5)
+      .setDepth(9)
       .setInteractive({ useHandCursor: true });
 
     restart.on("pointerdown", () => this.scene.start("MenuScene"));
     this.input.keyboard?.once("keydown-SPACE", () => this.scene.start("MenuScene"));
+    mountHubBgm(this);
   }
 
-  private formatLegacy(data: GameOverData, record: ReturnType<typeof AchievementSystem.readRecord>): string {
+  private formatLegacy(data: GameOverData, record: ReturnType<typeof AchievementSystem.saveRun>): string {
     const unlocked = data.unlockedSkillsThisRun.length ? data.unlockedSkillsThisRun.map((skillId) => skillName(skillId)).join(" / ") : t("none");
     const runUltimates = data.evolvedArtsSeen.length
       ? data.evolvedArtsSeen.map((evolutionId) => t(EVOLUTION_CONFIGS[evolutionId].nameKey as Parameters<typeof t>[0])).join(" / ")
