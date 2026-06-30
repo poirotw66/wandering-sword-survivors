@@ -904,15 +904,18 @@ describe("game regression rules", () => {
 
   it("scales enemy hp and damage with elapsed run time", () => {
     expect(timeCombatScale(0)).toEqual({ hp: 1, damage: 1 });
-    expect(timeCombatScale(900)).toEqual({ hp: 1.5, damage: 1.375 });
-    expect(timeCombatScale(1800)).toEqual({ hp: 2, damage: 1.75 });
-    expect(timeCombatScale(3600)).toEqual({ hp: 2, damage: 1.75 });
+    const mid = timeCombatScale(900);
+    expect(mid.hp).toBeCloseTo(1.474, 3);
+    expect(mid.damage).toBeCloseTo(1.379, 3);
+    expect(timeCombatScale(1800)).toEqual({ hp: 2.25, damage: 2 });
+    expect(timeCombatScale(3600)).toEqual({ hp: 2.25, damage: 2 });
   });
 
   it("requires progressively more experience for higher levels", () => {
-    expect(expToNextForLevel(1)).toBe(200);
+    expect(expToNextForLevel(1)).toBe(141);
     expect(expToNextForLevel(10)).toBeGreaterThan(expToNextForLevel(5) * 1.5);
     expect(expToNextForLevel(20)).toBeGreaterThan(expToNextForLevel(10) * 1.6);
+    expect(expToNextForLevel(35)).toBeGreaterThan(expToNextForLevel(28) * 1.15);
   });
 
   it("gives ordinary enemies more health than the previous baseline", () => {

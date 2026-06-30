@@ -139,6 +139,27 @@ export function drawSectionTab(
   underline.setOrigin(0.5, 0);
 }
 
+export function drawSectionTabCentered(
+  scene: Phaser.Scene,
+  centerX: number,
+  y: number,
+  label: string,
+  fontFamily: string,
+  depth = 8
+): number {
+  const tab = scene.add
+    .text(centerX, y, `『 ${label} 』`, {
+      fontFamily,
+      fontSize: "14px",
+      color: "#ffe09a",
+      fontStyle: "700"
+    })
+    .setDepth(depth)
+    .setOrigin(0.5, 0.5);
+  scene.add.rectangle(centerX, y + 12, tab.width + 8, 1, HUB.gold, 0.45).setDepth(depth - 1).setOrigin(0.5, 0);
+  return y + 24;
+}
+
 export function drawGoalRibbon(scene: Phaser.Scene, centerX: number, zoneY: number, zoneHeight: number, panelWidth: number, depth = 6): number {
   const y = zoneY + zoneHeight / 2;
   scene.add.rectangle(centerX, y, panelWidth, zoneHeight, 0x0a1218, 0.72).setDepth(depth).setStrokeStyle(1, HUB.goldDim, 0.45);

@@ -26,6 +26,9 @@ const SFX_KEYS = {
   drain: "sfx-drain"
 } as const;
 
+/** Scales weapon hits, crits, combos, and evolution attack SFX without muting UI feedback. */
+const ATTACK_SFX_VOLUME_SCALE = 0.58;
+
 export class AudioFeedbackSystem {
   private scene: Phaser.Scene;
   private context?: AudioContext;
@@ -34,6 +37,7 @@ export class AudioFeedbackSystem {
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
+    this.bgm.bindScene(scene);
     this.bgm.setMode("combat");
 
     if (this.bgm.isUnlocked()) {
@@ -57,15 +61,15 @@ export class AudioFeedbackSystem {
     scene.events.on("boss-spawned", () => this.bgm.setMode("boss"));
     scene.events.on("boss-defeated", () => this.bgm.setMode("combat"));
     scene.events.on("boss-defeated", () => this.playSfx(SFX_KEYS.boss, 0.55));
-    scene.events.on("projectile-hit", () => this.playSfx(SFX_KEYS.hit, 0.42));
+    scene.events.on("projectile-hit", () => this.playSfx(SFX_KEYS.hit, 0.42 * ATTACK_SFX_VOLUME_SCALE));
     scene.events.on("exp-collected", () => this.playSfx(SFX_KEYS.pickup, 0.34));
     scene.events.on("level-up", () => this.playSfx(SFX_KEYS.levelUp, 0.48));
     scene.events.on("player-damaged", () => this.playSfx(SFX_KEYS.hurt, 0.5));
     scene.events.on("player-healed", (_amount: number, source?: string) => {
       this.playSfx(source === "drain" ? SFX_KEYS.drain : SFX_KEYS.heal, source === "drain" ? 0.46 : 0.42);
     });
-    scene.events.on("critical-hit", () => this.playSfx(SFX_KEYS.crit, 0.5));
-    scene.events.on("combo-hit", () => this.playSfx(SFX_KEYS.combo, 0.44));
+    scene.events.on("critical-hit", () => this.playSfx(SFX_KEYS.crit, 0.5 * ATTACK_SFX_VOLUME_SCALE));
+    scene.events.on("combo-hit", () => this.playSfx(SFX_KEYS.combo, 0.44 * ATTACK_SFX_VOLUME_SCALE));
     scene.events.on("bgm-duck", (durationMs: number, ratio = 0.16) => this.bgm.duck(durationMs, ratio));
   }
 
@@ -112,14 +116,14 @@ export class AudioFeedbackSystem {
       thunderStrike: 0.4,
       starVortex: 0.38
     };
-    this.playSfx(SFX_KEYS.sword, volumeByWeapon[weaponId] ?? 0.36);
+    this.playSfx(SFX_KEYS.sword, (volumeByWeapon[weaponId] ?? 0.36) * ATTACK_SFX_VOLUME_SCALE);
   }
 
   private playEvolutionFired(evolutionId: EvolutionId): void {
     const profile = evolutionVfxFor(evolutionId);
     const pitch = profile.burstStyle === "vajra" || profile.burstStyle === "quake" ? 0.85 : profile.burstStyle === "gale" ? 1.15 : 1;
-    this.playSfx(SFX_KEYS.sword, 0.42 * pitch);
-    this.playTone(520 * pitch, 860 * pitch, 90, 0.028);
+    this.playSfx(SFX_KEYS.sword, 0.42 * pitch * ATTACK_SFX_VOLUME_SCALE);
+    this.playTone(520 * pitch, 860 * pitch, 90, 0.018);
   }
 
   private playEvolutionLearned(evolutionId: EvolutionId): void {

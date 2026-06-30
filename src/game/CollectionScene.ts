@@ -43,19 +43,20 @@ export class CollectionScene extends Phaser.Scene {
     drawInkSwordStrokes(this, width, height, 2);
     spawnHubPetals(this, width, height, 6);
 
-    drawHubSectionTitle(this, width / 2, 24, t("collectionTitle"), TITLE_FONT, 8, 32);
+    drawHubSectionTitle(this, width / 2, 34, t("collectionTitle"), TITLE_FONT, 8, width < 520 ? 26 : 32);
     this.add
-      .text(width / 2, 58, t("collectionSubtitle"), {
+      .text(width / 2, 72, t("collectionSubtitle"), {
         fontFamily: UI_FONT,
         fontSize: "14px",
         color: "#9eb4c8",
-        align: "center"
+        align: "center",
+        wordWrap: { width: Math.max(200, width - 120) }
       })
       .setOrigin(0.5, 0)
       .setDepth(8);
 
     const back = this.add
-      .text(24, 22, t("backToMenu"), {
+      .text(16, 16, t("backToMenu"), {
         fontFamily: TITLE_FONT,
         fontSize: "16px",
         color: "#1a1208",
@@ -68,7 +69,7 @@ export class CollectionScene extends Phaser.Scene {
     this.createDetailPanel(record, width);
 
     const listWidth = width >= 980 ? width - 470 : width;
-    this.contentTop = width >= 980 ? 92 : 270;
+    this.contentTop = width >= 980 ? 104 : 292;
     this.content = this.add.container(0, this.contentTop);
     let y = 0;
     y = this.addRecords(record, listWidth, y);
@@ -205,31 +206,36 @@ export class CollectionScene extends Phaser.Scene {
       y += 34;
     }
     const columns = width >= 980 ? 4 : width >= 720 ? 3 : 2;
-    const cellWidth = Math.min(230, (width - 86) / columns);
-    const startX = (width - cellWidth * columns) / 2 + 28;
+    const cellWidth = Math.min(210, (width - 86) / columns);
+    const cellHeight = 98;
+    const startX = (width - cellWidth * columns) / 2 + cellWidth / 2;
     items.forEach((item, index) => {
       const col = index % columns;
       const row = Math.floor(index / columns);
       const x = startX + col * cellWidth;
-      const itemY = y + row * 74;
+      const itemY = y + row * cellHeight;
       const alpha = item.unlocked ? 1 : 0.32;
-      const image = this.add.image(x, itemY + 24, item.iconKey).setDisplaySize(46, 46).setAlpha(alpha).setOrigin(0, 0.5);
+      const image = this.add
+        .image(x, itemY + 24, item.iconKey)
+        .setDisplaySize(42, 42)
+        .setAlpha(alpha)
+        .setOrigin(0.5);
       this.content?.add(image);
       const label = this.addTextBlock(
-        x + 56,
-        itemY + 10,
+        x,
+        itemY + 52,
         item.unlocked ? item.label : t("lockedCodexItem"),
         item.unlocked ? "#d8e2eb" : "#6f7d91",
-        14,
-        cellWidth - 64,
-        0
+        13,
+        cellWidth - 14,
+        0.5
       );
       if (item.onSelect) {
         image.setInteractive({ useHandCursor: true }).on("pointerdown", item.onSelect);
         label.setInteractive({ useHandCursor: true }).on("pointerdown", item.onSelect);
       }
     });
-    return y + Math.ceil(items.length / columns) * 74 + 8;
+    return y + Math.ceil(items.length / columns) * cellHeight + 8;
   }
 
   private addSectionTitle(text: string, width: number, y: number): void {
@@ -254,22 +260,23 @@ export class CollectionScene extends Phaser.Scene {
   private createDetailPanel(record: RunRecord, width: number): void {
     const panelWidth = Math.min(430, width - 64);
     const x = width >= 980 ? width - panelWidth / 2 - 24 : width / 2;
-    const y = 92;
+    const y = width >= 980 ? 104 : 108;
     const panelTop = y;
-    const panelHeight = 156;
+    const panelHeight = width >= 980 ? 168 : 148;
     drawScrollPanel(this, x, panelTop, panelHeight, panelWidth, 18);
     this.detailTitle = this.add
-      .text(x, y + 14, t("codexDetailHint"), {
+      .text(x, y + 16, t("codexDetailHint"), {
         fontFamily: TITLE_FONT,
         fontSize: "17px",
         color: "#ffe09a",
+        align: "center",
         wordWrap: { width: panelWidth - 32 }
       })
       .setOrigin(0.5, 0)
       .setScrollFactor(0)
       .setDepth(20);
     this.detailBody = this.add
-      .text(x, y + 50, t("codexDetailEmpty"), {
+      .text(x, y + 54, t("codexDetailEmpty"), {
         fontFamily: UI_FONT,
         fontSize: "13px",
         color: "#d8e2eb",

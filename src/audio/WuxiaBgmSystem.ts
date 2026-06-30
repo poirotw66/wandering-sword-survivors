@@ -1,6 +1,8 @@
+import Phaser from "phaser";
 import { readAudioSettings } from "../data/audioSettings";
+import { BGM_KEYS, type WuxiaBgmMode } from "./bgmKeys";
 
-export type WuxiaBgmMode = "hub" | "combat" | "boss";
+export type { WuxiaBgmMode };
 
 const PENTATONIC = [196, 220, 262, 294, 330, 392, 440, 523];
 
@@ -12,10 +14,13 @@ type DroneVoice = {
 export class WuxiaBgmSystem {
   private static instance?: WuxiaBgmSystem;
 
+  private scene?: Phaser.Scene;
   private context?: AudioContext;
   private masterGain?: GainNode;
   private unlocked = false;
   private mode: WuxiaBgmMode | null = null;
+  private useFileBgm = false;
+  private activeTrack?: Phaser.Sound.BaseSound;
   private drones: DroneVoice[] = [];
   private melodyTimer?: ReturnType<typeof setInterval>;
   private pulseTimer?: ReturnType<typeof setInterval>;
@@ -25,6 +30,14 @@ export class WuxiaBgmSystem {
   static shared(): WuxiaBgmSystem {
     WuxiaBgmSystem.instance ??= new WuxiaBgmSystem();
     return WuxiaBgmSystem.instance;
+  }
+
+  bindScene(scene: Phaser.Scene): void {
+    this.scene = scene;
+    this.useFileBgm = (Object.keys(BGM_KEYS) as WuxiaBgmMode[]).every((mode) => scene.cache.audio.exists(BGM_KEYS[mode]));
+    if (this.unlocked && this.mode && this.useFileBgm && !this.isTrackPlaying()) {
+      this.applyMode(this.mode);
+    }
   }
 
   isUnlocked(): boolean {
@@ -40,6 +53,15 @@ export class WuxiaBgmSystem {
   }
 
   private async unlockAsync(): Promise<void> {
+    this.unlocked = true;
+
+    if (this.useFileBgm) {
+      if (this.mode) {
+        this.applyMode(this.mode);
+      }
+      return;
+    }
+
     const AudioContextCtor = window.AudioContext ?? window.webkitAudioContext;
     if (!AudioContextCtor) {
       return;
@@ -56,7 +78,6 @@ export class WuxiaBgmSystem {
       this.masterGain.connect(this.context.destination);
     }
 
-    this.unlocked = true;
     if (this.mode) {
       this.applyMode(this.mode);
     }
@@ -71,14 +92,23 @@ export class WuxiaBgmSystem {
     }
     this.mode = mode;
     if (!this.unlocked || !mode) {
-      this.stopVoices();
+      this.stopPlayback();
       return;
     }
     this.applyMode(mode);
   }
 
   refreshVolume(): void {
-    if (!this.context || !this.masterGain || !this.unlocked || !this.mode) {
+    if (!this.unlocked || !this.mode) {
+      return;
+    }
+
+    if (this.useFileBgm) {
+      this.setTrackVolume(this.targetVolume());
+      return;
+    }
+
+    if (!this.context || !this.masterGain) {
       return;
     }
     const now = this.context.currentTime;
@@ -89,6 +119,19 @@ export class WuxiaBgmSystem {
   }
 
   duck(durationMs: number, ratio = 0.16): void {
+    if (!this.unlocked || !this.mode) {
+      return;
+    }
+
+    if (this.useFileBgm && this.activeTrack) {
+      this.setTrackVolume(this.targetVolume() * ratio);
+      if (this.duckRestoreTimer) {
+        clearTimeout(this.duckRestoreTimer);
+      }
+      this.duckRestoreTimer = setTimeout(() => this.restoreGain(), durationMs);
+      return;
+    }
+
     if (!this.context || !this.masterGain) {
       return;
     }
@@ -111,12 +154,19 @@ export class WuxiaBgmSystem {
     this.masterGain = undefined;
     this.context?.close();
     this.context = undefined;
+    this.scene = undefined;
     this.unlocked = false;
     WuxiaBgmSystem.instance = undefined;
   }
 
   private applyMode(mode: WuxiaBgmMode): void {
-    this.stopVoices();
+    this.stopPlayback();
+
+    if (this.useFileBgm && this.scene) {
+      this.playFileBgm(mode);
+      return;
+    }
+
     if (!this.context || !this.masterGain) {
       return;
     }
@@ -136,14 +186,65 @@ export class WuxiaBgmSystem {
     this.playModeIntro(mode);
   }
 
+  private playFileBgm(mode: WuxiaBgmMode): void {
+    if (!this.scene) {
+      return;
+    }
+
+    const key = BGM_KEYS[mode];
+    if (!this.scene.cache.audio.exists(key)) {
+      return;
+    }
+
+    this.activeTrack = this.scene.sound.add(key, {
+      loop: true,
+      volume: this.targetVolume()
+    });
+    this.activeTrack.play();
+  }
+
+  private stopFileBgm(): void {
+    if (!this.activeTrack) {
+      return;
+    }
+    this.activeTrack.stop();
+    this.activeTrack.destroy();
+    this.activeTrack = undefined;
+  }
+
+  private isTrackPlaying(): boolean {
+    return Boolean(this.activeTrack?.isPlaying);
+  }
+
+  private setTrackVolume(volume: number): void {
+    if (!this.activeTrack) {
+      return;
+    }
+    (this.activeTrack as Phaser.Sound.WebAudioSound).setVolume(volume);
+  }
+
+  private targetVolume(): number {
+    const settings = readAudioSettings();
+    if (settings.muted) {
+      return 0;
+    }
+    let scale = 0.78;
+    if (this.mode === "hub") {
+      scale = 0.72;
+    } else if (this.mode === "boss") {
+      scale = 0.85;
+    }
+    return Math.min(1, scale * settings.musicVolume);
+  }
+
   private targetGain(): number {
     const settings = readAudioSettings();
     if (settings.muted) {
       return 0;
     }
-    const base = 0.34 * settings.musicVolume;
+    const base = 0.5 * settings.musicVolume;
     if (this.mode === "hub") {
-      return base * 0.85;
+      return base * 0.9;
     }
     if (this.mode === "boss") {
       return base * 1.08;
@@ -152,6 +253,12 @@ export class WuxiaBgmSystem {
   }
 
   private restoreGain(): void {
+    if (this.useFileBgm) {
+      this.setTrackVolume(this.targetVolume());
+      this.duckRestoreTimer = undefined;
+      return;
+    }
+
     if (!this.context || !this.masterGain) {
       return;
     }
@@ -272,7 +379,12 @@ export class WuxiaBgmSystem {
     this.pluck(147, 0.28, 0.07, "square");
   }
 
-  private stopVoices(): void {
+  private stopPlayback(): void {
+    this.stopFileBgm();
+    this.stopSynthVoices();
+  }
+
+  private stopSynthVoices(): void {
     if (this.duckRestoreTimer) {
       clearTimeout(this.duckRestoreTimer);
       this.duckRestoreTimer = undefined;

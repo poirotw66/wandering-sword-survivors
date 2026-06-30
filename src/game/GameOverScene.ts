@@ -73,19 +73,24 @@ export class GameOverScene extends Phaser.Scene {
     const panelWidth = Math.min(760, width - 56);
     const panelHeight = Math.min(560, height - 100);
     const panelTop = height * 0.5 - panelHeight / 2;
-    drawScrollPanel(this, width / 2, panelTop, panelHeight, panelWidth, 4);
+    const panelCenterX = width / 2;
+    drawScrollPanel(this, panelCenterX, panelTop, panelHeight, panelWidth, 4);
 
     if (data.won) {
-      drawHubSeal(this, width / 2, panelTop + 36, t("gameOverSealVictory"), 10);
+      drawHubSeal(this, panelCenterX, panelTop + 44, t("gameOverSealVictory"), 10);
     } else {
-      drawHubSeal(this, width / 2, panelTop + 36, t("gameOverSealDefeat"), 10);
+      drawHubSeal(this, panelCenterX, panelTop + 44, t("gameOverSealDefeat"), 10);
     }
 
-    this.add.image(width / 2, height * 0.54, data.won ? "strike" : "boss-master").setScale(data.won ? 1.1 : 0.34).setAlpha(0.18).setDepth(3);
     this.add
-      .text(width / 2, height * 0.25, data.won ? t("victoryTitle") : t("defeatTitle"), {
+      .image(panelCenterX, panelTop + panelHeight * 0.62, data.won ? "strike" : "boss-master")
+      .setScale(data.won ? 1.1 : 0.34)
+      .setAlpha(0.14)
+      .setDepth(3);
+    this.add
+      .text(panelCenterX, panelTop + 92, data.won ? t("victoryTitle") : t("defeatTitle"), {
         fontFamily: TITLE_FONT,
-        fontSize: "52px",
+        fontSize: width < 520 ? "40px" : "52px",
         color: data.won ? "#f7c66b" : "#ff7687",
         stroke: "#120d18",
         strokeThickness: 4
@@ -95,8 +100,8 @@ export class GameOverScene extends Phaser.Scene {
       .setDepth(8);
     this.add
       .text(
-        width / 2,
-        height * 0.4,
+        panelCenterX,
+        panelTop + 156,
         t("resultLine", {
           time: formatClock(data.elapsedSec),
           kills: data.kills,
@@ -108,7 +113,8 @@ export class GameOverScene extends Phaser.Scene {
           fontSize: "21px",
           color: "#d8e2eb",
           align: "center",
-          lineSpacing: 14
+          lineSpacing: 14,
+          wordWrap: { width: panelWidth - 48 }
         }
       )
       .setPadding(0, 8, 0, 8)
@@ -117,8 +123,8 @@ export class GameOverScene extends Phaser.Scene {
 
     this.add
       .text(
-        width / 2,
-        height * 0.52,
+        panelCenterX,
+        panelTop + 228,
         t("recordLine", {
           difficulty: record.highestDifficulty,
           fastest: record.fastestClearSec === undefined ? t("none") : formatClock(record.fastestClearSec),
@@ -129,7 +135,8 @@ export class GameOverScene extends Phaser.Scene {
           fontSize: "18px",
           color: "#f7c66b",
           align: "center",
-          lineSpacing: 12
+          lineSpacing: 12,
+          wordWrap: { width: panelWidth - 48 }
         }
       )
       .setPadding(0, 8, 0, 8)
@@ -137,13 +144,13 @@ export class GameOverScene extends Phaser.Scene {
       .setDepth(8);
 
     this.add
-      .text(width / 2, height * 0.63, this.formatLegacy(data, record), {
+      .text(panelCenterX, panelTop + 292, this.formatLegacy(data, record), {
         fontFamily: UI_FONT,
         fontSize: "16px",
         color: "#d8e2eb",
         align: "center",
         lineSpacing: 8,
-        wordWrap: { width: Math.min(780, width - 72) }
+        wordWrap: { width: panelWidth - 48 }
       })
       .setPadding(0, 8, 0, 8)
       .setOrigin(0.5)
@@ -151,8 +158,8 @@ export class GameOverScene extends Phaser.Scene {
 
     this.add
       .text(
-        width / 2,
-        height * 0.75,
+        panelCenterX,
+        panelTop + 360,
         t("chronicleLine", {
           totalRenown: record.totalRenown,
           difficulty: data.selectedDifficulty,
@@ -166,37 +173,37 @@ export class GameOverScene extends Phaser.Scene {
           color: "#aac7d8",
           align: "center",
           lineSpacing: 7,
-          wordWrap: { width: Math.min(760, width - 72) }
+          wordWrap: { width: panelWidth - 48 }
         }
       )
       .setOrigin(0.5)
       .setDepth(8);
 
     this.add
-      .text(width / 2, height * 0.786, formatSpendableRenownGained(data.score, record.spendableRenown), {
+      .text(panelCenterX, panelTop + 418, formatSpendableRenownGained(data.score, record.spendableRenown), {
         fontFamily: UI_FONT,
         fontSize: "14px",
         color: "#f7c66b",
         align: "center",
-        wordWrap: { width: Math.min(760, width - 72) }
+        wordWrap: { width: panelWidth - 48 }
       })
       .setOrigin(0.5)
       .setDepth(8);
 
     this.add
-      .text(width / 2, height * 0.83, formatNextGoalLine(nextRunGoal(record)), {
+      .text(panelCenterX, panelTop + 452, formatNextGoalLine(nextRunGoal(record)), {
         fontFamily: UI_FONT,
         fontSize: "15px",
         color: "#ffe09a",
         align: "center",
-        wordWrap: { width: Math.min(760, width - 72) }
+        wordWrap: { width: panelWidth - 48 }
       })
       .setPadding(0, 6, 0, 6)
       .setOrigin(0.5)
       .setDepth(8);
 
     const restart = this.add
-      .text(width / 2, height * 0.9, t("restart"), {
+      .text(panelCenterX, panelTop + panelHeight - 36, t("restart"), {
         fontFamily: TITLE_FONT,
         fontSize: "24px",
         color: "#1a1208",

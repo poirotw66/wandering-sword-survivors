@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { BGM_ASSET_PATH, BGM_KEYS } from "../audio/bgmKeys";
 
 export class BootScene extends Phaser.Scene {
   constructor() {
@@ -8,7 +9,11 @@ export class BootScene extends Phaser.Scene {
   preload(): void {
     const basePath = "assets/sprites/wuxia";
     const audioPath = "assets/audio/wuxia";
+    const bgmPath = BGM_ASSET_PATH;
     this.load.image("wuxia-jianghu-map", "assets/maps/wuxia-jianghu-map.png");
+    this.load.audio(BGM_KEYS.hub, `${bgmPath}/bgm-hub.mp3`);
+    this.load.audio(BGM_KEYS.combat, `${bgmPath}/bgm-combat.mp3`);
+    this.load.audio(BGM_KEYS.boss, `${bgmPath}/bgm-boss.mp3`);
     this.load.audio("sfx-hit", `${audioPath}/sfx-hit.wav`);
     this.load.audio("sfx-sword", `${audioPath}/sfx-sword.wav`);
     this.load.audio("sfx-level-up", `${audioPath}/sfx-level-up.wav`);

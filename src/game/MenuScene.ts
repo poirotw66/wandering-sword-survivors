@@ -28,7 +28,7 @@ import {
 import { readAudioSettings, writeAudioSettings, type AudioSettings } from "../data/audioSettings";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
-import { drawGoalRibbon, drawScrollPanel, drawSectionTab, drawHubBorderFrame, drawVerticalCouplet, drawInkSwordStrokes, spawnHubPetals, paintHubMapLayer, HUB, paintMenuBackdrop } from "../ui/menuHubTheme";
+import { drawGoalRibbon, drawScrollPanel, drawSectionTabCentered, drawHubBorderFrame, drawVerticalCouplet, drawInkSwordStrokes, spawnHubPetals, paintHubMapLayer, HUB, paintMenuBackdrop } from "../ui/menuHubTheme";
 import { mountHubBgm } from "../audio/mountHubBgm";
 import { titleProgressFor } from "../data/metaProgression";
 
@@ -39,7 +39,7 @@ const START_STYLE_ICONS: Record<StartStyleId, string> = {
   wineSwordSect: "icon-build-wine"
 };
 
-const RUN_ZONE_H = 258;
+const RUN_ZONE_H = 300;
 const ZONE_GAP = 18;
 
 type HubZone = {
@@ -106,27 +106,27 @@ export class MenuScene extends Phaser.Scene {
     this.createTopBar(width, layout, record, bonuses);
     this.paintHeader(width, layout);
     drawGoalRibbon(this, width / 2, layout.goal.y, layout.goal.height, Math.min(layout.panelWidth - 48, 640));
-    const goalTextY = layout.showDifficultyHint ? layout.goal.y + 8 : this.zoneCenter(layout.goal);
+    const goalTextY = layout.showDifficultyHint ? layout.goal.y + 10 : this.zoneCenter(layout.goal);
     this.add
       .text(width / 2, goalTextY, formatNextGoalLine(nextRunGoal(record)), {
         fontFamily: UI_FONT,
         fontSize: layout.tight ? "12px" : "13px",
         color: "#84f7b2",
         align: "center",
-        wordWrap: { width: layout.panelWidth - 80 }
+        wordWrap: { width: layout.panelWidth - 96 }
       })
-      .setDepth(8)
+      .setDepth(9)
       .setOrigin(0.5, layout.showDifficultyHint ? 0 : 0.5);
     if (layout.showDifficultyHint) {
       this.add
-        .text(width / 2, layout.goal.y + layout.goal.height - 6, t("difficultyHint"), {
+        .text(width / 2, layout.goal.y + layout.goal.height - 8, t("difficultyHint"), {
           fontFamily: UI_FONT,
-          fontSize: "11px",
+          fontSize: "10px",
           color: "#566678",
           align: "center",
-          wordWrap: { width: layout.panelWidth - 80 }
+          wordWrap: { width: layout.panelWidth - 96 }
         })
-        .setDepth(8)
+        .setDepth(9)
         .setOrigin(0.5, 1);
     }
     this.createRunConfigPanel(record, unlocked, width, layout);
@@ -171,12 +171,12 @@ export class MenuScene extends Phaser.Scene {
     const compact = height < 940;
     void width;
     return {
-      topBarH: tight ? 40 : compact ? 46 : 50,
+      topBarH: tight ? 54 : compact ? 60 : 64,
       headerH: tight ? 68 : compact ? 80 : 92,
-      goalH: showHint ? (tight ? 32 : compact ? 36 : 40) : tight ? 18 : 22,
-      runH: tight ? 188 : compact ? 208 : RUN_ZONE_H,
-      summaryH: tight ? 28 : 32,
-      actionsH: tight ? 94 : compact ? 100 : 108,
+      goalH: showHint ? (tight ? 44 : compact ? 48 : 52) : tight ? 22 : 26,
+      runH: tight ? 292 : compact ? 300 : RUN_ZONE_H,
+      summaryH: tight ? 32 : 36,
+      actionsH: tight ? 112 : compact ? 118 : 124,
       footerH: tight ? 34 : compact ? 40 : 46,
       gap: tight ? 6 : compact ? 10 : ZONE_GAP
     };
@@ -191,7 +191,7 @@ export class MenuScene extends Phaser.Scene {
       m.gap -= 1;
       total = this.sumMetrics(m);
     }
-    while (total > budget && m.runH > 136) {
+    while (total > budget && m.runH > 272) {
       m.runH -= 6;
       total = this.sumMetrics(m);
     }
@@ -207,7 +207,7 @@ export class MenuScene extends Phaser.Scene {
         topBarH: scale(m.topBarH, 32),
         headerH: scale(m.headerH, 48),
         goalH: scale(m.goalH, showHint ? 18 : 10),
-        runH: scale(m.runH, 132),
+        runH: scale(m.runH, 272),
         summaryH: scale(m.summaryH, 18),
         actionsH: scale(m.actionsH, 34),
         footerH: scale(m.footerH, 28),
@@ -245,7 +245,7 @@ export class MenuScene extends Phaser.Scene {
     const goal: HubZone = { y: blockTop, height: metrics.goalH };
     const run: HubZone = { y: goal.y + metrics.goalH + metrics.gap, height: metrics.runH };
     const middlePad = middleBottom - middleTop - blockH;
-    const hidePitch = tight || middlePad < 32;
+    const hidePitch = tight || middlePad < 32 || width < 640;
 
     return {
       panelWidth: Math.min(900, width - 48),
@@ -278,7 +278,7 @@ export class MenuScene extends Phaser.Scene {
       if (blockBottom <= layout.summary.y - 4 && layout.header.y + layout.header.height <= layout.goal.y - 4) {
         return layout;
       }
-      metrics.runH = Math.max(130, metrics.runH - 8);
+      metrics.runH = Math.max(272, metrics.runH - 8);
       metrics.goalH = Math.max(showDifficultyHint ? 20 : 12, metrics.goalH - 2);
       metrics.headerH = Math.max(52, metrics.headerH - 4);
       metrics.gap = Math.max(4, metrics.gap - 1);
@@ -293,32 +293,19 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private paintBackground(width: number, height: number, layout: HubLayout): void {
+    const panelLeft = width / 2 - layout.panelWidth / 2;
     paintMenuBackdrop(this, width, height);
-    paintHubMapLayer(this, width, height, 1, 0.08);
+    if (!layout.tight) {
+      paintHubMapLayer(this, width, height, 1, width >= 900 ? 0.05 : 0.03);
+    }
     drawHubBorderFrame(this, width, height, 3);
-    drawInkSwordStrokes(this, width, height, 2);
-    spawnHubPetals(this, width, height, layout.compact ? 6 : 10);
-    if (!layout.tight && width >= 720) {
-      drawVerticalCouplet(this, 42, height * 0.42, t("menuHubCoupletLeft").split(""), 4);
-      drawVerticalCouplet(this, width - 42, height * 0.42, t("menuHubCoupletRight").split(""), 4);
+    if (!layout.tight) {
+      drawInkSwordStrokes(this, width, height, 2);
+      spawnHubPetals(this, width, height, layout.compact ? 4 : 6);
     }
-    const heroX = width * 0.78;
-    const heroY = this.zoneCenter(layout.run);
-    if (this.textures.exists("player")) {
-      this.add
-        .image(heroX, heroY, "player")
-        .setScale(layout.compact ? 0.26 : 0.32)
-        .setAlpha(0.14)
-        .setDepth(3)
-        .setFlipX(true);
-    }
-    if (this.textures.exists("blade") && !layout.hidePitch) {
-      this.add
-        .image(width * 0.14, layout.header.y + 40, "blade")
-        .setScale(0.58)
-        .setAlpha(0.12)
-        .setAngle(-28)
-        .setDepth(3);
+    if (!layout.tight && width >= 900 && panelLeft > 108) {
+      drawVerticalCouplet(this, 42, height * 0.44, t("menuHubCoupletLeft").split(""), 4);
+      drawVerticalCouplet(this, width - 42, height * 0.44, t("menuHubCoupletRight").split(""), 4);
     }
   }
 
@@ -328,9 +315,11 @@ export class MenuScene extends Phaser.Scene {
     record: ReturnType<typeof AchievementSystem.readRecord>,
     bonuses: ReturnType<typeof metaBonusesFromShop>
   ): void {
-    const barCenterY = this.zoneCenter(layout.topBar);
+    const sideReserve = Math.min(168, Math.max(120, width * 0.2));
+    const renownY = layout.topBar.y + layout.topBar.height * 0.36;
+    const controlsY = layout.topBar.y + layout.topBar.height * 0.72;
     this.add
-      .rectangle(width / 2, barCenterY, width, layout.topBar.height, HUB.inkMid, 0.72)
+      .rectangle(width / 2, layout.topBar.y + layout.topBar.height / 2, width, layout.topBar.height, HUB.inkMid, 0.88)
       .setDepth(10)
       .setStrokeStyle(1, HUB.goldDim, 0.35);
     const progress = titleProgressFor(record.totalRenown);
@@ -338,16 +327,18 @@ export class MenuScene extends Phaser.Scene {
       ? t("titleProgressMax")
       : t("titleProgressNext", { title: t(progress.nextTitleKey!), renown: progress.nextRenownRequired ?? 0 });
     this.add
-      .text(width / 2, barCenterY, t("metaProgressionLine", { title: t(bonuses.titleKey), renown: record.totalRenown, next: nextLine }), {
+      .text(width / 2, renownY, t("metaProgressionLine", { title: t(bonuses.titleKey), renown: record.totalRenown, next: nextLine }), {
         fontFamily: UI_FONT,
         fontSize: layout.compact ? "10px" : "11px",
         color: "#9eb4c8",
-        align: "center"
+        align: "center",
+        lineSpacing: 3,
+        wordWrap: { width: Math.max(200, width - sideReserve * 2) }
       })
       .setDepth(11)
       .setOrigin(0.5);
-    this.createLanguageToggle(width, layout.topBar.y + 10);
-    this.createAudioControls(width, layout.topBar.y + 8, layout.compact);
+    this.createLanguageToggle(width, layout.topBar.y + 8);
+    this.createAudioControls(width, controlsY, layout.compact, sideReserve);
   }
 
   private paintHeader(width: number, layout: HubLayout): void {
@@ -367,7 +358,7 @@ export class MenuScene extends Phaser.Scene {
         fontStyle: "700"
       })
       .setPadding(0, 10, 0, 10)
-      .setDepth(5)
+      .setDepth(9)
       .setOrigin(0.5);
     this.add
       .text(width / 2, subtitleY, `— ${t("menuSubtitle")} —`, {
@@ -377,7 +368,7 @@ export class MenuScene extends Phaser.Scene {
         fontStyle: "italic"
       })
       .setPadding(0, 4, 0, 4)
-      .setDepth(5)
+      .setDepth(9)
       .setOrigin(0.5);
     if (!layout.hidePitch) {
       this.add
@@ -387,10 +378,10 @@ export class MenuScene extends Phaser.Scene {
           color: "#9eb4c8",
           align: "center",
           lineSpacing: 6,
-          wordWrap: { width: Math.min(560, layout.panelWidth - 48) }
+          wordWrap: { width: Math.min(520, layout.panelWidth - 64) }
         })
         .setPadding(0, 4, 0, 4)
-        .setDepth(5)
+        .setDepth(9)
         .setOrigin(0.5);
     }
   }
@@ -402,8 +393,8 @@ export class MenuScene extends Phaser.Scene {
     sectionTitle: string
   ): { contentTop: number; innerWidth: number; innerLeft: number; panelBottom: number } {
     const frame = drawScrollPanel(this, centerX, zone.y, zone.height, panelWidth);
-    drawSectionTab(this, frame.innerLeft, zone.y + 12, sectionTitle, TITLE_FONT);
-    return frame;
+    const contentTop = drawSectionTabCentered(this, centerX, zone.y + 12, sectionTitle, TITLE_FONT);
+    return { ...frame, contentTop: Math.max(frame.contentTop, contentTop) };
   }
 
   private createRunConfigPanel(
@@ -419,32 +410,32 @@ export class MenuScene extends Phaser.Scene {
       t("menuHubRunSection")
     );
 
-    const labelGap = layout.tight ? 16 : 20;
-    const diffLabelY = contentTop + 2;
+    const labelGap = layout.tight ? 14 : 18;
+    const diffLabelY = contentTop + 4;
     this.add
       .text(width / 2, diffLabelY, `— ${t("menuHubDifficultyRow")} —`, {
         fontFamily: TITLE_FONT,
         fontSize: layout.tight ? "12px" : "13px",
         color: "#9ec8e8"
       })
-      .setDepth(8)
+      .setDepth(9)
       .setOrigin(0.5, 0);
 
-    const difficultyY = diffLabelY + labelGap;
+    const difficultyY = diffLabelY + labelGap + (layout.tight ? 20 : 22);
     this.createDifficultyButtons(unlocked, width, difficultyY, innerWidth, layout);
 
-    const styleLabelY = difficultyY + (layout.tight ? 50 : 56);
+    const styleLabelY = difficultyY + (layout.tight ? 56 : 62);
     this.add
       .text(width / 2, styleLabelY, `— ${startStyleLabel()} —`, {
         fontFamily: TITLE_FONT,
         fontSize: layout.tight ? "12px" : "13px",
         color: "#d8b4ff"
       })
-      .setDepth(8)
+      .setDepth(9)
       .setOrigin(0.5, 0);
 
-    const styleY = styleLabelY + labelGap;
-    this.createStartStyleButtons(record, width, styleY, innerWidth, layout);
+    const styleRowTop = styleLabelY + labelGap;
+    this.createStartStyleButtons(record, width, styleRowTop, innerWidth, layout);
   }
 
   private createDifficultyButtons(
@@ -464,7 +455,7 @@ export class MenuScene extends Phaser.Scene {
       const isUnlocked = unlocked.includes(difficulty.level);
       const selected = this.selectedDifficulty === difficulty.level;
       const x = startX + index * (tileWidth + gap);
-      const container = this.add.container(x, buttonY);
+      const container = this.add.container(x, buttonY).setDepth(9);
       const bg = this.add
         .rectangle(0, 0, tileWidth, tileHeight, selected ? 0xf7c66b : 0x141c28, selected ? 1 : 0.96)
         .setStrokeStyle(2, selected ? 0xffe09a : isUnlocked ? HUB.swordBlue : 0x3a4254);
@@ -516,18 +507,23 @@ export class MenuScene extends Phaser.Scene {
   private createStartStyleButtons(
     record: ReturnType<typeof AchievementSystem.readRecord>,
     width: number,
-    buttonY: number,
+    rowTop: number,
     innerWidth: number,
     layout: HubLayout
   ): void {
     const options = startStyleOptions(record);
-    const tileWidth = Math.min(118, Math.max(92, (innerWidth - 20) / options.length));
-    const gap = Math.max(8, (innerWidth - tileWidth * options.length) / Math.max(1, options.length - 1));
-    const startX = width / 2 - (tileWidth * options.length + gap * (options.length - 1)) / 2 + tileWidth / 2;
+    const tileHeight = layout.tight ? 66 : layout.compact ? 72 : 78;
+    const rowGap = 8;
+    const columns = innerWidth < 440 || layout.tight ? 2 : options.length;
+    const tileWidth = Math.floor((innerWidth - (columns - 1) * 10) / columns);
+    const gridLeft = width / 2 - innerWidth / 2;
 
     options.forEach((option, index) => {
-      const x = startX + index * (tileWidth + gap);
-      this.createStartStyleTile(option, x, buttonY, tileWidth, layout);
+      const col = index % columns;
+      const row = Math.floor(index / columns);
+      const x = gridLeft + col * (tileWidth + 10) + tileWidth / 2;
+      const y = rowTop + row * (tileHeight + rowGap) + tileHeight / 2;
+      this.createStartStyleTile(option, x, y, tileWidth, tileHeight, layout);
     });
   }
 
@@ -536,20 +532,19 @@ export class MenuScene extends Phaser.Scene {
     x: number,
     y: number,
     tileWidth: number,
+    tileHeight: number,
     layout: HubLayout
   ): void {
     const selected = this.selectedStartStyle === option.id;
-    const iconSize = layout.tight ? 28 : layout.compact ? 32 : 36;
-    const titleSize = layout.tight ? 11 : layout.compact ? 12 : 13;
-    const subSize = layout.tight ? 10 : 11;
-    const tileHeight = layout.tight ? 72 : layout.compact ? 78 : 84;
+    const iconSize = layout.tight ? 24 : layout.compact ? 28 : 32;
+    const titleSize = layout.tight ? 10 : layout.compact ? 11 : 12;
+    const subSize = layout.tight ? 9 : 10;
     const halfH = tileHeight / 2;
-    const padTop = 6;
-    const iconTextGap = 8;
-    const iconY = -halfH + padTop + iconSize / 2;
-    const titleY = iconY + iconSize / 2 + iconTextGap;
-    const subY = titleY + (layout.tight ? 18 : 20);
-    const container = this.add.container(x, y).setDepth(8);
+    const textWidth = tileWidth - 12;
+    const iconY = -halfH + 8 + iconSize / 2;
+    const titleY = iconY + iconSize / 2 + 5;
+    const subY = titleY + (layout.tight ? 12 : 14);
+    const container = this.add.container(x, y).setDepth(9);
     const bg = this.add
       .rectangle(0, 0, tileWidth, tileHeight, selected ? 0xf7c66b : 0x141c28, selected ? 1 : 0.96)
       .setStrokeStyle(2, selected ? 0xffe09a : option.unlocked ? HUB.qiPurple : 0x3a4254);
@@ -567,7 +562,7 @@ export class MenuScene extends Phaser.Scene {
           fontSize: `${titleSize}px`,
           color: option.unlocked ? (selected ? "#10121f" : "#e8d4ff") : "#6f7d91",
           align: "center",
-          wordWrap: { width: tileWidth - 10 }
+          wordWrap: { width: textWidth }
         })
         .setOrigin(0.5, 0)
     );
@@ -578,7 +573,7 @@ export class MenuScene extends Phaser.Scene {
           fontSize: `${subSize}px`,
           color: option.unlocked ? (selected ? "#2a2018" : "#9eb4c8") : "#566678",
           align: "center",
-          wordWrap: { width: tileWidth - 10 }
+          wordWrap: { width: textWidth }
         })
         .setOrigin(0.5, 0)
     );
@@ -625,14 +620,15 @@ export class MenuScene extends Phaser.Scene {
         }),
         {
           fontFamily: TITLE_FONT,
-          fontSize: layout.tight ? "14px" : "15px",
+          fontSize: layout.tight ? "13px" : "15px",
           color: "#f7efd8",
           backgroundColor: "#0a1018cc",
           padding: { left: 16, right: 16, top: 7, bottom: 7 },
-          align: "center"
+          align: "center",
+          wordWrap: { width: layout.panelWidth - 40 }
         }
       )
-      .setDepth(8)
+      .setDepth(9)
       .setOrigin(0.5);
   }
 
@@ -641,9 +637,10 @@ export class MenuScene extends Phaser.Scene {
     layout: HubLayout,
     record: ReturnType<typeof AchievementSystem.readRecord>
   ): void {
-    const startY = layout.actions.y + (layout.tight ? 10 : 14);
-    const secondaryY = layout.actions.y + layout.actions.height - (layout.tight ? 12 : 16);
-    const pairHalf = layout.stackActions ? 78 : Math.min(110, layout.panelWidth * 0.14);
+    const stackedFooter = layout.stackActions || layout.tight || width < 560;
+    const startY = layout.actions.y + (stackedFooter ? 8 : layout.tight ? 10 : 14);
+    const secondaryY = stackedFooter ? startY + 48 : layout.actions.y + layout.actions.height - (layout.tight ? 12 : 16);
+    const pairHalf = stackedFooter ? 86 : Math.min(110, layout.panelWidth * 0.14);
     const shopX = width / 2 - pairHalf - 8;
     const collectionX = width / 2 + pairHalf + 8;
 
@@ -655,10 +652,10 @@ export class MenuScene extends Phaser.Scene {
     const start = this.add
       .text(width / 2, startY, t("startRun"), {
         fontFamily: TITLE_FONT,
-        fontSize: layout.compact ? "26px" : "28px",
+        fontSize: stackedFooter ? "24px" : layout.compact ? "26px" : "28px",
         color: "#1a1208",
         backgroundColor: "#f7c66b",
-        padding: { left: 32, right: 32, top: 14, bottom: 14 }
+        padding: { left: stackedFooter ? 24 : 32, right: stackedFooter ? 24 : 32, top: 12, bottom: 12 }
       })
       .setDepth(9)
       .setOrigin(0.5)
@@ -731,7 +728,7 @@ export class MenuScene extends Phaser.Scene {
 
   private createLanguageToggle(width: number, y: number): void {
     const language = this.add
-      .text(width - 20, y, t("languageToggle"), {
+      .text(width - 16, y, t("languageToggle"), {
         fontFamily: UI_FONT,
         fontSize: "14px",
         color: "#f7c66b",
@@ -739,6 +736,7 @@ export class MenuScene extends Phaser.Scene {
         padding: { left: 10, right: 10, top: 6, bottom: 6 }
       })
       .setOrigin(1, 0)
+      .setDepth(12)
       .setInteractive({ useHandCursor: true });
     language.on("pointerdown", () => {
       toggleLocale();
@@ -746,7 +744,7 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private createAudioControls(width: number, y: number, compact: boolean): void {
+  private createAudioControls(width: number, y: number, compact: boolean, sideReserve: number): void {
     const settings = readAudioSettings();
     const label = settings.muted
       ? t("audioMutedLabel")
@@ -754,29 +752,36 @@ export class MenuScene extends Phaser.Scene {
           sfx: Math.round(settings.sfxVolume * 100),
           music: Math.round(settings.musicVolume * 100)
         });
-    const maxWidth = Math.max(180, width - 160);
+    const maxControlWidth = Math.max(96, sideReserve - 12);
     this.add
-      .text(16, y, t("audioSettingsButton"), {
+      .text(14, y, t("audioSettingsButton"), {
         fontFamily: UI_FONT,
         fontSize: "11px",
         color: "#aac7d8"
       })
-      .setOrigin(0, 0);
+      .setOrigin(0, 0)
+      .setDepth(12);
     const status = this.add
-      .text(16, y + (compact ? 16 : 18), label, {
+      .text(14, y + (compact ? 16 : 18), label, {
         fontFamily: UI_FONT,
         fontSize: "10px",
         color: settings.muted ? "#ff7687" : "#d8e2eb",
         backgroundColor: "#192033",
-        padding: { left: 6, right: 6, top: 3, bottom: 3 }
+        padding: { left: 6, right: 6, top: 3, bottom: 3 },
+        wordWrap: { width: maxControlWidth }
       })
       .setOrigin(0, 0)
+      .setDepth(12)
       .setInteractive({ useHandCursor: true });
     status.on("pointerdown", () => {
       const current = readAudioSettings();
       writeAudioSettings({ ...current, muted: !current.muted });
       this.scene.restart();
     });
+
+    if (width < 900) {
+      return;
+    }
 
     const buttonStyle = {
       fontFamily: UI_FONT,
@@ -786,9 +791,9 @@ export class MenuScene extends Phaser.Scene {
       padding: { left: 4, right: 4, top: 2, bottom: 2 }
     };
     const rowY = y + (compact ? 16 : 18);
-    const startX = Math.min(120, maxWidth * 0.35);
+    const startX = 14;
     const makeAdjuster = (offset: number, text: string, adjust: (settings: AudioSettings) => AudioSettings) => {
-      const button = this.add.text(startX + offset, rowY, text, buttonStyle).setOrigin(0, 0).setInteractive({ useHandCursor: true });
+      const button = this.add.text(startX + offset, rowY, text, buttonStyle).setOrigin(0, 0).setDepth(12).setInteractive({ useHandCursor: true });
       button.on("pointerdown", () => {
         writeAudioSettings(adjust(readAudioSettings()));
         this.scene.restart();
