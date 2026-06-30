@@ -1,13 +1,17 @@
 import type { EnemyId } from "./enemies";
 
-export type BossSkillId = "dash" | "fanStrike" | "summon";
+export type BossSkillId = "dash" | "fanStrike" | "summon" | "needleStorm";
 
 export type BossSkillConfig = {
   id: BossSkillId;
   cooldownMs: number;
   windupMs: number;
   damageMultiplier: number;
-  labelKey: "bossTechniqueDash" | "bossTechniqueFanStrike" | "bossTechniqueSummon";
+  labelKey:
+    | "bossTechniqueDash"
+    | "bossTechniqueFanStrike"
+    | "bossTechniqueSummon"
+    | "bossTechniqueNeedleStorm";
   range: number;
   width: number;
   arcRadians: number;
@@ -59,6 +63,17 @@ const BOSS_SKILL_CONFIGS: Record<BossSkillId, BossSkillConfig> = {
     width: 150,
     arcRadians: Math.PI * 2,
     color: 0xb86bff
+  },
+  needleStorm: {
+    id: "needleStorm",
+    cooldownMs: 9600,
+    windupMs: 980,
+    damageMultiplier: 1.35,
+    labelKey: "bossTechniqueNeedleStorm",
+    range: 390,
+    width: 18,
+    arcRadians: Math.PI * 2,
+    color: 0xff2f86
   }
 };
 
@@ -69,7 +84,7 @@ const BOSS_SKILL_PROFILES: Partial<Record<EnemyId, BossSkillProfile>> = {
   megaBoss: { enemyId: "megaBoss", skillIds: ["dash", "fanStrike", "summon"] },
   finalBoss: {
     enemyId: "finalBoss",
-    skillIds: ["dash", "fanStrike", "summon"],
+    skillIds: ["dash", "fanStrike", "summon", "needleStorm"],
     finalPhase: {
       hpRatio: 0.45,
       cooldownMultiplier: 0.72,

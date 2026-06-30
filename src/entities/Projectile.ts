@@ -1,10 +1,14 @@
 import Phaser from "phaser";
+import type { EvolutionId } from "../data/evolutions";
 import type { WeaponId } from "../data/weapons";
 
 export class Projectile extends Phaser.Physics.Arcade.Sprite {
   weaponId: WeaponId = "magicBolt";
+  evolutionId?: EvolutionId;
   damage = 1;
   pierceLeft = 1;
+  crit = false;
+  combo = false;
   expiresAt = 0;
   hitIds = new Set<Phaser.GameObjects.GameObject>();
 
@@ -27,8 +31,14 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     texture?: string;
     scale?: number;
     tint?: number;
+    evolutionId?: EvolutionId;
+    crit?: boolean;
+    combo?: boolean;
   }): void {
     this.weaponId = options.weaponId;
+    this.evolutionId = options.evolutionId;
+    this.crit = options.crit ?? false;
+    this.combo = options.combo ?? false;
     this.damage = options.damage;
     this.pierceLeft = options.pierce;
     this.expiresAt = this.scene.time.now + options.durationMs;

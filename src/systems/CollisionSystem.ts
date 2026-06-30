@@ -13,6 +13,8 @@ import type { WeaponSystem } from "./WeaponSystem";
 import { enemyName, t } from "../i18n";
 import type { AchievementSystem } from "./AchievementSystem";
 import { buildBossLegacySummary } from "../data/bossLegacy";
+import { formatBossBuildPathRewardMessage, grantRandomBuildPathLevel } from "../data/bossBuildPathReward";
+import { evolutionVfxFor, playEvolutionHitBurst } from "../data/evolutionVfx";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
 
@@ -50,8 +52,18 @@ export class CollisionSystem {
     projectile.hitIds.add(enemy);
     const killed = enemy.damage(projectile.damage);
     this.scene.events.emit("projectile-hit", enemy.x, enemy.y, projectile.weaponId);
-    const flashColor = this.hitColor(projectile.weaponId);
-    this.flashHit(enemy.x, enemy.y, flashColor);
+    const flashColor = projectile.evolutionId ? evolutionVfxFor(projectile.evolutionId).hitColor : this.hitColor(projectile.weaponId);
+    if (projectile.evolutionId) {
+      playEvolutionHitBurst(this.scene, enemy.x, enemy.y, projectile.evolutionId, projectile.crit);
+    } else {
+      this.flashHit(enemy.x, enemy.y, flashColor, projectile.crit ? 16 : 12, projectile.crit);
+    }
+    if (projectile.crit) {
+      this.scene.events.emit("critical-hit", enemy.x, enemy.y);
+    }
+    if (projectile.combo) {
+      this.scene.events.emit("combo-hit", enemy.x, enemy.y);
+    }
     if (enemy.config.isBoss) {
       this.scene.events.emit("boss-health-changed", Math.max(0, enemy.hp), enemy.maxHp, enemyName(enemy.enemyId));
     }
@@ -93,16 +105,27 @@ export class CollisionSystem {
     this.pickupSystem.collect(pickupObject as HealthPickup);
   }
 
-  private flashHit(x: number, y: number, color: number): void {
-    const flash = this.scene.add.circle(x, y, 12, color, 0.52).setDepth(35);
+  private flashHit(x: number, y: number, color: number, radius = 12, intense = false): void {
+    const flash = this.scene.add.circle(x, y, radius, color, intense ? 0.62 : 0.52).setDepth(35);
     this.scene.tweens.add({
       targets: flash,
       alpha: 0,
-      scale: 2.2,
-      duration: 130,
+      scale: intense ? 2.6 : 2.2,
+      duration: intense ? 150 : 130,
       ease: "Sine.easeOut",
       onComplete: () => flash.destroy()
     });
+    if (intense) {
+      const ring = this.scene.add.circle(x, y, radius + 4, 0xffffff, 0.28).setDepth(36);
+      this.scene.tweens.add({
+        targets: ring,
+        alpha: 0,
+        scale: 2.4,
+        duration: 140,
+        ease: "Sine.easeOut",
+        onComplete: () => ring.destroy()
+      });
+    }
   }
 
   private hitColor(weaponId: string): number {
@@ -139,6 +162,11 @@ export class CollisionSystem {
       }
       const newlyUnlocked = [...this.state.unlockedSkills].filter((skillId) => !unlockedBefore.has(skillId));
       this.scene.events.emit("boss-legacy", buildBossLegacySummary(enemy.enemyId, newlyUnlocked, exp, score));
+      const buildReward = grantRandomBuildPathLevel(this.state);
+      if (buildReward) {
+        this.scene.events.emit("milestone-unlocked", formatBossBuildPathRewardMessage(buildReward));
+        this.scene.scene.get("UIScene")?.events.emit("loadout-changed", this.state);
+      }
     }
     enemy.setActive(false);
     enemy.setVisible(false);

@@ -12,13 +12,15 @@ import { PickupSystem } from "../systems/PickupSystem";
 import { SpawnSystem } from "../systems/SpawnSystem";
 import { UpgradeSystem } from "../systems/UpgradeSystem";
 import { WeaponSystem } from "../systems/WeaponSystem";
-import type { UpgradeOption } from "../data/upgrades";
+import type { EvolutionId } from "../data/evolutions";
+import { evolutionVfxFor } from "../data/evolutionVfx";
 import type { GameOverData } from "./GameOverScene";
 import type { GameState } from "./GameState";
 import { buildPathName, t } from "../i18n";
 import { difficultyForLevel, type DifficultyConfig } from "../data/metaProgression";
 import { applyStartStyleBonus, formatStartStyleToast, normalizeStartStyle, type StartStyleId } from "../data/metaChoices";
 import { applyStyleMasteryBonus, banishChargesFromShop, metaBonusesFromShop } from "../data/renownShop";
+import type { UpgradeOption } from "../data/upgrades";
 
 type GameSceneData = {
   difficultyLevel?: number;
@@ -146,11 +148,27 @@ export class GameScene extends Phaser.Scene {
       }
     });
     this.events.on("enemy-killed", (x: number, y: number, score: number) => this.showScorePop(x, y, score));
-    this.events.on("critical-hit", () => this.showCombatFeedback(this.player.x, this.player.y - 24, t("combatCrit"), "#ffe09a"));
-    this.events.on("combo-hit", () => this.showCombatFeedback(this.player.x, this.player.y - 36, t("combatCombo"), "#8ff4ff"));
+    this.events.on("critical-hit", (x?: number, y?: number) => {
+      const fx = x ?? this.player.x;
+      const fy = y ?? this.player.y - 24;
+      this.showCombatFeedback(fx, fy, t("combatCrit"), "#ffe09a", true);
+    });
+    this.events.on("combo-hit", (x?: number, y?: number) => {
+      const fx = x ?? this.player.x;
+      const fy = y ?? this.player.y - 36;
+      this.showCombatFeedback(fx, fy, t("combatCombo"), "#8ff4ff", false, true);
+    });
     this.events.on("virtual-move", (x: number, y: number) => this.playerSystem.setVirtualDirection(x, y));
     this.events.on("milestone-unlocked", (message: string) => this.showScorePop(this.player.x, this.player.y - 78, message, "#ffe09a"));
-    this.events.on("player-healed", (amount: number) => this.showScorePop(this.player.x, this.player.y - 12, amount, "#84f7b2"));
+    this.events.on("player-healed", (amount: number, source: "heal" | "drain" = "heal") => {
+      const color = source === "drain" ? "#d8b4ff" : "#84f7b2";
+      const label = source === "drain" ? t("combatDrain", { amount }) : `+${amount}`;
+      this.showScorePop(this.player.x, this.player.y - 12, label, color);
+      if (source === "drain") {
+        const line = this.add.rectangle(this.player.x, this.player.y, 42, 2, 0xb86bff, 0.55).setDepth(37).setRotation(Phaser.Math.FloatBetween(-0.5, 0.5));
+        this.tweens.add({ targets: line, alpha: 0, scaleX: 1.8, duration: 180, onComplete: () => line.destroy() });
+      }
+    });
     this.input.keyboard?.on("keydown-ESC", () => this.togglePause());
     this.input.keyboard?.on("keydown-P", () => this.toggleStatusPanel());
     this.input.keyboard?.on("keydown-p", () => this.toggleStatusPanel());
@@ -162,7 +180,7 @@ export class GameScene extends Phaser.Scene {
       this.upgradeSystem.apply(option);
       if (option.evolutionId) {
         this.events.emit("evolution-learned", option.evolutionId);
-        this.showEvolutionLearned(option.title);
+        this.showEvolutionLearned(option.evolutionId, option.title);
         for (const message of this.achievementSystem.recordEvolution(option.evolutionId)) {
           this.showScorePop(this.player.x, this.player.y - 94, message, "#ffe09a");
         }
@@ -420,16 +438,19 @@ export class GameScene extends Phaser.Scene {
     );
   }
 
-  private showCombatFeedback(x: number, y: number, label: string, color: string): void {
-    const flash = this.add.circle(x, y, 16, Phaser.Display.Color.HexStringToColor(color).color, 0.35).setDepth(38);
+  private showCombatFeedback(x: number, y: number, label: string, color: string, crit = false, combo = false): void {
+    const flash = this.add.circle(x, y, crit ? 20 : combo ? 14 : 16, Phaser.Display.Color.HexStringToColor(color).color, crit ? 0.48 : 0.35).setDepth(38);
     this.tweens.add({
       targets: flash,
       alpha: 0,
-      scale: 2.2,
-      duration: 180,
+      scale: crit ? 2.8 : combo ? 2.4 : 2.2,
+      duration: crit ? 200 : 180,
       ease: "Sine.easeOut",
       onComplete: () => flash.destroy()
     });
+    if (crit) {
+      this.cameras.main.shake(80, 0.004);
+    }
     this.showScorePop(x, y - 10, label, color);
   }
 
@@ -452,18 +473,96 @@ export class GameScene extends Phaser.Scene {
     });
   }
 
-  private showEvolutionLearned(title: string): void {
-    const ring = this.add.circle(this.player.x, this.player.y, 54, 0xffd36a, 0.22).setDepth(36);
+  private showEvolutionLearned(evolutionId: EvolutionId, title: string): void {
+    const profile = evolutionVfxFor(evolutionId);
+    const [flashR, flashG, flashB] = profile.flashRgb;
+    const centerX = this.cameras.main.centerX;
+    const centerY = this.cameras.main.centerY;
+    const titleColor = Phaser.Display.Color.IntegerToColor(profile.primaryColor).rgba;
+
+    this.time.timeScale = 0.42;
+    this.time.delayedCall(380, () => {
+      this.time.timeScale = 1;
+    });
+
+    const vignette = this.add
+      .rectangle(centerX, centerY, this.scale.width, this.scale.height, 0x050711, 0.58)
+      .setScrollFactor(0)
+      .setDepth(115)
+      .setAlpha(0);
+    const ring = this.add.circle(this.player.x, this.player.y, 54, profile.primaryColor, 0.28).setDepth(36);
     this.tweens.add({
       targets: ring,
       alpha: 0,
-      scale: 2.7,
-      duration: 420,
+      scale: 3,
+      duration: 480,
       ease: "Sine.easeOut",
       onComplete: () => ring.destroy()
     });
-    this.cameras.main.flash(180, 255, 220, 120, false);
-    this.showScorePop(this.player.x, this.player.y - 118, title, "#ffe09a");
+
+    const banner = this.add
+      .text(centerX, centerY - 54, t("evolutionLearnedBanner"), {
+        fontFamily: "Microsoft JhengHei, Noto Sans TC, Arial, sans-serif",
+        fontSize: "42px",
+        color: "#fff6df",
+        fontStyle: "900",
+        stroke: "#1a1208",
+        strokeThickness: 8
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(120)
+      .setAlpha(0)
+      .setScale(2.2);
+    banner.setShadow(0, 0, "#ffe09a", 14, true, true);
+
+    const nameText = this.add
+      .text(centerX, centerY + 18, title, {
+        fontFamily: "Microsoft JhengHei, Noto Sans TC, Arial, sans-serif",
+        fontSize: "28px",
+        color: titleColor,
+        fontStyle: "700",
+        stroke: "#120d18",
+        strokeThickness: 5
+      })
+      .setOrigin(0.5)
+      .setScrollFactor(0)
+      .setDepth(120)
+      .setAlpha(0)
+      .setY(centerY + 42);
+
+    this.tweens.add({ targets: vignette, alpha: 1, duration: 140, ease: "Sine.easeOut" });
+    this.tweens.add({
+      targets: banner,
+      alpha: 1,
+      scale: 1,
+      duration: 340,
+      delay: 60,
+      ease: "Back.easeOut"
+    });
+    this.tweens.add({
+      targets: nameText,
+      alpha: 1,
+      y: centerY + 18,
+      duration: 280,
+      delay: 220,
+      ease: "Sine.easeOut"
+    });
+    this.tweens.add({
+      targets: [vignette, banner, nameText],
+      alpha: 0,
+      delay: 1080,
+      duration: 360,
+      ease: "Sine.easeIn",
+      onComplete: () => {
+        vignette.destroy();
+        banner.destroy();
+        nameText.destroy();
+      }
+    });
+
+    this.cameras.main.flash(220, flashR, flashG, flashB, false);
+    this.showScorePop(this.player.x, this.player.y - 118, title, titleColor);
   }
 
   private applyMetaBonuses(difficulty: DifficultyConfig): void {

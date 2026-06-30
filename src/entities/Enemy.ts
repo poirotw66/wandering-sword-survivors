@@ -1,5 +1,6 @@
 import Phaser from "phaser";
-import { ENEMY_CONFIGS, type EnemyConfig, type EnemyId } from "../data/enemies";
+import { ENEMY_CONFIGS, MINION_VISUAL_RADIUS, type EnemyConfig, type EnemyId } from "../data/enemies";
+import { bossPresentationFor } from "../data/bossPresentation";
 import { eliteTraitFor } from "../data/eliteTraits";
 import { t } from "../i18n";
 
@@ -18,6 +19,10 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
   private eliteAuraOuter?: Phaser.GameObjects.Arc;
   private eliteAuraInner?: Phaser.GameObjects.Arc;
   private elitePulseTween?: Phaser.Tweens.Tween;
+  private bossBaseScale = 1;
+  private bossAuraOuter?: Phaser.GameObjects.Arc;
+  private bossAuraInner?: Phaser.GameObjects.Arc;
+  private bossIdleTween?: Phaser.Tweens.Tween;
 
   constructor(scene: Phaser.Scene, x: number, y: number, enemyId: EnemyId) {
     super(scene, x, y, "enemy");
@@ -50,13 +55,22 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     } else {
       this.stopElitePulse();
     }
-    const scale = this.config.isBoss ? this.config.radius / 150 : this.config.radius / 90;
+    if (!this.config.isBoss) {
+      this.stopBossPresentation();
+    }
+    const visualRadius = this.config.isBoss
+      ? this.config.radius
+      : Math.min(this.config.radius, MINION_VISUAL_RADIUS);
+    const scale = this.config.isBoss ? this.config.radius / 150 : visualRadius / 90;
     this.setScale(this.isElite ? scale * 1.22 : scale);
-    const bodyRadius = this.config.isBoss ? 95 : 74;
+    const bodyRadius = this.config.isBoss ? 95 : Math.max(8, Math.round(visualRadius * 0.55));
     this.setCircle(bodyRadius, this.width / 2 - bodyRadius, this.height / 2 - bodyRadius);
     this.setDepth(this.config.isBoss || this.isElite ? 18 : 10);
     this.ensureStatusUi();
     this.updateStatusUi();
+    if (this.config.isBoss) {
+      this.startBossPresentation();
+    }
   }
 
   damage(amount: number): boolean {
@@ -74,6 +88,15 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.eliteAuraOuter?.setVisible(false);
     this.eliteAuraInner?.setVisible(false);
     this.stopElitePulse();
+    this.stopBossPresentation();
+  }
+
+  tickBossPresentation(): void {
+    if (!this.config.isBoss || !this.active) {
+      return;
+    }
+    this.bossAuraOuter?.setPosition(this.x, this.y);
+    this.bossAuraInner?.setPosition(this.x, this.y);
   }
 
   updateStatusUi(): void {
@@ -184,5 +207,50 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.elitePulseTween?.stop();
     this.elitePulseTween = undefined;
     this.eliteAuraOuter?.setAlpha(1);
+  }
+
+  private startBossPresentation(): void {
+    const presentation = bossPresentationFor(this.enemyId);
+    if (!presentation) {
+      return;
+    }
+
+    this.bossBaseScale = this.scale;
+    this.ensureBossAura(presentation.auraColor, presentation.tier);
+    this.bossIdleTween?.stop();
+    this.bossIdleTween = this.scene.tweens.add({
+      targets: this,
+      scale: this.bossBaseScale * presentation.idlePulseScale,
+      duration: 820 + presentation.tier * 70,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut"
+    });
+  }
+
+  private ensureBossAura(color: number, tier: number): void {
+    const radius = this.displayWidth * (0.52 + tier * 0.03);
+    if (!this.bossAuraOuter) {
+      this.bossAuraOuter = this.scene.add
+        .circle(this.x, this.y, radius, 0x000000, 0)
+        .setStrokeStyle(3 + Math.min(tier, 3), color, 0.72)
+        .setDepth(8);
+      this.bossAuraInner = this.scene.add.circle(this.x, this.y, radius * 0.86, color, 0.1 + tier * 0.02).setDepth(8);
+    } else {
+      this.bossAuraOuter.setRadius(radius).setStrokeStyle(3 + Math.min(tier, 3), color, 0.72);
+      this.bossAuraInner?.setRadius(radius * 0.86).setFillStyle(color, 0.1 + tier * 0.02);
+    }
+    this.bossAuraOuter.setVisible(true);
+    this.bossAuraInner?.setVisible(true);
+  }
+
+  private stopBossPresentation(): void {
+    this.bossIdleTween?.stop();
+    this.bossIdleTween = undefined;
+    this.bossBaseScale = 1;
+    this.bossAuraOuter?.destroy();
+    this.bossAuraInner?.destroy();
+    this.bossAuraOuter = undefined;
+    this.bossAuraInner = undefined;
   }
 }

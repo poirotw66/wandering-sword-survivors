@@ -16,6 +16,7 @@ export class EnemySystem {
   private readonly dashUntil = new WeakMap<Enemy, number>();
   private readonly nextFanAt = new WeakMap<Enemy, number>();
   private readonly nextSummonAt = new WeakMap<Enemy, number>();
+  private readonly nextNeedleAt = new WeakMap<Enemy, number>();
   private readonly finalPhaseActive = new WeakSet<Enemy>();
   private readonly minionNextActionAt = new WeakMap<Enemy, number>();
   private readonly minionLockedUntil = new WeakMap<Enemy, number>();
@@ -52,6 +53,7 @@ export class EnemySystem {
       }
 
       if (enemy.config.isBoss) {
+        enemy.tickBossPresentation();
         this.updateBossSkills(enemy);
         if ((this.dashUntil.get(enemy) ?? 0) < now) {
           this.chasePlayer(enemy, 1);
@@ -288,6 +290,10 @@ export class EnemySystem {
       this.nextSummonAt.set(enemy, now + bossSkillCooldown("summon", inFinalPhase, enemy.enemyId));
       this.performSummon(enemy, bossSkillConfig("summon"));
     }
+    if (profile.skillIds.includes("needleStorm") && now >= (this.nextNeedleAt.get(enemy) ?? 0)) {
+      this.nextNeedleAt.set(enemy, now + bossSkillCooldown("needleStorm", inFinalPhase, enemy.enemyId));
+      this.performNeedleStorm(enemy, bossSkillConfig("needleStorm"), inFinalPhase);
+    }
   }
 
   private performDash(enemy: Enemy, config: BossSkillConfig): void {
@@ -355,6 +361,64 @@ export class EnemySystem {
       }
       this.emitTechniqueEnded(enemy);
     });
+  }
+
+  private performNeedleStorm(enemy: Enemy, config: BossSkillConfig, inFinalPhase: boolean): void {
+    const needleCount = Math.round(config.width) + (inFinalPhase ? 6 : 0);
+    this.emitTechniqueStarted(enemy, config);
+    this.showCastLabel(enemy, t(config.labelKey), config.color);
+    for (let i = 0; i < needleCount; i += 1) {
+      const angle = (Math.PI * 2 * i) / needleCount;
+      this.showLineTelegraph(enemy.x, enemy.y, angle, 92, 4, config.color, config.windupMs);
+    }
+    const pulse = this.scene.add.circle(enemy.x, enemy.y, 48, config.color, 0.24).setDepth(12);
+    this.scene.tweens.add({
+      targets: pulse,
+      alpha: { from: 0.34, to: 0.05 },
+      scale: { from: 0.7, to: 1.8 },
+      duration: config.windupMs,
+      yoyo: true,
+      onComplete: () => pulse.destroy()
+    });
+    this.scene.time.delayedCall(config.windupMs, () => {
+      if (!enemy.active) {
+        this.emitTechniqueEnded(enemy);
+        return;
+      }
+      const damage = Math.round(enemy.config.damage * enemy.damageMultiplier * config.damageMultiplier);
+      const speed = config.range + (inFinalPhase ? 60 : 0);
+      for (let i = 0; i < needleCount; i += 1) {
+        const angle = (Math.PI * 2 * i) / needleCount + Phaser.Math.FloatBetween(-0.04, 0.04);
+        this.fireBossNeedle(enemy, angle, damage, speed, config.color, inFinalPhase ? 2200 : 1800);
+      }
+      this.scene.cameras.main.shake(160, 0.004);
+      this.emitTechniqueEnded(enemy);
+    });
+  }
+
+  private fireBossNeedle(
+    enemy: Enemy,
+    angle: number,
+    damage: number,
+    speed: number,
+    tint: number,
+    durationMs: number
+  ): void {
+    const pooled = this.enemyProjectiles.get(enemy.x, enemy.y, "bolt") as EnemyProjectile | null;
+    const projectile = pooled ?? new EnemyProjectile(this.scene, enemy.x, enemy.y);
+    projectile.fire({
+      x: enemy.x,
+      y: enemy.y,
+      damage,
+      velocityX: Math.cos(angle) * speed,
+      velocityY: Math.sin(angle) * speed,
+      tint,
+      durationMs
+    });
+    projectile.setScale(0.42);
+    if (!pooled) {
+      this.enemyProjectiles.add(projectile);
+    }
   }
 
   private performSummon(enemy: Enemy, config: BossSkillConfig): void {

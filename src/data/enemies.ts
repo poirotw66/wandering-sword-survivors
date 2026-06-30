@@ -42,6 +42,9 @@ export type EnemyConfig = {
   canSummon?: boolean;
 };
 
+/** Caps on-screen minion size; gameplay stats stay independent of radius. */
+export const MINION_VISUAL_RADIUS = 14;
+
 export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
   slime: {
     id: "slime",
@@ -76,7 +79,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     damage: 20,
     moveSpeed: 48,
     exp: 7,
-    radius: 20,
+    radius: 14,
     tint: 0xc0a46b,
     score: 40,
     spriteKey: "enemy-red",
@@ -115,7 +118,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     damage: 16,
     moveSpeed: 58,
     exp: 5,
-    radius: 17,
+    radius: 14,
     tint: 0xd9b45f,
     score: 28,
     spriteKey: "enemy-taishan",
@@ -154,7 +157,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     damage: 18,
     moveSpeed: 88,
     exp: 6,
-    radius: 16,
+    radius: 14,
     tint: 0xff73d2,
     score: 36,
     spriteKey: "enemy-sun-moon",
@@ -167,7 +170,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     damage: 24,
     moveSpeed: 54,
     exp: 8,
-    radius: 21,
+    radius: 14,
     tint: 0x6aa8ff,
     score: 55,
     spriteKey: "enemy-royal-guard",
@@ -180,7 +183,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     damage: 13,
     moveSpeed: 62,
     exp: 4,
-    radius: 15,
+    radius: 14,
     tint: 0x7ec8e3,
     score: 22,
     spriteKey: "enemy-wudang",
@@ -193,7 +196,7 @@ export const ENEMY_CONFIGS: Record<EnemyId, EnemyConfig> = {
     damage: 18,
     moveSpeed: 52,
     exp: 6,
-    radius: 18,
+    radius: 14,
     tint: 0xffb347,
     score: 34,
     spriteKey: "enemy-shaolin",

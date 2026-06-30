@@ -14,8 +14,11 @@ import { computeEvolutionProgress, trackedEvolutionProgress } from "../src/data/
 import { formatBossUnlockDetail, formatEvolutionRecipeDetail } from "../src/data/codexDetails";
 import { buildBossLegacySummary } from "../src/data/bossLegacy";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor } from "../src/data/bossSkills";
+import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
+import { bossPresentationFor, isBossEnemyId } from "../src/data/bossPresentation";
 import { eliteTraitFor } from "../src/data/eliteTraits";
-import { ENEMY_CONFIGS } from "../src/data/enemies";
+import { ENEMY_CONFIGS, MINION_VISUAL_RADIUS } from "../src/data/enemies";
+import { formatBossBuildPathRewardMessage, grantRandomBuildPathLevel } from "../src/data/bossBuildPathReward";
 import { archetypeConfigFor, ordinaryEnemyBehaviorMap } from "../src/data/minionBehaviors";
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows, startStyleOptions } from "../src/data/metaChoices";
@@ -751,11 +754,11 @@ describe("game regression rules", () => {
     expect(bossSkillProfileFor("minorBoss")?.skillIds).toEqual(["dash"]);
     expect(bossSkillProfileFor("midBoss")?.skillIds).toEqual(["dash", "fanStrike"]);
     expect(bossSkillProfileFor("greatBoss")?.skillIds).toEqual(["dash", "fanStrike", "summon"]);
-    expect(bossSkillProfileFor("finalBoss")?.skillIds).toEqual(["dash", "fanStrike", "summon"]);
+    expect(bossSkillProfileFor("finalBoss")?.skillIds).toEqual(["dash", "fanStrike", "summon", "needleStorm"]);
   });
 
   it("keeps boss skill timing and damage config valid", () => {
-    for (const skillId of ["dash", "fanStrike", "summon"] as const) {
+    for (const skillId of ["dash", "fanStrike", "summon", "needleStorm"] as const) {
       const config = bossSkillConfig(skillId);
       expect(config.cooldownMs).toBeGreaterThan(0);
       expect(config.windupMs).toBeGreaterThan(0);
@@ -771,6 +774,48 @@ describe("game regression rules", () => {
     expect(phase).toMatchObject({ hpRatio: 0.45, labelKey: "bossTechniqueFinalPhase" });
     expect(bossSkillCooldown("dash", true, "finalBoss")).toBeLessThan(bossSkillCooldown("dash", false, "finalBoss"));
     expect(finalPhaseFor("minorBoss")).toBeUndefined();
+  });
+
+  it("defines distinct evolution vfx profiles for every ultimate art", () => {
+    const evolutionIds = Object.keys(EVOLUTION_CONFIGS) as (keyof typeof EVOLUTION_CONFIGS)[];
+    expect(evolutionIds).toHaveLength(10);
+    const burstStyles = new Set(evolutionIds.map((id) => evolutionVfxFor(id).burstStyle));
+    expect(burstStyles.size).toBe(10);
+    for (const id of evolutionIds) {
+      expect(EVOLUTION_VFX[id].hitColor).toBeGreaterThan(0);
+      expect(EVOLUTION_VFX[id].primaryColor).toBeGreaterThan(0);
+    }
+  });
+
+  it("assigns tiered boss presentation for every boss enemy", () => {
+    const bossIds = ["minorBoss", "midBoss", "greatBoss", "megaBoss", "finalBoss"] as const;
+    for (const bossId of bossIds) {
+      expect(isBossEnemyId(bossId)).toBe(true);
+      const presentation = bossPresentationFor(bossId);
+      expect(presentation?.tier).toBeGreaterThan(0);
+      expect(presentation?.portraitScale).toBeGreaterThan(1);
+    }
+    expect(bossPresentationFor("finalBoss")?.tier).toBeGreaterThan(bossPresentationFor("minorBoss")?.tier ?? 0);
+  });
+
+  it("keeps ordinary minion display radii within the visual cap", () => {
+    const minionIds = Object.keys(ENEMY_CONFIGS).filter((id) => !ENEMY_CONFIGS[id as keyof typeof ENEMY_CONFIGS].isBoss);
+    for (const enemyId of minionIds) {
+      expect(ENEMY_CONFIGS[enemyId as keyof typeof ENEMY_CONFIGS].radius).toBeLessThanOrEqual(MINION_VISUAL_RADIUS);
+    }
+    expect(ENEMY_CONFIGS.bat.radius).toBeLessThan(MINION_VISUAL_RADIUS);
+  });
+
+  it("grants one random build-path level after a boss defeat reward", () => {
+    const state = createState();
+    const reward = grantRandomBuildPathLevel(state);
+
+    expect(reward).not.toBeNull();
+    expect(reward?.newLevel).toBe(1);
+    expect(reward?.previousLevel).toBe(0);
+    expect(state.buildPathLevels.get(reward!.pathId)).toBe(1);
+    setLocale("en");
+    expect(formatBossBuildPathRewardMessage(reward!)).toContain("Boss insight");
   });
 
   it("keeps elite family traits distinct", () => {

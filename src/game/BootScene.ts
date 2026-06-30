@@ -307,9 +307,9 @@ export class BootScene extends Phaser.Scene {
         graphics.lineBetween(40, 18, 51, 7);
         break;
       case "staff":
-        graphics.lineBetween(11, 8, 45, 49);
+        graphics.lineBetween(14, 10, 42, 46);
         graphics.fillStyle(accent, 0.9);
-        graphics.fillCircle(12, 8, 3);
+        graphics.fillCircle(14, 10, 2.5);
         break;
       case "saber":
         graphics.beginPath();
@@ -334,9 +334,9 @@ export class BootScene extends Phaser.Scene {
         graphics.strokeCircle(45, 17, 9);
         break;
       case "spear":
-        graphics.lineBetween(42, 6, 42, 48);
+        graphics.lineBetween(40, 10, 40, 42);
         graphics.fillStyle(accent, 0.96);
-        graphics.fillTriangle(42, 3, 37, 13, 47, 13);
+        graphics.fillTriangle(40, 8, 36, 16, 44, 16);
         break;
       case "dagger":
         graphics.lineBetween(38, 18, 50, 8);
@@ -344,9 +344,9 @@ export class BootScene extends Phaser.Scene {
         graphics.fillTriangle(50, 6, 54, 10, 48, 12);
         break;
       case "hammer":
-        graphics.lineBetween(14, 20, 44, 44);
+        graphics.lineBetween(16, 22, 40, 42);
         graphics.fillStyle(accent, 0.94);
-        graphics.fillRect(10, 14, 14, 10);
+        graphics.fillRect(12, 16, 10, 7);
         break;
       case "fan":
         graphics.beginPath();
@@ -359,8 +359,8 @@ export class BootScene extends Phaser.Scene {
         break;
       case "fist":
         graphics.fillStyle(accent, 0.94);
-        graphics.fillCircle(40, 16, 5);
-        graphics.fillCircle(48, 22, 5);
+        graphics.fillCircle(38, 18, 3.5);
+        graphics.fillCircle(44, 22, 3.5);
         break;
       case "needle":
         graphics.lineBetween(36, 24, 52, 10);
@@ -368,9 +368,9 @@ export class BootScene extends Phaser.Scene {
         graphics.lineBetween(38, 22, 50, 12);
         break;
       case "club":
-        graphics.lineBetween(12, 12, 40, 46);
+        graphics.lineBetween(14, 14, 38, 44);
         graphics.fillStyle(accent, 0.94);
-        graphics.fillCircle(12, 10, 6);
+        graphics.fillCircle(14, 12, 4.5);
         break;
       case "whip":
         graphics.lineBetween(38, 16, 46, 10);

@@ -71,7 +71,7 @@ export class SpawnSystem {
     const point = this.randomSpawnPoint(520);
     const boss = this.enemySystem.spawn(entry.enemyId, point.x, point.y);
     this.scene.events.emit("boss-health-changed", boss.hp, boss.maxHp, enemyName(boss.enemyId));
-    this.scene.events.emit("boss-spawned", enemyName(boss.enemyId), entry.markSec);
+    this.scene.events.emit("boss-spawned", enemyName(boss.enemyId), entry.markSec, boss.enemyId);
   }
 
   private randomSpawnPoint(distance = 460): Phaser.Math.Vector2 {

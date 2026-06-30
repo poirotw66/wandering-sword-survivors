@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { WEAPON_CONFIGS, type WeaponId } from "../data/weapons";
 import type { EvolutionId } from "../data/evolutions";
+import { playEvolutionFireBurst } from "../data/evolutionVfx";
 import type { Enemy } from "../entities/Enemy";
 import type { Player } from "../entities/Player";
 import { Projectile } from "../entities/Projectile";
@@ -90,7 +91,7 @@ export class WeaponSystem {
         durationMs: evolved ? 1550 : 1300,
         scale: evolved ? 0.24 : 0.14,
         tint: evolved ? 0xffe09a : 0x89d8ff
-      });
+      }, evolved ? "voidDuguSword" : undefined);
     }
     this.emitFired("magicBolt", evolved ? "voidDuguSword" : undefined);
   }
@@ -108,13 +109,13 @@ export class WeaponSystem {
         scale: evolved ? 0.22 : 0.16,
         tint: evolved ? 0xb86bff : 0xffffff,
         texture: "palm-wave"
-      });
+      }, evolved ? "starDrainingPalm" : undefined);
     }
     if (evolved) {
       const affected = this.pullNearbyEnemies(190 + level * 14, 95 + level * 10);
       const healAmount = Math.min(18, Math.max(3, Math.floor(affected / 2) + 3));
       this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
-      this.scene.events.emit("player-healed", healAmount);
+      this.scene.events.emit("player-healed", healAmount, "drain");
     }
     this.emitFired("flameWave", evolved ? "starDrainingPalm" : undefined);
   }
@@ -124,11 +125,15 @@ export class WeaponSystem {
     const targets = this.closestEnemies((evolved ? 3 : 1) + Math.floor(level / 2));
     for (const target of targets) {
       const projectile = this.acquireProjectile();
+      const rolled = this.rollDamage((evolved ? 58 : 45) + level * 18);
       projectile.fire({
         weaponId: "thunderStrike",
         x: target.x,
         y: target.y,
-        damage: this.rollDamage((evolved ? 58 : 45) + level * 18),
+        damage: rolled.damage,
+        crit: rolled.crit,
+        combo: rolled.combo,
+        evolutionId: evolved ? "drunkenShadowNineSwords" : undefined,
         pierce: evolved ? 2 : 1,
         velocityX: 0,
         velocityY: 0,
@@ -146,11 +151,15 @@ export class WeaponSystem {
     const evolved = this.evolvedWeapons.get("starVortex") === "starReturningOriginField";
     const radius = (evolved ? 150 : 116) + level * 18;
     const projectile = this.acquireProjectile();
+    const rolled = this.rollDamage((evolved ? 20 : 12) + level * 6);
     projectile.fire({
       weaponId: "starVortex",
       x: this.player.x,
       y: this.player.y,
-      damage: this.rollDamage((evolved ? 20 : 12) + level * 6),
+      damage: rolled.damage,
+      crit: rolled.crit,
+      combo: rolled.combo,
+      evolutionId: evolved ? "starReturningOriginField" : undefined,
       pierce: 99,
       velocityX: 0,
       velocityY: 0,
@@ -172,7 +181,7 @@ export class WeaponSystem {
 
     const healAmount = (evolved ? 8 : 2) + Math.floor(level / 2) + Math.floor(this.player.stats.areaMultiplier - 1);
     this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
-    this.scene.events.emit("player-healed", healAmount);
+    this.scene.events.emit("player-healed", healAmount, evolved ? "drain" : "heal");
     this.emitFired("starVortex", evolved ? "starReturningOriginField" : undefined);
   }
 
@@ -192,7 +201,7 @@ export class WeaponSystem {
         scale: evolved ? 0.2 : 0.16,
         tint: evolved ? 0xd5a3ff : 0xffb7d5,
         texture: "blade"
-      });
+      }, evolved ? "violetMistBlossomSword" : undefined);
     }
     if (evolved) {
       this.scene.time.delayedCall(260, () => {
@@ -206,7 +215,7 @@ export class WeaponSystem {
             scale: 0.18,
             tint: 0xffe09a,
             texture: "blade"
-          });
+          }, "violetMistBlossomSword");
         }
       });
     }
@@ -229,7 +238,7 @@ export class WeaponSystem {
         scale: evolved ? 0.17 : 0.13,
         tint: bonusSlash ? 0xffe09a : 0xb8ffd8,
         texture: "blade"
-      });
+      }, evolved ? "shadowlessGaleSlash" : undefined);
       if (bonusSlash) {
         this.spawnProjectile("galeSword", angle + 0.16, {
           damage: 18 + level * 3,
@@ -239,7 +248,7 @@ export class WeaponSystem {
           scale: 0.14,
           tint: 0xffe09a,
           texture: "strike"
-        });
+        }, "shadowlessGaleSlash");
       }
     }
     this.emitFired("galeSword", evolved ? "shadowlessGaleSlash" : undefined);
@@ -250,11 +259,15 @@ export class WeaponSystem {
     const targets = this.closestEnemies(evolved ? 5 : 3);
     for (const target of targets) {
       const projectile = this.acquireProjectile();
+      const rolled = this.rollDamage((evolved ? 70 : 44) + level * 12);
       projectile.fire({
         weaponId: "taiyuePeak",
         x: target.x,
         y: target.y,
-        damage: this.rollDamage((evolved ? 70 : 44) + level * 12),
+        damage: rolled.damage,
+        crit: rolled.crit,
+        combo: rolled.combo,
+        evolutionId: evolved ? "taiyueMountainSealingForm" : undefined,
         pierce: 99,
         velocityX: 0,
         velocityY: 0,
@@ -283,7 +296,7 @@ export class WeaponSystem {
         scale: evolved ? 0.18 : 0.14,
         tint: evolved ? 0xb8f7ff : 0x8ff4ff,
         texture: "bolt"
-      });
+      }, evolved ? "coldPondMirrorSword" : undefined);
       const body = target.body as Phaser.Physics.Arcade.Body;
       target.setVelocity(body.velocity.x * 0.62, body.velocity.y * 0.62);
       if (evolved) {
@@ -310,12 +323,12 @@ export class WeaponSystem {
         scale: evolved ? 0.28 : 0.2,
         tint: evolved ? 0xffd36a : 0xf7efd8,
         texture: "palm-wave"
-      });
+      }, evolved ? "vajraHundredStepQuake" : undefined);
     }
     if (evolved) {
       const healAmount = 3 + Math.floor(level / 2);
       this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
-      this.scene.events.emit("player-healed", healAmount);
+      this.scene.events.emit("player-healed", healAmount, "drain");
     }
     this.emitFired("vajraFist", evolved ? "vajraHundredStepQuake" : undefined);
   }
@@ -340,11 +353,15 @@ export class WeaponSystem {
       }
 
       const angle = this.scene.time.now * (evolved ? 0.006 : 0.004) + (Math.PI * 2 * i) / count;
+      const rolled = this.rollDamage((evolved ? 14 : 9) + level * 4);
       blade.fire({
         weaponId: "orbitBlade",
         x: this.player.x + Math.cos(angle) * radius,
         y: this.player.y + Math.sin(angle) * radius,
-        damage: this.rollDamage((evolved ? 14 : 9) + level * 4),
+        damage: rolled.damage,
+        crit: rolled.crit,
+        combo: rolled.combo,
+        evolutionId: evolved ? "windClearSwordArray" : undefined,
         pierce: 99,
         velocityX: 0,
         velocityY: 0,
@@ -364,21 +381,27 @@ export class WeaponSystem {
     this.scene.events.emit("weapon-fired", weaponId);
     if (evolutionId) {
       this.scene.events.emit("evolution-fired", evolutionId);
+      playEvolutionFireBurst(this.scene, this.player.x, this.player.y, evolutionId);
     }
   }
 
   private spawnProjectile(
     weaponId: WeaponId,
     angle: number,
-    options: { damage: number; speed: number; pierce: number; durationMs: number; scale: number; tint: number; texture?: string }
+    options: { damage: number; speed: number; pierce: number; durationMs: number; scale: number; tint: number; texture?: string },
+    evolutionId?: EvolutionId
   ): void {
     const direction = angleToVector(angle);
+    const rolled = this.rollDamage(options.damage);
     const projectile = this.acquireProjectile();
     projectile.fire({
       weaponId,
+      evolutionId,
+      crit: rolled.crit,
+      combo: rolled.combo,
       x: this.player.x + direction.x * 24,
       y: this.player.y + direction.y * 24,
-      damage: this.rollDamage(options.damage),
+      damage: rolled.damage,
       pierce: options.pierce,
       velocityX: direction.x * options.speed * this.player.stats.projectileSpeedMultiplier,
       velocityY: direction.y * options.speed * this.player.stats.projectileSpeedMultiplier,
@@ -420,17 +443,19 @@ export class WeaponSystem {
     return projectile ?? new Projectile(this.scene, this.player.x, this.player.y);
   }
 
-  private rollDamage(baseDamage: number): number {
+  private rollDamage(baseDamage: number): { damage: number; crit: boolean; combo: boolean } {
     let damage = baseDamage * this.player.stats.damageMultiplier * this.player.stats.burstMultiplier;
+    let crit = false;
+    let combo = false;
     if (Math.random() < this.player.stats.critChance) {
       damage *= this.player.stats.critMultiplier;
-      this.scene.events.emit("critical-hit");
+      crit = true;
     }
     if (Math.random() < this.player.stats.comboChance) {
       damage *= 1.35;
-      this.scene.events.emit("combo-hit");
+      combo = true;
     }
-    return damage;
+    return { damage, crit, combo };
   }
 
   private nearestEnemy(): Enemy | undefined {

@@ -8,6 +8,8 @@ import { StatusPanel } from "../ui/StatusPanel";
 import { TimerText } from "../ui/TimerText";
 import { UpgradePanel } from "../ui/UpgradePanel";
 import { enemyName, t } from "../i18n";
+import { ENEMY_CONFIGS, type EnemyId } from "../data/enemies";
+import { bossPresentationFor } from "../data/bossPresentation";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import { VirtualJoystick } from "../ui/VirtualJoystick";
 import { formatCompactNumber } from "../utils/math";
@@ -30,6 +32,7 @@ export class UIScene extends Phaser.Scene {
   private bossBarLabel!: Phaser.GameObjects.Text;
   private bossTechniqueLabel!: Phaser.GameObjects.Text;
   private legacyPanel?: Phaser.GameObjects.Container;
+  private bossIntroPanel?: Phaser.GameObjects.Container;
   private pauseOverlay!: Phaser.GameObjects.Container;
   private upgradePanel!: UpgradePanel;
   private virtualJoystick?: VirtualJoystick;
@@ -118,7 +121,9 @@ export class UIScene extends Phaser.Scene {
     gameScene.events.on("sync-state", (state: GameState) => {
       this.state = state;
     });
-    this.scene.get("GameScene").events.on("boss-spawned", (name: string, markSec: number) => this.showBossWarning(name, markSec));
+    this.scene.get("GameScene").events.on("boss-spawned", (name: string, markSec: number, enemyId: EnemyId) =>
+      this.showBossIntro(name, markSec, enemyId)
+    );
     this.scene.get("GameScene").events.on("boss-health-changed", (hp: number, maxHp: number, name: string) => {
       this.updateBossBar(hp, maxHp, name);
     });
@@ -272,14 +277,78 @@ export class UIScene extends Phaser.Scene {
     this.bossTechniqueLabel?.setText("");
   }
 
-  private showBossWarning(name: string, markSec: number): void {
+  private showBossIntro(name: string, markSec: number, enemyId: EnemyId): void {
+    this.bossIntroPanel?.destroy();
     this.bossText.setText(t("bossWarning", { minute: Math.floor(markSec / 60), name }));
+    this.bossText.setAlpha(1);
+
+    const config = ENEMY_CONFIGS[enemyId];
+    const presentation = bossPresentationFor(enemyId);
+    const centerX = this.scale.width / 2;
+    const frameColor = presentation?.portraitFrameColor ?? 0xff7687;
+    const titleColor = presentation?.titleColor ?? "#ff7687";
+    const portraitScale = presentation?.portraitScale ?? 1.1;
+    const textureKey = this.textures.exists(config.spriteKey) ? config.spriteKey : "boss-master";
+
+    const container = this.add.container(centerX, 118).setDepth(880).setScrollFactor(0).setAlpha(0);
+    const backdrop = this.add.rectangle(0, 0, Math.min(420, this.scale.width - 48), 148, 0x120d18, 0.9).setStrokeStyle(3, frameColor, 0.95);
+    const portrait = this.add.image(0, -8, textureKey).setScale(portraitScale);
+    const frame = this.add.rectangle(0, -8, portrait.displayWidth + 18, portrait.displayHeight + 18, 0x000000, 0).setStrokeStyle(4, frameColor, 0.92);
+    const tierLabel =
+      presentation && presentation.tier >= 5
+        ? t("bossTierSupreme")
+        : presentation && presentation.tier >= 4
+          ? t("bossTierLegendary")
+          : presentation && presentation.tier >= 3
+            ? t("bossTierGrand")
+            : presentation && presentation.tier >= 2
+              ? t("bossTierMaster")
+              : t("bossTierCaptain");
+    const tierText = this.add
+      .text(0, -72, tierLabel, {
+        fontFamily: UI_FONT,
+        fontSize: presentation && presentation.tier >= 5 ? "15px" : "13px",
+        color: titleColor,
+        fontStyle: "700"
+      })
+      .setOrigin(0.5);
+    const nameText = this.add
+      .text(0, 58, name, {
+        fontFamily: TITLE_FONT,
+        fontSize: presentation && presentation.tier >= 5 ? "28px" : "24px",
+        color: titleColor,
+        fontStyle: "700"
+      })
+      .setOrigin(0.5);
+    container.add([backdrop, portrait, frame, tierText, nameText]);
+    this.bossIntroPanel = container;
+
     this.tweens.add({
-      targets: this.bossText,
+      targets: container,
+      alpha: 1,
+      y: 108,
+      duration: 280,
+      ease: "Back.easeOut"
+    });
+    this.tweens.add({
+      targets: portrait,
+      scale: portraitScale * 1.06,
+      duration: 720,
+      yoyo: true,
+      repeat: 2,
+      ease: "Sine.easeInOut"
+    });
+    this.tweens.add({
+      targets: [container, this.bossText],
       alpha: 0,
-      delay: 1600,
-      duration: 900,
+      delay: 2200,
+      duration: 520,
+      ease: "Sine.easeIn",
       onComplete: () => {
+        container.destroy();
+        if (this.bossIntroPanel === container) {
+          this.bossIntroPanel = undefined;
+        }
         this.bossText.setText("");
         this.bossText.setAlpha(1);
       }

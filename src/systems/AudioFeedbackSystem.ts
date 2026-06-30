@@ -1,5 +1,7 @@
 import Phaser from "phaser";
 import { readAudioSettings } from "../data/audioSettings";
+import type { EvolutionId } from "../data/evolutions";
+import { evolutionVfxFor } from "../data/evolutionVfxProfiles";
 
 type TonePreset = {
   frequency: number;
@@ -19,7 +21,8 @@ const SFX_KEYS = {
   boss: "sfx-boss",
   evolution: "sfx-evolution",
   crit: "sfx-crit",
-  combo: "sfx-combo"
+  combo: "sfx-combo",
+  drain: "sfx-drain"
 } as const;
 
 export class AudioFeedbackSystem {
@@ -28,6 +31,7 @@ export class AudioFeedbackSystem {
   private unlocked = false;
   private bgmGain?: GainNode;
   private bgmOscillators: OscillatorNode[] = [];
+  private bgmDuckTimer?: Phaser.Time.TimerEvent;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -36,16 +40,19 @@ export class AudioFeedbackSystem {
     scene.events.once("shutdown", () => this.stopBgm());
 
     scene.events.on("weapon-fired", (weaponId: string) => this.playWeapon(weaponId));
-    scene.events.on("evolution-fired", () => this.playSfx(SFX_KEYS.sword, 0.4));
-    scene.events.on("evolution-learned", () => this.playSfx(SFX_KEYS.evolution, 0.5));
+    scene.events.on("evolution-fired", (evolutionId: EvolutionId) => this.playEvolutionFired(evolutionId));
+    scene.events.on("evolution-learned", (evolutionId: EvolutionId) => this.playEvolutionLearned(evolutionId));
     scene.events.on("boss-defeated", () => this.playSfx(SFX_KEYS.boss, 0.55));
     scene.events.on("projectile-hit", () => this.playSfx(SFX_KEYS.hit, 0.42));
     scene.events.on("exp-collected", () => this.playSfx(SFX_KEYS.pickup, 0.34));
     scene.events.on("level-up", () => this.playSfx(SFX_KEYS.levelUp, 0.48));
     scene.events.on("player-damaged", () => this.playSfx(SFX_KEYS.hurt, 0.5));
-    scene.events.on("player-healed", () => this.playSfx(SFX_KEYS.heal, 0.42));
+    scene.events.on("player-healed", (_amount: number, source?: string) => {
+      this.playSfx(source === "drain" ? SFX_KEYS.drain : SFX_KEYS.heal, source === "drain" ? 0.46 : 0.42);
+    });
     scene.events.on("critical-hit", () => this.playSfx(SFX_KEYS.crit, 0.5));
     scene.events.on("combo-hit", () => this.playSfx(SFX_KEYS.combo, 0.44));
+    scene.events.on("bgm-duck", (durationMs: number, ratio = 0.16) => this.duckBgm(durationMs, ratio));
   }
 
   private unlock(): void {
@@ -98,6 +105,26 @@ export class AudioFeedbackSystem {
     this.playSfx(SFX_KEYS.sword, volumeByWeapon[weaponId] ?? 0.36);
   }
 
+  private playEvolutionFired(evolutionId: EvolutionId): void {
+    const profile = evolutionVfxFor(evolutionId);
+    const pitch = profile.burstStyle === "vajra" || profile.burstStyle === "quake" ? 0.85 : profile.burstStyle === "gale" ? 1.15 : 1;
+    this.playSfx(SFX_KEYS.sword, 0.42 * pitch);
+    this.playTone(520 * pitch, 860 * pitch, 90, 0.028);
+  }
+
+  private playEvolutionLearned(evolutionId: EvolutionId): void {
+    const profile = evolutionVfxFor(evolutionId);
+    const pitch = profile.burstStyle === "vajra" || profile.burstStyle === "quake" ? 0.88 : profile.burstStyle === "gale" ? 1.12 : 1;
+    this.duckBgm(1650, 0.14);
+    this.playSfx(SFX_KEYS.evolution, 0.55);
+    this.playTone(330 * pitch, 1180 * pitch, 280, 0.045);
+    this.playTone(660 * pitch, 990 * pitch, 220, 0.03);
+  }
+
+  private playTone(from: number, to: number, durationMs: number, gain: number): void {
+    this.play({ frequency: from, slideTo: to, durationMs, type: "triangle", gain });
+  }
+
   private playSynthFallback(key: string, volume: number): void {
     const fallbackPresets: Record<string, TonePreset> = {
       [SFX_KEYS.hit]: { frequency: 180, slideTo: 120, durationMs: 80, type: "square", gain: 0.04 * volume },
@@ -108,8 +135,9 @@ export class AudioFeedbackSystem {
       [SFX_KEYS.hurt]: { frequency: 120, slideTo: 70, durationMs: 160, type: "sawtooth", gain: 0.06 * volume },
       [SFX_KEYS.boss]: { frequency: 180, slideTo: 520, durationMs: 320, type: "sawtooth", gain: 0.055 * volume },
       [SFX_KEYS.evolution]: { frequency: 330, slideTo: 990, durationMs: 260, type: "triangle", gain: 0.06 * volume },
-      [SFX_KEYS.crit]: { frequency: 680, slideTo: 1180, durationMs: 120, type: "triangle", gain: 0.05 * volume },
-      [SFX_KEYS.combo]: { frequency: 420, slideTo: 760, durationMs: 140, type: "sine", gain: 0.045 * volume }
+      [SFX_KEYS.crit]: { frequency: 720, slideTo: 1320, durationMs: 130, type: "triangle", gain: 0.055 * volume },
+      [SFX_KEYS.combo]: { frequency: 480, slideTo: 920, durationMs: 150, type: "sine", gain: 0.05 * volume },
+      [SFX_KEYS.drain]: { frequency: 280, slideTo: 520, durationMs: 180, type: "sine", gain: 0.048 * volume }
     };
     const preset = fallbackPresets[key];
     if (preset) {
@@ -166,7 +194,37 @@ export class AudioFeedbackSystem {
     this.bgmGain.gain.exponentialRampToValueAtTime(Math.max(targetGain, 0.0001), now + 1.8);
   }
 
+  private duckBgm(durationMs: number, ratio: number): void {
+    if (!this.context || !this.bgmGain) {
+      return;
+    }
+
+    const now = this.context.currentTime;
+    const duckedGain = Math.max(0.12 * this.musicVolume() * ratio, 0.0001);
+    this.bgmGain.gain.cancelScheduledValues(now);
+    this.bgmGain.gain.setValueAtTime(Math.max(this.bgmGain.gain.value, 0.0001), now);
+    this.bgmGain.gain.exponentialRampToValueAtTime(duckedGain, now + 0.14);
+
+    this.bgmDuckTimer?.remove(false);
+    this.bgmDuckTimer = this.scene.time.delayedCall(durationMs, () => this.restoreBgm());
+  }
+
+  private restoreBgm(): void {
+    if (!this.context || !this.bgmGain) {
+      return;
+    }
+
+    const now = this.context.currentTime;
+    const targetGain = Math.max(0.12 * this.musicVolume(), 0.0001);
+    this.bgmGain.gain.cancelScheduledValues(now);
+    this.bgmGain.gain.setValueAtTime(Math.max(this.bgmGain.gain.value, 0.0001), now);
+    this.bgmGain.gain.exponentialRampToValueAtTime(targetGain, now + 0.45);
+    this.bgmDuckTimer = undefined;
+  }
+
   private stopBgm(): void {
+    this.bgmDuckTimer?.remove(false);
+    this.bgmDuckTimer = undefined;
     for (const oscillator of this.bgmOscillators) {
       try {
         oscillator.stop();
