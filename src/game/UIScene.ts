@@ -158,12 +158,21 @@ export class UIScene extends Phaser.Scene {
         reward: Math.round(this.state.difficultyRewardMultiplier * 100)
       })
     );
-    this.layoutLeftHud();
+    this.layoutHud();
+    const narrow = isNarrowViewport(this.scale.width);
     const rewardSuffix =
       this.state.difficultyRewardMultiplier > 1
         ? `  ×${Math.round(this.state.difficultyRewardMultiplier * 100)}%`
         : "";
-    this.scoreText.setText(`${t("renown")} ${this.state.score}${rewardSuffix}  ${t("defeated")} ${this.state.kills}`);
+    if (narrow) {
+      this.scoreText.setText(
+        `${t("renown")} ${this.state.score}${rewardSuffix}\n${t("defeated")} ${this.state.kills}`
+      );
+      this.scoreText.setStyle({ align: "right" });
+    } else {
+      this.scoreText.setText(`${t("renown")} ${this.state.score}${rewardSuffix}  ${t("defeated")} ${this.state.kills}`);
+      this.scoreText.setStyle({ align: "left" });
+    }
     this.hudHintText.setText(
       t("hudControlsLine", {
         rerolls: this.state.rerolls,
@@ -181,15 +190,7 @@ export class UIScene extends Phaser.Scene {
   private resize(): void {
     const width = this.scale.width;
     this.expBar.resize(width);
-    this.timerText.setPosition(width / 2, 18);
-    this.difficultyText.setPosition(width / 2, 46);
-    this.layoutLeftHud();
-    if (this.scoreText) {
-      this.scoreText.setPosition(width - 24, 26);
-    }
-    if (this.hudHintText) {
-      this.hudHintText.setPosition(width - 24, 48);
-    }
+    this.layoutHud();
     if (this.virtualJoystick) {
       const insetLeft = safeInset("left");
       const insetBottom = safeInset("bottom");
@@ -206,31 +207,115 @@ export class UIScene extends Phaser.Scene {
     }
     if (this.bossBar) {
       this.bossBar.setPosition(width / 2, this.scale.height - 40);
+      const bossScale = isNarrowViewport(width) ? Math.min(1, (width - 32) / 420) : 1;
+      this.bossBar.setScale(bossScale);
     }
     if (this.bossText) {
-      this.bossText.setPosition(width / 2, 62);
+      const insetTop = safeInset("top");
+      this.bossText.setPosition(width / 2, insetTop + (isNarrowViewport(width) ? 72 : 62));
     }
   }
 
-  private layoutLeftHud(): void {
+  private layoutHud(): void {
+    const width = this.scale.width;
+    const height = this.scale.height;
     const insetLeft = safeInset("left");
+    const insetRight = safeInset("right");
     const insetTop = safeInset("top");
-    const hpLeft = insetLeft + 16;
-    const hpTop = insetTop + 28;
-    const loadoutLeft = insetLeft + 16;
-    const loadoutTop = isCompactViewport(this.scale.width, this.scale.height) ? hpTop + 46 : hpTop + 52;
-    this.healthBar.setPosition(hpLeft, hpTop);
-    this.levelText.setPosition(hpLeft + this.healthBar.getWidth() + 10, hpTop - 1);
-    this.levelText.setFontSize(isNarrowViewport(this.scale.width) ? "13px" : "14px");
-    this.loadoutBar.setPosition(loadoutLeft, loadoutTop);
-    this.evolutionPreviewText.setPosition(loadoutLeft, loadoutTop + this.loadoutBar.getHeight() + 4);
-    this.evolutionPreviewText.setFontSize(isNarrowViewport(this.scale.width) ? "10px" : "11px");
-    this.evolutionPreviewText.setStyle({
-      wordWrap: { width: Math.min(320, this.scale.width - loadoutLeft - 24) }
-    });
-    if (isTouchDevice()) {
+    const insetBottom = safeInset("bottom");
+    const narrow = isNarrowViewport(width);
+    const margin = narrow ? 10 : 16;
+    const topY = insetTop + (narrow ? 10 : 18);
+
+    if (narrow) {
+      const columnGap = 8;
+      const leftColumnWidth = Math.min(128, width * 0.3);
+      const rightColumnWidth = Math.min(108, width * 0.28);
+      const centerX = width / 2;
+      const leftX = insetLeft + margin;
+      const rightX = width - insetRight - margin;
+
+      this.healthBar.setBarWidth(leftColumnWidth);
+      this.healthBar.setPosition(leftX, topY + 10);
+      this.levelText.setPosition(leftX + leftColumnWidth / 2, topY + 28);
+      this.levelText.setOrigin(0.5, 0);
+      this.levelText.setFontSize("12px");
+
+      this.timerText.setPosition(centerX, topY);
+      this.timerText.setFontSize("20px");
+
+      this.difficultyText.setPosition(centerX, topY + 28);
+      this.difficultyText.setFontSize("11px");
+
+      this.scoreText.setPosition(rightX, topY + 2);
+      this.scoreText.setOrigin(1, 0);
+      this.scoreText.setFontSize("11px");
+      this.scoreText.setStyle({
+        wordWrap: { width: rightColumnWidth },
+        lineSpacing: 2
+      });
+
+      this.hudHintText.setPosition(rightX, topY + 44);
+
+      this.loadoutBar.setDisplayScale(1);
+      const baseLoadoutWidth = this.loadoutBar.getWidth();
+      const loadoutScale = Math.min(0.76, (width - insetLeft - insetRight - 24) / baseLoadoutWidth);
+      this.loadoutBar.setDisplayScale(loadoutScale);
+      const loadoutW = this.loadoutBar.getWidth();
+      const loadoutH = this.loadoutBar.getHeight();
+      const loadoutX = width - insetRight - margin - loadoutW;
+      const loadoutY = height - insetBottom - loadoutH - 56;
+      this.loadoutBar.setPosition(loadoutX, loadoutY);
+
+      const preview = evolutionPreviewLine(this.state);
+      this.evolutionPreviewText.setPosition(leftX, topY + 46);
+      this.evolutionPreviewText.setFontSize("10px");
+      this.evolutionPreviewText.setStyle({
+        wordWrap: { width: Math.min(leftColumnWidth + 40, centerX - leftX - columnGap) }
+      });
+      this.evolutionPreviewText.setVisible(Boolean(preview));
+    } else {
+      this.healthBar.setBarWidth(200);
+      const hpLeft = insetLeft + margin;
+      const hpTop = insetTop + 28;
+      const loadoutLeft = insetLeft + margin;
+      const loadoutTop = isCompactViewport(width, height) ? hpTop + 46 : hpTop + 52;
+
+      this.healthBar.setPosition(hpLeft, hpTop);
+      this.levelText.setPosition(hpLeft + this.healthBar.getWidth() + 10, hpTop - 1);
+      this.levelText.setOrigin(0, 0);
+      this.levelText.setFontSize("14px");
+
+      this.timerText.setPosition(width / 2, topY);
+      this.timerText.setFontSize("26px");
+
+      this.difficultyText.setPosition(width / 2, topY + 28);
+      this.difficultyText.setFontSize("12px");
+
+      this.scoreText.setPosition(width - 24, topY + 8);
+      this.scoreText.setOrigin(1, 0);
+      this.scoreText.setFontSize("18px");
+      this.scoreText.setStyle({ wordWrap: { width: 0 } });
+
+      this.hudHintText.setPosition(width - 24, topY + 30);
+
+      this.loadoutBar.setDisplayScale(1);
+      this.loadoutBar.setPosition(loadoutLeft, loadoutTop);
+
+      this.evolutionPreviewText.setPosition(loadoutLeft, loadoutTop + this.loadoutBar.getHeight() + 4);
+      this.evolutionPreviewText.setFontSize("11px");
+      this.evolutionPreviewText.setStyle({
+        wordWrap: { width: Math.min(320, width - loadoutLeft - 24) }
+      });
+    }
+
+    if (isTouchDevice() && !narrow) {
       this.scoreText.setFontSize("16px");
       this.bossText.setFontSize("18px");
+    } else if (!narrow) {
+      this.bossText.setFontSize("21px");
+    } else {
+      this.bossText.setFontSize("17px");
     }
   }
 

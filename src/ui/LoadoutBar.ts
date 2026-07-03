@@ -126,12 +126,20 @@ export class LoadoutBar {
     this.root.setPosition(x, y);
   }
 
+  setDisplayScale(scale: number): void {
+    this.root.setScale(scale);
+  }
+
+  getDisplayScale(): number {
+    return this.root.scale;
+  }
+
   getWidth(): number {
-    return ROW_WIDTH;
+    return ROW_WIDTH * this.root.scale;
   }
 
   getHeight(): number {
-    return this.sectionHeight() * 3 + SECTION_GAP * 2;
+    return (this.sectionHeight() * 3 + SECTION_GAP * 2) * this.root.scale;
   }
 
   update(state: GameState): void {
