@@ -12,3 +12,4 @@
 | `008-renown-shop-and-meta-unlocks` | `prd-001-nightfall-survivors` | done | Implemented spendable renown, purchasable meta upgrades, save migration, and compact shop UX. |
 | `009-boss-and-enemy-visual-identity` | `prd-001-nightfall-survivors` | done | Implemented ten ordinary wuxia enemy archetypes, unique Boss sprite keys, fallback silhouettes, codex icons, and sprite mapping tests. |
 | `010-enemy-behavior-archetypes` | `prd-001-nightfall-survivors` | in_progress | Introduce four ordinary enemy behavior archetypes (chaser, dasher, tank, ranger), map all sixteen minion factions, and add lightweight telegraphs plus ranged minion attacks. |
+| `011-run-pacing-and-pressure-waves` | `prd-001-nightfall-survivors` | in_progress | Add five-minute pressure waves, post-Boss respite, segment-themed factions, and a 120-minion cap for late-run readability. |

@@ -34,6 +34,7 @@ export type GameState = {
   banishedUpgradeIds: Set<string>;
   banishCharges: number;
   renownTitle: string;
+  respiteUntilMs: number;
   devMode: {
     enabled: boolean;
     timeScale: number;

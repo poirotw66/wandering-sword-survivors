@@ -71,6 +71,18 @@ export class EnemySystem {
     return this.enemies.countActive(true);
   }
 
+  activeMinionCount(): number {
+    let count = 0;
+    this.enemies.children.each((child) => {
+      const enemy = child as Enemy;
+      if (enemy.active && !enemy.config.isBoss) {
+        count += 1;
+      }
+      return true;
+    });
+    return count;
+  }
+
   private updateOrdinaryBehavior(enemy: Enemy): void {
     const now = this.scene.time.now;
     const archetype = minionBehaviorFor(enemy.enemyId);

@@ -25,6 +25,15 @@ import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows,
 import { SPAWN_DENSITY, SPAWN_WAVES } from "../src/data/waves";
 import { expToNextForLevel } from "../src/data/expCurve";
 import { timeCombatScale } from "../src/data/timeCombatScale";
+import {
+  expDropMultiplierFor,
+  isPressureWaveActive,
+  isRespiteActive,
+  isSegmentThemeEnemy,
+  pressureWaveIndex,
+  RUN_PACING,
+  spawnPacingModifiers
+} from "../src/data/runPacing";
 import { estimateBossTimeToDefeat, estimateWeaponDps } from "../src/data/combatMetrics";
 import { formatCompactNumber } from "../src/utils/math";
 import {
@@ -97,6 +106,7 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     banishedUpgradeIds: new Set(),
     banishCharges: 1,
     renownTitle: "江湖浪客",
+    respiteUntilMs: 0,
     evolvedArtsSeen: new Set(),
     standaloneSkillsSeen: new Set(),
     devMode: {
@@ -1028,6 +1038,41 @@ describe("game regression rules", () => {
     expect(record.bossDefeatsSeen).toEqual(["minorBoss"]);
     expect(record.totalRenown).toBe(100);
     expect(record.favoriteBuildPathId).toBe("swordSect");
+  });
+
+  it("defines pressure waves every five minutes for forty-five seconds", () => {
+    expect(isPressureWaveActive(299)).toBe(false);
+    expect(isPressureWaveActive(300)).toBe(true);
+    expect(isPressureWaveActive(344)).toBe(true);
+    expect(isPressureWaveActive(345)).toBe(false);
+    expect(isPressureWaveActive(600)).toBe(true);
+    expect(pressureWaveIndex(300)).toBe(1);
+    expect(pressureWaveIndex(120)).toBe(-1);
+  });
+
+  it("applies boss respite spawn and exp modifiers", () => {
+    const nowMs = 10_000;
+    const respiteUntilMs = nowMs + 4_000;
+    expect(isRespiteActive(respiteUntilMs, nowMs)).toBe(true);
+    expect(isRespiteActive(respiteUntilMs, nowMs + 5_000)).toBe(false);
+    expect(expDropMultiplierFor(120, nowMs, respiteUntilMs)).toBe(RUN_PACING.respiteExpMultiplier);
+    const respitePacing = spawnPacingModifiers(120, nowMs, respiteUntilMs, 0, "slime");
+    expect(respitePacing.intervalMultiplier).toBeGreaterThan(1);
+    expect(respitePacing.amountMultiplier).toBeLessThan(1);
+  });
+
+  it("boosts segment theme enemies without affecting off-theme spawns", () => {
+    expect(isSegmentThemeEnemy(120, "huashanSwordsman")).toBe(true);
+    expect(isSegmentThemeEnemy(120, "royalGuard")).toBe(false);
+    expect(isSegmentThemeEnemy(1300, "royalGuard")).toBe(true);
+    const themePacing = spawnPacingModifiers(120, 0, 0, 0, "huashanSwordsman");
+    const offThemePacing = spawnPacingModifiers(120, 0, 0, 0, "royalGuard");
+    expect(themePacing.intervalMultiplier).toBeLessThan(offThemePacing.intervalMultiplier);
+  });
+
+  it("blocks ordinary spawns when the minion cap is reached", () => {
+    const capped = spawnPacingModifiers(600, 0, 0, RUN_PACING.ordinaryEnemyCap, "slime");
+    expect(capped.atEnemyCap).toBe(true);
   });
 
   it("keeps Traditional Chinese and English locale keys in sync", () => {

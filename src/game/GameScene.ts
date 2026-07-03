@@ -105,6 +105,7 @@ export class GameScene extends Phaser.Scene {
       banishedUpgradeIds: new Set(),
       banishCharges: banishChargesFromShop(record),
       renownTitle: t(metaBonuses.titleKey),
+      respiteUntilMs: 0,
       devMode: {
         enabled: this.isDevModeRequested(),
         timeScale: 1
@@ -116,7 +117,7 @@ export class GameScene extends Phaser.Scene {
 
     this.playerSystem = new PlayerSystem(this, this.player);
     this.enemySystem = new EnemySystem(this, this.player, difficulty);
-    this.spawnSystem = new SpawnSystem(this, this.player, this.enemySystem);
+    this.spawnSystem = new SpawnSystem(this, this.player, this.enemySystem, this.state);
     this.weaponSystem = new WeaponSystem(this, this.player, this.enemySystem, this.state.weaponLevels, this.state.evolvedWeapons);
     this.expSystem = new ExpSystem(this, this.player, this.state);
     this.pickupSystem = new PickupSystem(this, this.player);
