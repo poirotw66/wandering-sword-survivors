@@ -81,13 +81,13 @@ const BOSS_SKILL_PROFILES: Partial<Record<EnemyId, BossSkillProfile>> = {
   minorBoss: { enemyId: "minorBoss", skillIds: ["dash"] },
   midBoss: { enemyId: "midBoss", skillIds: ["dash", "fanStrike"] },
   greatBoss: { enemyId: "greatBoss", skillIds: ["dash", "fanStrike", "summon"] },
-  megaBoss: { enemyId: "megaBoss", skillIds: ["dash", "fanStrike", "summon"] },
+  megaBoss: { enemyId: "megaBoss", skillIds: ["dash", "fanStrike", "summon", "needleStorm"] },
   finalBoss: {
     enemyId: "finalBoss",
     skillIds: ["dash", "fanStrike", "summon", "needleStorm"],
     finalPhase: {
-      hpRatio: 0.45,
-      cooldownMultiplier: 0.72,
+      hpRatio: 0.3,
+      cooldownMultiplier: 0.6,
       labelKey: "bossTechniqueFinalPhase"
     }
   }
