@@ -1,5 +1,6 @@
 import type { EnemyId } from "./enemies";
 import { GAME_DURATION_SEC } from "./waves";
+import type { RunEventPacingOverlay } from "./runEvents";
 
 export const RUN_PACING = {
   pressureWaveIntervalSec: 300,
@@ -77,7 +78,8 @@ export function spawnPacingModifiers(
   nowMs: number,
   respiteUntilMs: number,
   activeMinionCount: number,
-  enemyId: EnemyId
+  enemyId: EnemyId,
+  runEventOverlay: RunEventPacingOverlay = { spawnRateMultiplier: 1, expDropMultiplier: 1 }
 ): SpawnPacingModifiers {
   const pressureWaveActive = isPressureWaveActive(elapsedSec);
   const respiteActive = isRespiteActive(respiteUntilMs, nowMs);
@@ -100,7 +102,13 @@ export function spawnPacingModifiers(
     intervalMultiplier *= RUN_PACING.segmentThemeIntervalMultiplier;
   }
 
-  const expDropMultiplier = respiteActive ? RUN_PACING.respiteExpMultiplier : 1;
+  if (runEventOverlay.spawnRateMultiplier !== 1) {
+    intervalMultiplier /= runEventOverlay.spawnRateMultiplier;
+    amountMultiplier *= runEventOverlay.spawnRateMultiplier;
+  }
+
+  let expDropMultiplier = respiteActive ? RUN_PACING.respiteExpMultiplier : 1;
+  expDropMultiplier *= runEventOverlay.expDropMultiplier;
 
   return {
     intervalMultiplier,
@@ -112,6 +120,11 @@ export function spawnPacingModifiers(
   };
 }
 
-export function expDropMultiplierFor(elapsedSec: number, nowMs: number, respiteUntilMs: number): number {
-  return spawnPacingModifiers(elapsedSec, nowMs, respiteUntilMs, 0, "slime").expDropMultiplier;
+export function expDropMultiplierFor(
+  elapsedSec: number,
+  nowMs: number,
+  respiteUntilMs: number,
+  runEventOverlay: RunEventPacingOverlay = { spawnRateMultiplier: 1, expDropMultiplier: 1 }
+): number {
+  return spawnPacingModifiers(elapsedSec, nowMs, respiteUntilMs, 0, "slime", runEventOverlay).expDropMultiplier;
 }

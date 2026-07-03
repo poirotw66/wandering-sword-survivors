@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import { BOSS_SCHEDULE, SPAWN_DENSITY, SPAWN_WAVES, type BossScheduleEntry } from "../data/waves";
 import { pressureWaveIndex, RUN_PACING, spawnPacingModifiers } from "../data/runPacing";
+import { runEventPacingOverlay } from "../data/runEvents";
 import type { GameState } from "../game/GameState";
 import type { EnemySystem } from "./EnemySystem";
 import type { Player } from "../entities/Player";
@@ -34,12 +35,18 @@ export class SpawnSystem {
         continue;
       }
 
+      const eventOverlay = runEventPacingOverlay(
+        this.state.activeRunEventId,
+        this.state.activeRunEventUntilMs,
+        this.scene.time.now
+      );
       const pacing = spawnPacingModifiers(
         elapsedSec,
         this.scene.time.now,
         this.state.respiteUntilMs,
         this.enemySystem.activeMinionCount(),
-        wave.enemyId
+        wave.enemyId,
+        eventOverlay
       );
       if (pacing.atEnemyCap) {
         continue;

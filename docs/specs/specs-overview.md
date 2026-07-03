@@ -15,3 +15,4 @@
 | `011-run-pacing-and-pressure-waves` | `prd-001-nightfall-survivors` | in_progress | Add five-minute pressure waves, post-Boss respite, segment-themed factions, and a 120-minion cap for late-run readability. |
 | `012-boss-identity-per-tier` | `prd-001-nightfall-survivors` | in_progress | Give each Boss tier a signature mechanic: pursuit lock, lingering fan qi, guard formation, sector needle storm, and final-phase orbiting needles. |
 | `013-mid-run-build-synergy` | `prd-001-nightfall-survivors` | in_progress | Unlock build paths earlier, add Lv3/5/8 milestones, HUD evolution preview, and soft third-path weighting. |
+| `014-mid-run-events` | `prd-001-nightfall-survivors` | in_progress | Random mid-run encounters: ambush, qi surge, formation lull, hermit gift, and bandit cache. |

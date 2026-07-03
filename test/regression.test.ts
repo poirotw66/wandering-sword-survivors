@@ -44,6 +44,13 @@ import {
   RUN_PACING,
   spawnPacingModifiers
 } from "../src/data/runPacing";
+import {
+  canRollRunEvent,
+  isNearBossMark,
+  isRunEventActive,
+  RUN_EVENT_CONFIG,
+  runEventPacingOverlay
+} from "../src/data/runEvents";
 import { estimateBossTimeToDefeat, estimateWeaponDps } from "../src/data/combatMetrics";
 import { formatCompactNumber } from "../src/utils/math";
 import {
@@ -117,6 +124,8 @@ function createState(overrides: Partial<GameState> = {}): GameState {
     banishCharges: 1,
     renownTitle: "江湖浪客",
     respiteUntilMs: 0,
+    activeRunEventId: null,
+    activeRunEventUntilMs: 0,
     evolvedArtsSeen: new Set(),
     standaloneSkillsSeen: new Set(),
     devMode: {
@@ -1113,6 +1122,29 @@ describe("game regression rules", () => {
   it("blocks ordinary spawns when the minion cap is reached", () => {
     const capped = spawnPacingModifiers(600, 0, 0, RUN_PACING.ordinaryEnemyCap, "slime");
     expect(capped.atEnemyCap).toBe(true);
+  });
+
+  it("gates mid-run events away from bosses and pressure windows", () => {
+    const nowMs = 20_000;
+    expect(canRollRunEvent(500, 0, null, 0, nowMs)).toBe(true);
+    expect(canRollRunEvent(60, 0, null, 0, nowMs)).toBe(false);
+    expect(canRollRunEvent(500, 390, null, 0, nowMs)).toBe(false);
+    expect(isNearBossMark(300)).toBe(true);
+    expect(isNearBossMark(500)).toBe(false);
+    expect(isRunEventActive("qiSurge", nowMs + 5_000, nowMs)).toBe(true);
+    expect(isRunEventActive("qiSurge", nowMs + 5_000, nowMs + 6_000)).toBe(false);
+  });
+
+  it("applies qi surge and formation lull event pacing overlays", () => {
+    const nowMs = 30_000;
+    const qiOverlay = runEventPacingOverlay("qiSurge", nowMs + 8_000, nowMs);
+    expect(qiOverlay.expDropMultiplier).toBe(RUN_EVENT_CONFIG.qiSurgeExpMultiplier);
+    const lullOverlay = runEventPacingOverlay("formationLull", nowMs + 6_000, nowMs);
+    const lullPacing = spawnPacingModifiers(400, nowMs, 0, 0, "slime", lullOverlay);
+    expect(lullPacing.amountMultiplier).toBeLessThan(1);
+    expect(lullPacing.intervalMultiplier).toBeGreaterThan(1);
+    const stackedExp = expDropMultiplierFor(400, nowMs, nowMs + 5_000, qiOverlay);
+    expect(stackedExp).toBeGreaterThan(RUN_PACING.respiteExpMultiplier);
   });
 
   it("softly discourages a third build path once two paths are active", () => {
