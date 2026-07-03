@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { buildBuildPathLoadoutSlots, buildSkillLoadoutSlots, buildWeaponLoadoutSlots } from "../src/data/loadoutEntries";
-import { isBuildPathUpgradeUnlocked, isStandaloneSkillPoolUnlocked } from "../src/data/upgradeUnlocks";
+import { isStandaloneSkillPoolUnlocked } from "../src/data/upgradeUnlocks";
 import { isMartialLoadoutComplete, learnedSkillCount, skillsLoadoutFullAndMastered, weaponsLoadoutFullAndMastered } from "../src/data/loadoutLimits";
 import { buildUpgradePool, isEndgameUpgradeUnlocked } from "../src/data/upgrades";
 import type { GameState } from "../src/game/GameState";
@@ -15,6 +15,14 @@ import { formatBossUnlockDetail, formatEvolutionRecipeDetail } from "../src/data
 import { buildBossLegacySummary } from "../src/data/bossLegacy";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor } from "../src/data/bossSkills";
 import { bossDamageTakenMultiplier, bossIdentityFor, BOSS_IDENTITY_CONFIGS } from "../src/data/bossIdentity";
+import {
+  applyBuildPathMilestone,
+  buildPathWeightMultiplier,
+  countSkillsAtLevel,
+  countWeaponsAtLevel,
+  evolutionPreviewLine,
+  isBuildPathUpgradeUnlocked
+} from "../src/data/buildPathSynergy";
 import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
 import { bossPresentationFor, isBossEnemyId } from "../src/data/bossPresentation";
 import { eliteTraitFor } from "../src/data/eliteTraits";
@@ -189,7 +197,7 @@ describe("game regression rules", () => {
     expect(options.some((option) => option.kind === "stat")).toBe(false);
   });
 
-  it("does not unlock build paths when heart method slots are not full", () => {
+  it("unlocks build paths via early thresholds even when heart method slots are not full", () => {
     const state = createState({
       weaponLevels: new Map([
         ["magicBolt", 5],
@@ -214,8 +222,8 @@ describe("game regression rules", () => {
 
     expect(weaponsLoadoutFullAndMastered(state)).toBe(true);
     expect(skillsLoadoutFullAndMastered(state)).toBe(false);
-    expect(isBuildPathUpgradeUnlocked(state)).toBe(false);
-    expect(buildUpgradePool(state).some((option) => option.id.startsWith("build-"))).toBe(false);
+    expect(isBuildPathUpgradeUnlocked(state)).toBe(true);
+    expect(buildUpgradePool(state).some((option) => option.id.startsWith("build-"))).toBe(true);
     expect(buildUpgradePool(state).some((option) => option.id.startsWith("skill-"))).toBe(true);
   });
 
@@ -957,10 +965,28 @@ describe("game regression rules", () => {
     expect(estimateBossTimeToDefeat("minorBoss", "magicBolt", 1, 1)).toBeGreaterThan(200);
   });
 
-  it("unlocks build paths only after six mastered forms and heart methods", () => {
+  it("unlocks build paths after early progression or first minor boss", () => {
     const early = createState({ level: 12, bossDefeats: new Map([["minorBoss", 1]]) });
-    expect(isBuildPathUpgradeUnlocked(early)).toBe(false);
+    expect(isBuildPathUpgradeUnlocked(early)).toBe(true);
 
+    const midRun = createState({
+      weaponLevels: new Map([
+        ["magicBolt", 3],
+        ["orbitBlade", 3]
+      ]),
+      skillLevels: new Map([["duguNineSwords", 2]])
+    });
+    expect(isBuildPathUpgradeUnlocked(midRun)).toBe(true);
+    expect(buildUpgradePool(midRun).some((option) => option.id.startsWith("build-"))).toBe(true);
+
+    const tooEarly = createState({
+      weaponLevels: new Map([["magicBolt", 2]]),
+      skillLevels: new Map([["duguNineSwords", 1]])
+    });
+    expect(isBuildPathUpgradeUnlocked(tooEarly)).toBe(false);
+  });
+
+  it("unlocks build paths when six forms and six heart methods are mastered", () => {
     const mastered = createState({
       weaponLevels: new Map([
         ["magicBolt", 5],
@@ -1086,6 +1112,35 @@ describe("game regression rules", () => {
   it("blocks ordinary spawns when the minion cap is reached", () => {
     const capped = spawnPacingModifiers(600, 0, 0, RUN_PACING.ordinaryEnemyCap, "slime");
     expect(capped.atEnemyCap).toBe(true);
+  });
+
+  it("softly discourages a third build path once two paths are active", () => {
+    const state = createState({
+      buildPathLevels: new Map([
+        ["swordSect", 2],
+        ["qiSect", 1]
+      ])
+    });
+    expect(buildPathWeightMultiplier(state, "swordSect")).toBe(1);
+    expect(buildPathWeightMultiplier(state, "footworkSect")).toBe(0.5);
+  });
+
+  it("shows evolution preview when one level away from an ultimate art", () => {
+    const state = createState({
+      weaponLevels: new Map([["magicBolt", 4]]),
+      skillLevels: new Map([["duguNineSwords", 5]])
+    });
+    expect(evolutionPreviewLine(state)).toContain(t("evolution_voidDuguSword"));
+    expect(countWeaponsAtLevel(state, 3)).toBe(1);
+    expect(countSkillsAtLevel(state, 2)).toBe(1);
+  });
+
+  it("applies build path milestone bonuses at levels 3, 5, and 8", () => {
+    const state = createState();
+    applyBuildPathMilestone(state, "swordSect", 3);
+    expect(state.player.stats.critChance).toBeCloseTo(0.08);
+    applyBuildPathMilestone(state, "qiSect", 8);
+    expect(state.player.stats.areaMultiplier).toBeCloseTo(1.1);
   });
 
   it("keeps Traditional Chinese and English locale keys in sync", () => {

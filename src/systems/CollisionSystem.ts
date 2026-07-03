@@ -15,6 +15,12 @@ import type { AchievementSystem } from "./AchievementSystem";
 import { buildBossLegacySummary } from "../data/bossLegacy";
 import { formatBossBuildPathRewardMessage, grantRandomBuildPathLevel } from "../data/bossBuildPathReward";
 import { evolutionVfxFor, playEvolutionHitBurst } from "../data/evolutionVfx";
+import {
+  qiKillHealAmount,
+  shouldTriggerQiKillHeal,
+  shouldTriggerSwordCritBurst,
+  swordCritBurstDamage
+} from "../data/buildPathSynergy";
 import { expDropMultiplierFor } from "../data/runPacing";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
@@ -63,6 +69,9 @@ export class CollisionSystem {
     }
     if (projectile.crit) {
       this.scene.events.emit("critical-hit", enemy.x, enemy.y);
+      if (shouldTriggerSwordCritBurst(this.state)) {
+        this.triggerSwordCritBurst(enemy.x, enemy.y, swordCritBurstDamage(this.state, projectile.damage));
+      }
     }
     if (projectile.combo) {
       this.scene.events.emit("combo-hit", enemy.x, enemy.y);
@@ -154,6 +163,11 @@ export class CollisionSystem {
     const exp = Math.round(enemy.config.exp * enemy.rewardMultiplier * expMultiplier);
     this.state.score += score;
     this.scene.events.emit("enemy-killed", enemy.x, enemy.y, score);
+    if (!enemy.config.isBoss && shouldTriggerQiKillHeal(this.state)) {
+      const healAmount = qiKillHealAmount(this.state);
+      this.player.stats.hp = Math.min(this.player.stats.maxHp, this.player.stats.hp + healAmount);
+      this.scene.events.emit("player-healed", healAmount);
+    }
     this.expSystem.drop(enemy.x, enemy.y, exp);
     this.pickupSystem.maybeDropHealth(enemy.x, enemy.y, enemy.config.isBoss || enemy.enemyId === "golem" ? 0.16 : 0.065);
     const wonRun = Boolean(enemy.config.endsRunOnDefeat);
@@ -180,5 +194,29 @@ export class CollisionSystem {
     if (wonRun) {
       this.scene.events.emit("game-won");
     }
+  }
+
+  private triggerSwordCritBurst(x: number, y: number, damage: number): void {
+    const burst = this.scene.add.circle(x, y, 18, 0xfff1a1, 0.42).setDepth(34);
+    this.scene.tweens.add({
+      targets: burst,
+      alpha: 0,
+      scale: 2.4,
+      duration: 160,
+      onComplete: () => burst.destroy()
+    });
+    this.enemySystem.enemies.children.each((child) => {
+      const enemy = child as Enemy;
+      if (!enemy.active) {
+        return true;
+      }
+      if (Phaser.Math.Distance.Between(x, y, enemy.x, enemy.y) > 72) {
+        return true;
+      }
+      if (enemy.damage(damage)) {
+        this.killEnemy(enemy);
+      }
+      return true;
+    });
   }
 }

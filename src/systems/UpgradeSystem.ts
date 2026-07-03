@@ -3,6 +3,7 @@ import { buildUpgradePool, type UpgradeOption } from "../data/upgrades";
 import { EVOLUTION_CONFIGS } from "../data/evolutions";
 import { trackedEvolutionProgress } from "../data/evolutionProgress";
 import type { GameState } from "../game/GameState";
+import { buildPathWeightMultiplier } from "../data/buildPathSynergy";
 import { t } from "../i18n";
 import { shuffle } from "../utils/random";
 
@@ -76,7 +77,7 @@ export function chooseUpgradeOptions(
       .filter((option) => !pickedIds.has(option.id))
       .filter((option) => option.kind !== "evolution")
       .filter((option) => option.kind !== "stat" || statCount < 1)
-      .map((option) => ({ option, weight: upgradeWeight(option, nearRoutes) }))
+      .map((option) => ({ option, weight: upgradeWeight(state, option, nearRoutes) }))
       .filter((candidate) => candidate.weight > 0)
       .sort((a, b) => b.weight - a.weight || a.option.id.localeCompare(b.option.id));
 
@@ -106,6 +107,7 @@ export function chooseUpgradeOptions(
 }
 
 function upgradeWeight(
+  state: GameState,
   option: UpgradeOption,
   nearRoutes: ReturnType<typeof trackedEvolutionProgress>
 ): number {
@@ -116,9 +118,10 @@ function upgradeWeight(
     return 1.3;
   }
   if (option.kind === "build") {
-    const buildPathId = option.id.replace("build-", "");
+    const buildPathId = option.id.replace("build-", "") as import("../data/buildPaths").BuildPathId;
     const route = nearRoutes.find((progress) => EVOLUTION_CONFIGS[progress.evolutionId].preferredBuildPathId === buildPathId);
-    return route ? 4.4 + route.progressScore * 0.25 : 1.9;
+    const base = route ? 4.4 + route.progressScore * 0.25 : 1.9;
+    return base * buildPathWeightMultiplier(state, buildPathId);
   }
   if (option.kind === "weapon" || option.kind === "skill") {
     if (!option.recipeHint) {

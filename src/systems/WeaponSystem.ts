@@ -489,4 +489,13 @@ export class WeaponSystem {
 
     return candidates.slice(0, limit);
   }
+
+  shaveCooldowns(amountMs: number): void {
+    const now = this.scene.time.now;
+    for (const [weaponId, readyAt] of this.cooldowns.entries()) {
+      if (readyAt > now) {
+        this.cooldowns.set(weaponId, Math.max(now, readyAt - amountMs));
+      }
+    }
+  }
 }

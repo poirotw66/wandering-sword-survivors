@@ -16,6 +16,12 @@ import type { EvolutionId } from "../data/evolutions";
 import { evolutionVfxFor } from "../data/evolutionVfx";
 import type { GameOverData } from "./GameOverScene";
 import type { GameState } from "./GameState";
+import {
+  footworkDodgeSpeedBonus,
+  shouldTriggerFootworkDodgeBoost,
+  shouldTriggerWineComboCooldownShave,
+  wineComboCooldownShaveMs
+} from "../data/buildPathSynergy";
 import { buildPathName, t } from "../i18n";
 import { difficultyForLevel, type DifficultyConfig } from "../data/metaProgression";
 import { applyStartStyleBonus, formatStartStyleToast, normalizeStartStyle, type StartStyleId } from "../data/metaChoices";
@@ -158,6 +164,19 @@ export class GameScene extends Phaser.Scene {
       const fx = x ?? this.player.x;
       const fy = y ?? this.player.y - 36;
       this.showCombatFeedback(fx, fy, t("combatCombo"), "#8ff4ff", false, true);
+      if (shouldTriggerWineComboCooldownShave(this.state)) {
+        this.weaponSystem.shaveCooldowns(wineComboCooldownShaveMs(this.state));
+      }
+    });
+    this.events.on("player-dodged", () => {
+      if (!shouldTriggerFootworkDodgeBoost(this.state)) {
+        return;
+      }
+      const bonus = footworkDodgeSpeedBonus(this.state);
+      this.player.stats.moveSpeed += bonus;
+      this.time.delayedCall(1200, () => {
+        this.player.stats.moveSpeed -= bonus;
+      });
     });
     this.events.on("virtual-move", (x: number, y: number) => this.playerSystem.setVirtualDirection(x, y));
     this.events.on("milestone-unlocked", (message: string) => this.showScorePop(this.player.x, this.player.y - 78, message, "#ffe09a"));
