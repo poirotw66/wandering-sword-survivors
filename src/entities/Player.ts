@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { playerDisplayHeight } from "../utils/display";
 
 export type PlayerStats = {
   hp: number;
@@ -40,8 +41,10 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
     super(scene, x, y, "player");
     scene.add.existing(this);
     scene.physics.add.existing(this);
-    this.setScale(0.2);
-    this.setCircle(78, 105, 112);
+    const displayHeight = playerDisplayHeight();
+    const displayWidth = displayHeight * 0.92;
+    this.setDisplaySize(displayWidth, displayHeight);
+    this.setCircle(displayHeight * 0.38, this.width / 2 - displayHeight * 0.38, this.height / 2 - displayHeight * 0.38);
     this.setDepth(20);
     this.setCollideWorldBounds(false);
   }

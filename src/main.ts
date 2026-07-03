@@ -6,20 +6,31 @@ import { GameOverScene } from "./game/GameOverScene";
 import { GameScene } from "./game/GameScene";
 import { MenuScene } from "./game/MenuScene";
 import { UIScene } from "./game/UIScene";
+import { getRenderResolution } from "./utils/display";
 
-const config: Phaser.Types.Core.GameConfig = {
+const renderResolution = getRenderResolution();
+
+const config = {
   type: Phaser.AUTO,
   parent: "app",
   backgroundColor: "#10121f",
+  resolution: renderResolution,
   render: {
     antialias: true,
-    roundPixels: true
+    roundPixels: false,
+    powerPreference: "high-performance"
   },
   scale: {
     mode: Phaser.Scale.RESIZE,
     autoCenter: Phaser.Scale.CENTER_BOTH,
     width: window.innerWidth,
     height: window.innerHeight
+  },
+  input: {
+    activePointers: 2,
+    touch: {
+      capture: true
+    }
   },
   physics: {
     default: "arcade",
@@ -28,6 +39,6 @@ const config: Phaser.Types.Core.GameConfig = {
     }
   },
   scene: [BootScene, MenuScene, CollectionScene, GameScene, UIScene, GameOverScene]
-};
+} as Phaser.Types.Core.GameConfig;
 
 new Phaser.Game(config);

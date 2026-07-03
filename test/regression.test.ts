@@ -23,6 +23,7 @@ import {
   evolutionPreviewLine,
   isBuildPathUpgradeUnlocked
 } from "../src/data/buildPathSynergy";
+import { getRenderResolution, isNarrowViewport, isTouchDevice, playerDisplayHeight } from "../src/utils/display";
 import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
 import { bossPresentationFor, isBossEnemyId } from "../src/data/bossPresentation";
 import { eliteTraitFor } from "../src/data/eliteTraits";
@@ -1141,6 +1142,15 @@ describe("game regression rules", () => {
     expect(state.player.stats.critChance).toBeCloseTo(0.08);
     applyBuildPathMilestone(state, "qiSect", 8);
     expect(state.player.stats.areaMultiplier).toBeCloseTo(1.1);
+  });
+
+  it("caps render resolution for high-dpi displays", () => {
+    expect(getRenderResolution()).toBeGreaterThanOrEqual(1);
+    expect(getRenderResolution()).toBeLessThanOrEqual(2.5);
+    expect(typeof isTouchDevice()).toBe("boolean");
+    expect(isNarrowViewport(390)).toBe(true);
+    expect(isNarrowViewport(1280)).toBe(false);
+    expect(playerDisplayHeight()).toBeGreaterThan(60);
   });
 
   it("keeps Traditional Chinese and English locale keys in sync", () => {

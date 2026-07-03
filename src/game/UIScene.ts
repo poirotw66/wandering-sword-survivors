@@ -15,6 +15,7 @@ import { VirtualJoystick } from "../ui/VirtualJoystick";
 import { formatCompactNumber } from "../utils/math";
 import { evolutionPreviewLine } from "../data/buildPathSynergy";
 import type { BossLegacySummary } from "../data/bossLegacy";
+import { isCompactViewport, isNarrowViewport, isTouchDevice, joystickRadius, safeInset } from "../utils/display";
 
 export class UIScene extends Phaser.Scene {
   private state!: GameState;
@@ -169,6 +170,7 @@ export class UIScene extends Phaser.Scene {
         banish: this.state.banishCharges
       })
     );
+    this.hudHintText.setVisible(!isNarrowViewport(this.scale.width));
     const preview = evolutionPreviewLine(this.state);
     this.evolutionPreviewText.setText(preview ?? "");
     this.evolutionPreviewText.setVisible(Boolean(preview));
@@ -189,7 +191,13 @@ export class UIScene extends Phaser.Scene {
       this.hudHintText.setPosition(width - 24, 48);
     }
     if (this.virtualJoystick) {
-      this.virtualJoystick.setPosition(88, this.scale.height - 108);
+      const insetLeft = safeInset("left");
+      const insetBottom = safeInset("bottom");
+      const radius = joystickRadius();
+      this.virtualJoystick.setPosition(
+        insetLeft + radius + 20,
+        this.scale.height - insetBottom - radius - 20
+      );
     }
     if (this.pauseOverlay) {
       this.pauseOverlay.setPosition(width / 2, this.scale.height / 2);
@@ -205,14 +213,25 @@ export class UIScene extends Phaser.Scene {
   }
 
   private layoutLeftHud(): void {
-    const hpLeft = 24;
-    const hpTop = 34;
-    const loadoutLeft = 24;
-    const loadoutTop = 58;
+    const insetLeft = safeInset("left");
+    const insetTop = safeInset("top");
+    const hpLeft = insetLeft + 16;
+    const hpTop = insetTop + 28;
+    const loadoutLeft = insetLeft + 16;
+    const loadoutTop = isCompactViewport(this.scale.width, this.scale.height) ? hpTop + 46 : hpTop + 52;
     this.healthBar.setPosition(hpLeft, hpTop);
     this.levelText.setPosition(hpLeft + this.healthBar.getWidth() + 10, hpTop - 1);
+    this.levelText.setFontSize(isNarrowViewport(this.scale.width) ? "13px" : "14px");
     this.loadoutBar.setPosition(loadoutLeft, loadoutTop);
     this.evolutionPreviewText.setPosition(loadoutLeft, loadoutTop + this.loadoutBar.getHeight() + 4);
+    this.evolutionPreviewText.setFontSize(isNarrowViewport(this.scale.width) ? "10px" : "11px");
+    this.evolutionPreviewText.setStyle({
+      wordWrap: { width: Math.min(320, this.scale.width - loadoutLeft - 24) }
+    });
+    if (isTouchDevice()) {
+      this.scoreText.setFontSize("16px");
+      this.bossText.setFontSize("18px");
+    }
   }
 
   private createPauseOverlay(): Phaser.GameObjects.Container {
