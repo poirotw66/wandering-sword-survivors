@@ -13,6 +13,7 @@ import { bossPresentationFor } from "../data/bossPresentation";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import { VirtualJoystick } from "../ui/VirtualJoystick";
 import { formatCompactNumber } from "../utils/math";
+import { evolutionPreviewLine } from "../data/buildPathSynergy";
 import type { BossLegacySummary } from "../data/bossLegacy";
 
 export class UIScene extends Phaser.Scene {
@@ -25,6 +26,7 @@ export class UIScene extends Phaser.Scene {
   private levelText!: Phaser.GameObjects.Text;
   private difficultyText!: Phaser.GameObjects.Text;
   private hudHintText!: Phaser.GameObjects.Text;
+  private evolutionPreviewText!: Phaser.GameObjects.Text;
   private scoreText!: Phaser.GameObjects.Text;
   private bossText!: Phaser.GameObjects.Text;
   private bossBar!: Phaser.GameObjects.Container;
@@ -74,6 +76,11 @@ export class UIScene extends Phaser.Scene {
       .setOrigin(1, 0)
       .setScrollFactor(0)
       .setDepth(820);
+    this.evolutionPreviewText = this.add
+      .text(24, 0, "", { fontFamily: UI_FONT, fontSize: "11px", color: "#ffe09a", fontStyle: "700" })
+      .setPadding(0, 1, 0, 1)
+      .setScrollFactor(0)
+      .setDepth(825);
     this.scoreText = this.add
       .text(this.scale.width - 24, 26, "", { fontFamily: UI_FONT, fontSize: "18px", color: "#d8e2eb" })
       .setPadding(0, 4, 0, 4)
@@ -162,6 +169,9 @@ export class UIScene extends Phaser.Scene {
         banish: this.state.banishCharges
       })
     );
+    const preview = evolutionPreviewLine(this.state);
+    this.evolutionPreviewText.setText(preview ?? "");
+    this.evolutionPreviewText.setVisible(Boolean(preview));
     this.loadoutBar.update(this.state);
     this.statusPanel.refresh(this.state);
   }
@@ -202,6 +212,7 @@ export class UIScene extends Phaser.Scene {
     this.healthBar.setPosition(hpLeft, hpTop);
     this.levelText.setPosition(hpLeft + this.healthBar.getWidth() + 10, hpTop - 1);
     this.loadoutBar.setPosition(loadoutLeft, loadoutTop);
+    this.evolutionPreviewText.setPosition(loadoutLeft, loadoutTop + this.loadoutBar.getHeight() + 4);
   }
 
   private createPauseOverlay(): Phaser.GameObjects.Container {

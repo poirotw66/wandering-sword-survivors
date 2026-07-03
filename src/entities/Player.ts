@@ -53,6 +53,7 @@ export class Player extends Phaser.Physics.Arcade.Sprite {
 
     if (Math.random() < this.stats.dodgeChance) {
       this.invulnerableUntil = now + 260;
+      this.scene.events.emit("player-dodged");
       this.scene.tweens.add({
         targets: this,
         alpha: 0.55,

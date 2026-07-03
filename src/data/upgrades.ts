@@ -1,6 +1,7 @@
 import { SKILL_CONFIGS, type SkillId } from "./skills";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 import { BUILD_PATH_CONFIGS, type BuildPathId } from "./buildPaths";
+import { applyBuildPathMilestone, buildPathMilestoneLabel, isBuildPathMilestone } from "./buildPathSynergy";
 import { EVOLUTION_CONFIGS, EVOLUTION_REQUIRED_WEAPON_LEVEL, type EvolutionId } from "./evolutions";
 import { findProgressForSkill, findProgressForWeapon, trackedEvolutionProgress, type EvolutionProgress } from "./evolutionProgress";
 import { canLearnNewSkill, canLearnNewWeapon, isMartialLoadoutComplete } from "./loadoutLimits";
@@ -182,12 +183,14 @@ export function buildUpgradePool(state: GameState): UpgradeOption[] {
           level === 0
             ? t("buildUnlock", { name: buildPathName(buildPathId) })
             : t("buildLevel", { name: buildPathName(buildPathId), level: nextLevel }),
-        description: config.describe(state, nextLevel),
+        description: [config.describe(state, nextLevel), buildPathMilestoneLabel(buildPathId, nextLevel)].filter(Boolean).join("\n"),
+        badgeText: isBuildPathMilestone(nextLevel) ? t("buildMilestoneBadge") : undefined,
         recommendedText: route ? t("recommendedBadge") : undefined,
         recommendationReason: route ? t("recommendBuildPath", { path: buildPathName(buildPathId), art: artName }) : undefined,
         apply: (gameState) => {
           gameState.buildPathLevels.set(buildPathId, nextLevel);
           config.apply(gameState, nextLevel);
+          applyBuildPathMilestone(gameState, buildPathId, nextLevel);
         }
       });
     }
