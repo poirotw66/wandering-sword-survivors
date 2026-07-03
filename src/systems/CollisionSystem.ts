@@ -24,7 +24,7 @@ export class CollisionSystem {
     private readonly scene: Phaser.Scene,
     private readonly player: Player,
     private readonly state: GameState,
-    enemySystem: EnemySystem,
+    private readonly enemySystem: EnemySystem,
     weaponSystem: WeaponSystem,
     private readonly expSystem: ExpSystem,
     private readonly pickupSystem: PickupSystem,
@@ -51,7 +51,9 @@ export class CollisionSystem {
     }
 
     projectile.hitIds.add(enemy);
-    const killed = enemy.damage(projectile.damage);
+    const bossMultiplier = enemy.config.isBoss ? this.enemySystem.bossDamageTakenMultiplier(enemy) : 1;
+    const damage = Math.round(projectile.damage * bossMultiplier);
+    const killed = enemy.damage(damage);
     this.scene.events.emit("projectile-hit", enemy.x, enemy.y, projectile.weaponId);
     const flashColor = projectile.evolutionId ? evolutionVfxFor(projectile.evolutionId).hitColor : this.hitColor(projectile.weaponId);
     if (projectile.evolutionId) {

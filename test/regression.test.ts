@@ -14,6 +14,7 @@ import { computeEvolutionProgress, trackedEvolutionProgress } from "../src/data/
 import { formatBossUnlockDetail, formatEvolutionRecipeDetail } from "../src/data/codexDetails";
 import { buildBossLegacySummary } from "../src/data/bossLegacy";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor } from "../src/data/bossSkills";
+import { bossDamageTakenMultiplier, bossIdentityFor, BOSS_IDENTITY_CONFIGS } from "../src/data/bossIdentity";
 import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
 import { bossPresentationFor, isBossEnemyId } from "../src/data/bossPresentation";
 import { eliteTraitFor } from "../src/data/eliteTraits";
@@ -764,6 +765,7 @@ describe("game regression rules", () => {
     expect(bossSkillProfileFor("minorBoss")?.skillIds).toEqual(["dash"]);
     expect(bossSkillProfileFor("midBoss")?.skillIds).toEqual(["dash", "fanStrike"]);
     expect(bossSkillProfileFor("greatBoss")?.skillIds).toEqual(["dash", "fanStrike", "summon"]);
+    expect(bossSkillProfileFor("megaBoss")?.skillIds).toEqual(["dash", "fanStrike", "summon", "needleStorm"]);
     expect(bossSkillProfileFor("finalBoss")?.skillIds).toEqual(["dash", "fanStrike", "summon", "needleStorm"]);
   });
 
@@ -781,9 +783,20 @@ describe("game regression rules", () => {
   it("gives the final boss a phase cue that speeds up techniques", () => {
     const phase = finalPhaseFor("finalBoss");
 
-    expect(phase).toMatchObject({ hpRatio: 0.45, labelKey: "bossTechniqueFinalPhase" });
+    expect(phase).toMatchObject({ hpRatio: 0.3, labelKey: "bossTechniqueFinalPhase" });
     expect(bossSkillCooldown("dash", true, "finalBoss")).toBeLessThan(bossSkillCooldown("dash", false, "finalBoss"));
     expect(finalPhaseFor("minorBoss")).toBeUndefined();
+  });
+
+  it("defines per-tier boss identity mechanics", () => {
+    expect(bossIdentityFor("minorBoss")?.pursuitLockMs).toBe(1200);
+    expect(bossIdentityFor("midBoss")?.fanLingerMs).toBe(2000);
+    expect(bossIdentityFor("greatBoss")?.guardFormation).toMatchObject({ count: 2, damageReduction: 0.35 });
+    expect(bossIdentityFor("megaBoss")?.needleSectorRadians).toBeCloseTo(Math.PI / 2);
+    expect(bossIdentityFor("finalBoss")?.orbitingNeedles?.count).toBe(6);
+    expect(Object.keys(BOSS_IDENTITY_CONFIGS)).toHaveLength(5);
+    expect(bossDamageTakenMultiplier("greatBoss", 2)).toBeCloseTo(0.65);
+    expect(bossDamageTakenMultiplier("greatBoss", 0)).toBe(1);
   });
 
   it("defines distinct evolution vfx profiles for every ultimate art", () => {
