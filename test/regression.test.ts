@@ -70,6 +70,15 @@ import {
   renownShopState,
   type RenownShopUpgradeId
 } from "../src/data/renownShop";
+import {
+  applyRunModifier,
+  isRunModifierUnlocked,
+  normalizeRunModifier,
+  rollRunModifierChoices,
+  runModifierEliteBonus,
+  runModifierExpMultiplier,
+  unlockedRunModifiers
+} from "../src/data/runModifiers";
 
 function createStorage(): Storage {
   const store = new Map<string, string>();
@@ -1210,6 +1219,39 @@ describe("game regression rules", () => {
     expect(isNarrowViewport(390)).toBe(true);
     expect(isNarrowViewport(1280)).toBe(false);
     expect(playerDisplayHeight()).toBeGreaterThan(60);
+  });
+
+  it("unlocks run modifiers through renown and boss milestones", () => {
+    const fresh = createRecord();
+    expect(unlockedRunModifiers(fresh)).toEqual(["ironTrial", "jadeFlow"]);
+    expect(isRunModifierUnlocked(fresh, "mistFoot")).toBe(false);
+    expect(isRunModifierUnlocked(createRecord({ totalRenown: 1500 }), "mistFoot")).toBe(true);
+    expect(isRunModifierUnlocked(createRecord({ bossDefeatsSeen: ["minorBoss"] }), "bloodOath")).toBe(true);
+    expect(isRunModifierUnlocked(createRecord({ bossDefeatsSeen: ["midBoss"] }), "sectChase")).toBe(true);
+  });
+
+  it("rolls and normalizes run modifier choices for the menu", () => {
+    const record = createRecord({ totalRenown: 5000, bossDefeatsSeen: ["minorBoss", "midBoss"] });
+    const choices = rollRunModifierChoices(record, 3);
+    expect(choices).toHaveLength(3);
+    expect(new Set(choices).size).toBe(3);
+    const picked = choices.includes("hermitGift") ? "hermitGift" : choices[0]!;
+    expect(normalizeRunModifier(record, choices, picked)).toBe(picked);
+    expect(normalizeRunModifier(record, choices, "missing")).toBe(choices[0]);
+  });
+
+  it("applies run modifier combat bonuses at run start", () => {
+    const state = createState({ rerolls: 0 });
+    applyRunModifier(state, "ironTrial");
+    expect(state.runModifierId).toBe("ironTrial");
+    expect(state.player.stats.damageMultiplier).toBeCloseTo(1.12);
+    expect(runModifierEliteBonus("ironTrial")).toBeCloseTo(0.05);
+    expect(runModifierExpMultiplier("jadeFlow")).toBeCloseTo(1.15);
+
+    const giftState = createState({ rerolls: 1 });
+    applyRunModifier(giftState, "hermitGift");
+    expect(giftState.rerolls).toBe(2);
+    expect(giftState.player.stats.damageMultiplier).toBeCloseTo(0.92);
   });
 
   it("keeps Traditional Chinese and English locale keys in sync", () => {

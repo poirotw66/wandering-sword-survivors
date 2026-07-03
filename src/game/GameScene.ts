@@ -26,12 +26,14 @@ import {
 import { buildPathName, t } from "../i18n";
 import { difficultyForLevel, type DifficultyConfig } from "../data/metaProgression";
 import { applyStartStyleBonus, formatStartStyleToast, normalizeStartStyle, type StartStyleId } from "../data/metaChoices";
+import { applyRunModifier, formatRunModifierToast, type RunModifierId } from "../data/runModifiers";
 import { applyStyleMasteryBonus, banishChargesFromShop, metaBonusesFromShop } from "../data/renownShop";
 import type { UpgradeOption } from "../data/upgrades";
 
 type GameSceneData = {
   difficultyLevel?: number;
   startStyleId?: StartStyleId;
+  runModifierId?: RunModifierId;
 };
 
 export class GameScene extends Phaser.Scene {
@@ -124,9 +126,16 @@ export class GameScene extends Phaser.Scene {
     applyStartStyleBonus(this.state, startStyleId);
     applyStyleMasteryBonus(this.state, startStyleId, record);
     this.showScorePop(this.player.x, this.player.y - 100, formatStartStyleToast(buildPathName(startStyleId)), "#b8f7ff");
+    if (data.runModifierId) {
+      applyRunModifier(this.state, data.runModifierId);
+      this.showScorePop(this.player.x, this.player.y - 72, formatRunModifierToast(data.runModifierId), "#ffe09a");
+    }
 
     this.playerSystem = new PlayerSystem(this, this.player);
     this.enemySystem = new EnemySystem(this, this.player, difficulty);
+    if (data.runModifierId) {
+      this.enemySystem.setRunModifier(data.runModifierId);
+    }
     this.spawnSystem = new SpawnSystem(this, this.player, this.enemySystem, this.state);
     this.pickupSystem = new PickupSystem(this, this.player);
     this.runEventSystem = new RunEventSystem(this, this.player, this.enemySystem, this.pickupSystem, this.state);

@@ -24,6 +24,7 @@ import {
 import { expDropMultiplierFor } from "../data/runPacing";
 import { expDropBalanceMultiplier } from "../data/runBalance";
 import { runEventPacingOverlay } from "../data/runEvents";
+import { runModifierExpMultiplier, runModifierScoreMultiplier } from "../data/runModifiers";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
 
@@ -160,7 +161,9 @@ export class CollisionSystem {
 
   private killEnemy(enemy: Enemy): void {
     this.state.kills += 1;
-    const score = Math.round(enemy.config.score * enemy.rewardMultiplier);
+    const score = Math.round(
+      enemy.config.score * enemy.rewardMultiplier * runModifierScoreMultiplier(this.state.runModifierId)
+    );
     const eventOverlay = runEventPacingOverlay(
       this.state.activeRunEventId,
       this.state.activeRunEventUntilMs,
@@ -173,7 +176,11 @@ export class CollisionSystem {
       eventOverlay
     );
     const exp = Math.round(
-      enemy.config.exp * enemy.rewardMultiplier * expMultiplier * expDropBalanceMultiplier(Boolean(enemy.config.isBoss))
+      enemy.config.exp *
+        enemy.rewardMultiplier *
+        expMultiplier *
+        expDropBalanceMultiplier(Boolean(enemy.config.isBoss)) *
+        runModifierExpMultiplier(this.state.runModifierId)
     );
     this.state.score += score;
     this.scene.events.emit("enemy-killed", enemy.x, enemy.y, score);

@@ -4,6 +4,8 @@ import { archetypeConfigFor, minionBehaviorFor, type MinionArchetypeConfig } fro
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor, type BossSkillConfig } from "../data/bossSkills";
 import { bossIdentityFor, type GuardFormationConfig, type OrbitingNeedlesConfig } from "../data/bossIdentity";
 import type { DifficultyConfig } from "../data/metaProgression";
+import type { RunModifierId } from "../data/runModifiers";
+import { runModifierEnemySpeedMultiplier } from "../data/runModifiers";
 import { timeCombatScale } from "../data/timeCombatScale";
 import { Enemy } from "../entities/Enemy";
 import { EnemyProjectile } from "../entities/EnemyProjectile";
@@ -25,6 +27,7 @@ export class EnemySystem {
   private readonly bossGuards = new WeakMap<Enemy, Enemy[]>();
   private readonly nextOrbitAt = new WeakMap<Enemy, number>();
   private elapsedSec = 0;
+  private runModifierId: RunModifierId | null = null;
 
   constructor(
     private readonly scene: Phaser.Scene,
@@ -37,6 +40,10 @@ export class EnemySystem {
 
   setElapsedSec(elapsedSec: number): void {
     this.elapsedSec = elapsedSec;
+  }
+
+  setRunModifier(modifierId: RunModifierId | null): void {
+    this.runModifierId = modifierId;
   }
 
   spawn(enemyId: EnemyId, x: number, y: number, elite = false): Enemy {
@@ -670,7 +677,7 @@ export class EnemySystem {
     return {
       hp: this.difficulty.hpMultiplier * time.hp,
       damage: this.difficulty.damageMultiplier * time.damage,
-      speed: this.difficulty.speedMultiplier,
+      speed: this.difficulty.speedMultiplier * runModifierEnemySpeedMultiplier(this.runModifierId),
       reward: this.difficulty.rewardMultiplier
     };
   }

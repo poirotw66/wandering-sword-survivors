@@ -17,3 +17,4 @@
 | `013-mid-run-build-synergy` | `prd-001-nightfall-survivors` | in_progress | Unlock build paths earlier, add Lv3/5/8 milestones, HUD evolution preview, and soft third-path weighting. |
 | `014-mid-run-events` | `prd-001-nightfall-survivors` | in_progress | Random mid-run encounters: ambush, qi surge, formation lull, hermit gift, and bandit cache. |
 | `015-balance-pass` | `prd-001-nightfall-survivors` | in_progress | Centralized balance knobs for elites, bosses, time scaling, exp, and build-path parity. |
+| `016-replay-variety` | `prd-001-nightfall-survivors` | in_progress | Per-run Jianghu encounter modifiers rolled at the menu with renown and boss unlocks. |

@@ -5,6 +5,7 @@ import type { BuildPathId } from "../data/buildPaths";
 import type { EnemyId } from "../data/enemies";
 import type { EvolutionId } from "../data/evolutions";
 import type { RunEventId } from "../data/runEvents";
+import type { RunModifierId } from "../data/runModifiers";
 
 export type GameState = {
   player: Player;
@@ -38,6 +39,7 @@ export type GameState = {
   respiteUntilMs: number;
   activeRunEventId: RunEventId | null;
   activeRunEventUntilMs: number;
+  runModifierId?: RunModifierId;
   devMode: {
     enabled: boolean;
     timeScale: number;
