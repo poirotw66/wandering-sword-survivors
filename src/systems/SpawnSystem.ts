@@ -1,11 +1,11 @@
 import Phaser from "phaser";
 import { BOSS_SCHEDULE, SPAWN_DENSITY, SPAWN_WAVES, type BossScheduleEntry } from "../data/waves";
 import { pressureWaveIndex, RUN_PACING, spawnPacingModifiers } from "../data/runPacing";
+import { eliteSpawnChance, spawnPressureMultiplier } from "../data/runBalance";
 import { runEventPacingOverlay } from "../data/runEvents";
 import type { GameState } from "../game/GameState";
 import type { EnemySystem } from "./EnemySystem";
 import type { Player } from "../entities/Player";
-import { clamp } from "../utils/math";
 import { enemyName, t } from "../i18n";
 
 export class SpawnSystem {
@@ -54,7 +54,7 @@ export class SpawnSystem {
 
       const key = `${wave.enemyId}-${wave.startTimeSec}`;
       const last = this.lastSpawn.get(key) ?? -Infinity;
-      const pressureMultiplier = clamp(1 - elapsedSec / 1800 * 0.4, 0.6, 1);
+      const pressureMultiplier = spawnPressureMultiplier(elapsedSec);
       const spawnInterval =
         wave.spawnIntervalMs * pressureMultiplier * SPAWN_DENSITY.intervalScale * pacing.intervalMultiplier;
       if (this.scene.time.now - last < spawnInterval) {
@@ -76,7 +76,7 @@ export class SpawnSystem {
           break;
         }
         const point = this.randomSpawnPoint();
-        const eliteChance = clamp(0.03 + elapsedSec / 1800 * 0.11, 0.03, 0.13);
+        const eliteChance = eliteSpawnChance(elapsedSec);
         this.enemySystem.spawn(wave.enemyId, point.x, point.y, Math.random() < eliteChance);
       }
     }

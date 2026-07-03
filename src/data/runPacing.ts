@@ -1,11 +1,12 @@
 import type { EnemyId } from "./enemies";
 import { GAME_DURATION_SEC } from "./waves";
+import { RUN_BALANCE } from "./runBalance";
 import type { RunEventPacingOverlay } from "./runEvents";
 
 export const RUN_PACING = {
   pressureWaveIntervalSec: 300,
   pressureWaveDurationSec: 45,
-  pressureSpawnMultiplier: 1.5,
+  pressureSpawnMultiplier: RUN_BALANCE.pressureWaveSpawnMultiplier,
   respiteDurationSec: 8,
   respiteSpawnMultiplier: 0.5,
   respiteExpMultiplier: 1.5,
