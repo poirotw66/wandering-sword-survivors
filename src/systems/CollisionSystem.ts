@@ -15,6 +15,7 @@ import type { AchievementSystem } from "./AchievementSystem";
 import { buildBossLegacySummary } from "../data/bossLegacy";
 import { formatBossBuildPathRewardMessage, grantRandomBuildPathLevel } from "../data/bossBuildPathReward";
 import { evolutionVfxFor, playEvolutionHitBurst } from "../data/evolutionVfx";
+import { expDropMultiplierFor } from "../data/runPacing";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
 
@@ -147,7 +148,8 @@ export class CollisionSystem {
   private killEnemy(enemy: Enemy): void {
     this.state.kills += 1;
     const score = Math.round(enemy.config.score * enemy.rewardMultiplier);
-    const exp = Math.round(enemy.config.exp * enemy.rewardMultiplier);
+    const expMultiplier = expDropMultiplierFor(this.state.elapsedSec, this.scene.time.now, this.state.respiteUntilMs);
+    const exp = Math.round(enemy.config.exp * enemy.rewardMultiplier * expMultiplier);
     this.state.score += score;
     this.scene.events.emit("enemy-killed", enemy.x, enemy.y, score);
     this.expSystem.drop(enemy.x, enemy.y, exp);
