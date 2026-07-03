@@ -66,11 +66,17 @@ const BUILD_THEME: SlotTheme = {
   sealColor: "#f0e0ff"
 };
 
+const COMPACT_ROW_SCALE = 0.6;
+const COMPACT_SECTION_GAP = 3;
+
 export class LoadoutBar {
   private readonly root: Phaser.GameObjects.Container;
   private readonly weaponSection: Phaser.GameObjects.Container;
   private readonly skillSection: Phaser.GameObjects.Container;
   private readonly buildSection: Phaser.GameObjects.Container;
+  private readonly weaponRow: Phaser.GameObjects.Container;
+  private readonly skillRow: Phaser.GameObjects.Container;
+  private readonly buildRow: Phaser.GameObjects.Container;
   private readonly weaponLabel: Phaser.GameObjects.Text;
   private readonly skillLabel: Phaser.GameObjects.Text;
   private readonly buildLabel: Phaser.GameObjects.Text;
@@ -78,6 +84,7 @@ export class LoadoutBar {
   private readonly skillSlots: Phaser.GameObjects.Container[] = [];
   private readonly buildSlots: Phaser.GameObjects.Container[] = [];
   private readonly tooltip: Phaser.GameObjects.Text;
+  private compactMode = false;
 
   constructor(private readonly scene: Phaser.Scene, x: number, y: number) {
     this.root = scene.add.container(x, y).setDepth(820).setScrollFactor(0);
@@ -102,21 +109,21 @@ export class LoadoutBar {
     this.skillLabel = this.createSectionLabel(this.skillSection, SKILL_THEME);
     this.buildLabel = this.createSectionLabel(this.buildSection, BUILD_THEME);
 
-    const weaponRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
-    const skillRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
-    const buildRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
-    this.weaponSection.add(weaponRow);
-    this.skillSection.add(skillRow);
-    this.buildSection.add(buildRow);
+    this.weaponRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
+    this.skillRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
+    this.buildRow = scene.add.container(SECTION_PADDING, SECTION_HEADER_HEIGHT + 4);
+    this.weaponSection.add(this.weaponRow);
+    this.skillSection.add(this.skillRow);
+    this.buildSection.add(this.buildRow);
 
     for (let index = 0; index < MAX_WEAPON_SLOTS; index += 1) {
-      this.weaponSlots.push(this.createSlot(weaponRow, index, WEAPON_THEME));
+      this.weaponSlots.push(this.createSlot(this.weaponRow, index, WEAPON_THEME));
     }
     for (let index = 0; index < MAX_SKILL_SLOTS; index += 1) {
-      this.skillSlots.push(this.createSlot(skillRow, index, SKILL_THEME));
+      this.skillSlots.push(this.createSlot(this.skillRow, index, SKILL_THEME));
     }
     for (let index = 0; index < MAX_BUILD_PATH_SLOTS; index += 1) {
-      this.buildSlots.push(this.createSlot(buildRow, index, BUILD_THEME));
+      this.buildSlots.push(this.createSlot(this.buildRow, index, BUILD_THEME));
     }
 
     this.root.add([this.weaponSection, this.skillSection, this.buildSection]);
@@ -130,16 +137,28 @@ export class LoadoutBar {
     this.root.setScale(scale);
   }
 
+  setCompactMode(compact: boolean): void {
+    if (this.compactMode === compact) {
+      return;
+    }
+    this.compactMode = compact;
+    this.applyLayoutMode();
+  }
+
+  isCompactMode(): boolean {
+    return this.compactMode;
+  }
+
   getDisplayScale(): number {
     return this.root.scale;
   }
 
   getWidth(): number {
-    return ROW_WIDTH * this.root.scale;
+    return this.baseWidth() * this.root.scale;
   }
 
   getHeight(): number {
-    return (this.sectionHeight() * 3 + SECTION_GAP * 2) * this.root.scale;
+    return this.layoutHeight() * this.root.scale;
   }
 
   update(state: GameState): void {
@@ -176,6 +195,52 @@ export class LoadoutBar {
 
   private sectionHeight(): number {
     return SECTION_HEADER_HEIGHT + SLOT_SIZE + SECTION_PADDING + 4;
+  }
+
+  private compactRowHeight(): number {
+    return SLOT_SIZE * COMPACT_ROW_SCALE;
+  }
+
+  private baseWidth(): number {
+    if (this.compactMode) {
+      return (MAX_WEAPON_SLOTS * (SLOT_SIZE + SLOT_GAP) - SLOT_GAP) * COMPACT_ROW_SCALE;
+    }
+    return ROW_WIDTH;
+  }
+
+  private layoutHeight(): number {
+    if (this.compactMode) {
+      const rowHeight = this.compactRowHeight();
+      return rowHeight * 3 + COMPACT_SECTION_GAP * 2;
+    }
+    return this.sectionHeight() * 3 + SECTION_GAP * 2;
+  }
+
+  private applyLayoutMode(): void {
+    const compact = this.compactMode;
+    const sections = [
+      { section: this.weaponSection, label: this.weaponLabel, row: this.weaponRow },
+      { section: this.skillSection, label: this.skillLabel, row: this.skillRow },
+      { section: this.buildSection, label: this.buildLabel, row: this.buildRow }
+    ];
+
+    for (const { section, label, row } of sections) {
+      label.setVisible(!compact);
+      for (let index = 0; index < 3; index += 1) {
+        (section.list[index] as unknown as Phaser.GameObjects.Components.Visible).setVisible(!compact);
+      }
+      row.setPosition(compact ? 0 : SECTION_PADDING, compact ? 0 : SECTION_HEADER_HEIGHT + 4);
+      row.setScale(compact ? COMPACT_ROW_SCALE : 1);
+    }
+
+    const rowHeight = compact ? this.compactRowHeight() : this.sectionHeight();
+    const gap = compact ? COMPACT_SECTION_GAP : SECTION_GAP;
+    let y = 0;
+    this.weaponSection.setPosition(0, y);
+    y += rowHeight + gap;
+    this.skillSection.setPosition(0, y);
+    y += rowHeight + gap;
+    this.buildSection.setPosition(0, y);
   }
 
   private createSection(y: number, theme: SlotTheme): Phaser.GameObjects.Container {

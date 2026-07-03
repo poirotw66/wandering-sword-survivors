@@ -257,14 +257,12 @@ export class UIScene extends Phaser.Scene {
 
       this.hudHintText.setPosition(rightX, topY + 44);
 
+      this.loadoutBar.setCompactMode(true);
       this.loadoutBar.setDisplayScale(1);
-      const baseLoadoutWidth = this.loadoutBar.getWidth();
-      const loadoutScale = Math.min(0.76, (width - insetLeft - insetRight - 24) / baseLoadoutWidth);
-      this.loadoutBar.setDisplayScale(loadoutScale);
       const loadoutW = this.loadoutBar.getWidth();
       const loadoutH = this.loadoutBar.getHeight();
       const loadoutX = width - insetRight - margin - loadoutW;
-      const loadoutY = height - insetBottom - loadoutH - 56;
+      const loadoutY = height - insetBottom - loadoutH - 48;
       this.loadoutBar.setPosition(loadoutX, loadoutY);
 
       const preview = evolutionPreviewLine(this.state);
@@ -299,6 +297,7 @@ export class UIScene extends Phaser.Scene {
 
       this.hudHintText.setPosition(width - 24, topY + 30);
 
+      this.loadoutBar.setCompactMode(false);
       this.loadoutBar.setDisplayScale(1);
       this.loadoutBar.setPosition(loadoutLeft, loadoutTop);
 
