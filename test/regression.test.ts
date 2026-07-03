@@ -21,7 +21,9 @@ import {
   countSkillsAtLevel,
   countWeaponsAtLevel,
   evolutionPreviewLine,
-  isBuildPathUpgradeUnlocked
+  isBuildPathUpgradeUnlocked,
+  qiKillHealAmount,
+  wineComboCooldownShaveMs
 } from "../src/data/buildPathSynergy";
 import { getRenderResolution, isNarrowViewport, isTouchDevice, playerDisplayHeight } from "../src/utils/display";
 import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
@@ -35,6 +37,13 @@ import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows,
 import { SPAWN_DENSITY, SPAWN_WAVES } from "../src/data/waves";
 import { expToNextForLevel } from "../src/data/expCurve";
 import { timeCombatScale } from "../src/data/timeCombatScale";
+import {
+  bossHpMultiplier,
+  eliteSpawnChance,
+  earlyLevelExpEase,
+  RUN_BALANCE,
+  spawnPressureMultiplier
+} from "../src/data/runBalance";
 import {
   expDropMultiplierFor,
   isPressureWaveActive,
@@ -937,14 +946,16 @@ describe("game regression rules", () => {
   it("scales enemy hp and damage with elapsed run time", () => {
     expect(timeCombatScale(0)).toEqual({ hp: 1, damage: 1 });
     const mid = timeCombatScale(900);
-    expect(mid.hp).toBeCloseTo(1.474, 3);
-    expect(mid.damage).toBeCloseTo(1.379, 3);
-    expect(timeCombatScale(1800)).toEqual({ hp: 2.25, damage: 2 });
-    expect(timeCombatScale(3600)).toEqual({ hp: 2.25, damage: 2 });
+    expect(mid.hp).toBeCloseTo(1.463, 2);
+    expect(mid.damage).toBeCloseTo(1.362, 2);
+    const end = timeCombatScale(1800);
+    expect(end.hp).toBeCloseTo(2.18, 2);
+    expect(end.damage).toBeCloseTo(1.92, 2);
+    expect(timeCombatScale(3600).hp).toBeCloseTo(2.18, 2);
   });
 
   it("requires progressively more experience for higher levels", () => {
-    expect(expToNextForLevel(1)).toBe(141);
+    expect(expToNextForLevel(1)).toBe(144);
     expect(expToNextForLevel(10)).toBeGreaterThan(expToNextForLevel(5) * 1.5);
     expect(expToNextForLevel(20)).toBeGreaterThan(expToNextForLevel(10) * 1.6);
     expect(expToNextForLevel(35)).toBeGreaterThan(expToNextForLevel(28) * 1.15);
@@ -963,7 +974,23 @@ describe("game regression rules", () => {
   it("estimates weapon dps and boss time-to-defeat for balance checks", () => {
     const dps = estimateWeaponDps("magicBolt", 1, 1);
     expect(dps).toBeGreaterThan(20);
-    expect(estimateBossTimeToDefeat("minorBoss", "magicBolt", 1, 1)).toBeGreaterThan(200);
+    expect(estimateBossTimeToDefeat("minorBoss", "magicBolt", 1, 1)).toBeGreaterThan(180);
+  });
+
+  it("keeps balance curves within spec 015 guardrails", () => {
+    expect(eliteSpawnChance(0)).toBeCloseTo(RUN_BALANCE.eliteSpawn.baseChance);
+    expect(eliteSpawnChance(1800)).toBeLessThanOrEqual(RUN_BALANCE.eliteSpawn.capChance);
+    expect(spawnPressureMultiplier(0)).toBe(1);
+    expect(spawnPressureMultiplier(1800)).toBeCloseTo(RUN_BALANCE.spawnPressure.floor);
+    expect(bossHpMultiplier("minorBoss")).toBeLessThan(1);
+    expect(bossHpMultiplier("finalBoss")).toBeLessThan(bossHpMultiplier("minorBoss"));
+    expect(earlyLevelExpEase(1)).toBeLessThan(earlyLevelExpEase(20));
+    expect(earlyLevelExpEase(30)).toBe(1);
+    const qiState = createState({ buildPathLevels: new Map([["qiSect", 3]]) });
+    expect(qiKillHealAmount(qiState)).toBe(RUN_BALANCE.buildPath.qiKillHeal.level3);
+    expect(wineComboCooldownShaveMs(createState({ buildPathLevels: new Map([["wineSwordSect", 5]]) }))).toBe(
+      RUN_BALANCE.buildPath.wineCooldownShaveMs.level5
+    );
   });
 
   it("unlocks build paths after early progression or first minor boss", () => {

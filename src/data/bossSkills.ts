@@ -1,4 +1,5 @@
 import type { EnemyId } from "./enemies";
+import { RUN_BALANCE } from "./runBalance";
 
 export type BossSkillId = "dash" | "fanStrike" | "summon" | "needleStorm";
 
@@ -108,5 +109,5 @@ export function finalPhaseFor(enemyId: EnemyId): FinalBossPhaseConfig | undefine
 export function bossSkillCooldown(skillId: BossSkillId, finalPhaseActive = false, enemyId: EnemyId = "minorBoss"): number {
   const config = bossSkillConfig(skillId);
   const phase = finalPhaseActive ? finalPhaseFor(enemyId) : undefined;
-  return Math.round(config.cooldownMs * (phase?.cooldownMultiplier ?? 1));
+  return Math.round(config.cooldownMs * (phase?.cooldownMultiplier ?? 1) * RUN_BALANCE.bossSkillCooldownScale);
 }

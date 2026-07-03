@@ -1,4 +1,5 @@
 import { ENEMY_CONFIGS, type EnemyId } from "./enemies";
+import { bossHpMultiplier } from "./runBalance";
 import { WEAPON_CONFIGS, type WeaponId } from "./weapons";
 
 export function estimateWeaponDps(
@@ -29,7 +30,7 @@ export function estimateBossTimeToDefeat(
   level = 1,
   damageMultiplier = 1
 ): number {
-  const hp = ENEMY_CONFIGS[enemyId].hp;
+  const hp = ENEMY_CONFIGS[enemyId].hp * bossHpMultiplier(enemyId);
   const dps = estimateWeaponDps(weaponId, level, damageMultiplier);
   return estimateTimeToDefeatSeconds(hp, dps);
 }

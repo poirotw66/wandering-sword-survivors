@@ -1,5 +1,6 @@
 import type { GameState } from "../game/GameState";
 import type { BuildPathId } from "./buildPaths";
+import { RUN_BALANCE } from "./runBalance";
 import { computeEvolutionProgress } from "./evolutionProgress";
 import { weaponsLoadoutFullAndMastered, skillsLoadoutFullAndMastered } from "./loadoutLimits";
 import { skillName, t, weaponName } from "../i18n";
@@ -161,7 +162,11 @@ export function shouldTriggerQiKillHeal(state: GameState): boolean {
 }
 
 export function qiKillHealAmount(state: GameState): number {
-  return buildPathLevel(state, "qiSect") >= 8 ? 3 : 1;
+  const level = buildPathLevel(state, "qiSect");
+  if (level >= 8) {
+    return RUN_BALANCE.buildPath.qiKillHeal.level8;
+  }
+  return RUN_BALANCE.buildPath.qiKillHeal.level3;
 }
 
 export function shouldTriggerFootworkDodgeBoost(state: GameState): boolean {
@@ -178,7 +183,8 @@ export function shouldTriggerWineComboCooldownShave(state: GameState): boolean {
 
 export function swordCritBurstDamage(state: GameState, baseDamage: number): number {
   const level = buildPathLevel(state, "swordSect");
-  const multiplier = level >= 8 ? 0.45 : 0.3;
+  const multiplier =
+    level >= 8 ? RUN_BALANCE.buildPath.swordCritBurst.level8 : RUN_BALANCE.buildPath.swordCritBurst.level5;
   return Math.round(baseDamage * multiplier * state.player.stats.damageMultiplier);
 }
 
@@ -189,5 +195,8 @@ export type BuildPathCombatTrigger =
   | { type: "wineComboCooldownShave"; amountMs: number };
 
 export function wineComboCooldownShaveMs(state: GameState): number {
-  return buildPathLevel(state, "wineSwordSect") >= 8 ? 120 : 80;
+  const level = buildPathLevel(state, "wineSwordSect");
+  return level >= 8
+    ? RUN_BALANCE.buildPath.wineCooldownShaveMs.level8
+    : RUN_BALANCE.buildPath.wineCooldownShaveMs.level5;
 }

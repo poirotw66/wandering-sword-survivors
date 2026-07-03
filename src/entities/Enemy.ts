@@ -1,5 +1,6 @@
 import Phaser from "phaser";
 import { ENEMY_CONFIGS, MINION_VISUAL_RADIUS, type EnemyConfig, type EnemyId } from "../data/enemies";
+import { combatHpMultiplier } from "../data/runBalance";
 import { bossPresentationFor } from "../data/bossPresentation";
 import { eliteTraitFor } from "../data/eliteTraits";
 import { minionDisplayDiameter } from "../utils/display";
@@ -44,7 +45,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     this.damageMultiplier = difficulty.damage;
     this.rewardMultiplier = difficulty.reward;
     const eliteMultiplier = this.isElite ? eliteTraitFor(enemyId).hpMultiplier : 1;
-    this.hp = Math.floor(this.config.hp * eliteMultiplier * difficulty.hp);
+    const balanceHpMultiplier = combatHpMultiplier(enemyId, Boolean(this.config.isBoss));
+    this.hp = Math.floor(this.config.hp * eliteMultiplier * difficulty.hp * balanceHpMultiplier);
     this.maxHp = this.hp;
     this.setTexture(this.textureFor(this.config));
     this.setPosition(x, y);
