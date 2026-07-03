@@ -4,6 +4,7 @@ import type { Player } from "../entities/Player";
 import type { BuildPathId } from "../data/buildPaths";
 import type { EnemyId } from "../data/enemies";
 import type { EvolutionId } from "../data/evolutions";
+import type { RunEventId } from "../data/runEvents";
 
 export type GameState = {
   player: Player;
@@ -35,6 +36,8 @@ export type GameState = {
   banishCharges: number;
   renownTitle: string;
   respiteUntilMs: number;
+  activeRunEventId: RunEventId | null;
+  activeRunEventUntilMs: number;
   devMode: {
     enabled: boolean;
     timeScale: number;
