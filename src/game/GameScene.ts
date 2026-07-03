@@ -67,7 +67,7 @@ export class GameScene extends Phaser.Scene {
     this.physics.world.setBounds(-3000, -3000, 6000, 6000);
     this.cameras.main.setBackgroundColor("#111421");
     this.cameras.main.setBounds(-3000, -3000, 6000, 6000);
-    this.cameras.main.roundPixels = true;
+    this.cameras.main.roundPixels = false;
 
     this.createFloor();
     this.player = new Player(this, 0, 0);

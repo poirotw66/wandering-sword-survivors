@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import type { UpgradeOption } from "../data/upgrades";
 import { t } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "./textStyle";
+import { isNarrowViewport } from "../utils/display";
 
 const CARD_HEIGHT = 252;
 
@@ -94,13 +95,15 @@ export class UpgradePanel {
         .setOrigin(0.5)
     );
 
-    const cardWidth = Math.min(300, (panelWidth - 64) / 3);
-    const cardGap = Math.max(16, (panelWidth - cardWidth * 3) / 4);
-    const cardY = height * 0.54;
+    const narrow = isNarrowViewport(width);
+    const cardWidth = narrow ? Math.min(320, width - 48) : Math.min(300, (panelWidth - 64) / 3);
+    const cardGap = narrow ? 18 : Math.max(16, (panelWidth - cardWidth * 3) / 4);
+    const cardY = narrow ? height * 0.48 : height * 0.54;
 
     options.forEach((option, index) => {
-      const x = width / 2 + (index - 1) * (cardWidth + cardGap);
-      this.cards.push(this.createCard(option, index, x, cardY, cardWidth, banishCharges, onPick, onBanish));
+      const x = narrow ? width / 2 : width / 2 + (index - 1) * (cardWidth + cardGap);
+      const y = narrow ? cardY + index * (CARD_HEIGHT + cardGap) : cardY;
+      this.cards.push(this.createCard(option, index, x, y, cardWidth, banishCharges, onPick, onBanish));
     });
   }
 

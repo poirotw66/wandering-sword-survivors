@@ -2,6 +2,7 @@ import Phaser from "phaser";
 import { ENEMY_CONFIGS, MINION_VISUAL_RADIUS, type EnemyConfig, type EnemyId } from "../data/enemies";
 import { bossPresentationFor } from "../data/bossPresentation";
 import { eliteTraitFor } from "../data/eliteTraits";
+import { minionDisplayDiameter } from "../utils/display";
 import { t } from "../i18n";
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
@@ -61,7 +62,8 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
     const visualRadius = this.config.isBoss
       ? this.config.radius
       : Math.min(this.config.radius, MINION_VISUAL_RADIUS);
-    const scale = this.config.isBoss ? this.config.radius / 150 : visualRadius / 90;
+    const minionDiameter = minionDisplayDiameter();
+    const scale = this.config.isBoss ? this.config.radius / 150 : minionDiameter / 90;
     this.setScale(this.isElite ? scale * 1.22 : scale);
     const bodyRadius = this.config.isBoss ? 95 : Math.max(8, Math.round(visualRadius * 0.55));
     this.setCircle(bodyRadius, this.width / 2 - bodyRadius, this.height / 2 - bodyRadius);

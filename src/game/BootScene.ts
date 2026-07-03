@@ -125,44 +125,11 @@ export class BootScene extends Phaser.Scene {
   }
 
   private configureTextureFilters(): void {
-    const smoothTextureKeys = [
-      "wuxia-jianghu-map",
-      "player",
-      "enemy-purple",
-      "enemy-red",
-      "enemy-green",
-      "enemy-huashan",
-      "enemy-hengshan",
-      "enemy-taishan",
-      "enemy-river-bandit",
-      "enemy-medicine-heretic",
-      "enemy-sun-moon",
-      "enemy-royal-guard",
-      "enemy-wudang",
-      "enemy-shaolin",
-      "enemy-emei",
-      "enemy-beggar",
-      "enemy-northern-rider",
-      "enemy-poison-cult",
-      "boss-master",
-      "boss-rival-captain",
-      "boss-renegade-master",
-      "boss-grand-elder",
-      "boss-demonic-overlord",
-      "boss-eastern-invincible",
-      "bolt",
-      "blade",
-      "palm-wave",
-      "strike",
-      "gem",
-      "heart",
-      "star-vortex"
-    ];
-
-    for (const key of smoothTextureKeys) {
-      if (this.textures.exists(key)) {
-        this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
+    for (const key of this.textures.getTextureKeys()) {
+      if (key === "__DEFAULT" || key === "__MISSING") {
+        continue;
       }
+      this.textures.get(key).setFilter(Phaser.Textures.FilterMode.LINEAR);
     }
   }
 
