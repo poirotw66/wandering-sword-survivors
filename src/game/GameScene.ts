@@ -10,6 +10,7 @@ import { expToNextForLevel } from "../data/expCurve";
 import { PlayerSystem } from "../systems/PlayerSystem";
 import { PickupSystem } from "../systems/PickupSystem";
 import { SpawnSystem } from "../systems/SpawnSystem";
+import { RunEventSystem } from "../systems/RunEventSystem";
 import { UpgradeSystem } from "../systems/UpgradeSystem";
 import { WeaponSystem } from "../systems/WeaponSystem";
 import type { EvolutionId } from "../data/evolutions";
@@ -39,6 +40,7 @@ export class GameScene extends Phaser.Scene {
   private playerSystem!: PlayerSystem;
   private enemySystem!: EnemySystem;
   private spawnSystem!: SpawnSystem;
+  private runEventSystem!: RunEventSystem;
   private weaponSystem!: WeaponSystem;
   private expSystem!: ExpSystem;
   private pickupSystem!: PickupSystem;
@@ -112,6 +114,8 @@ export class GameScene extends Phaser.Scene {
       banishCharges: banishChargesFromShop(record),
       renownTitle: t(metaBonuses.titleKey),
       respiteUntilMs: 0,
+      activeRunEventId: null,
+      activeRunEventUntilMs: 0,
       devMode: {
         enabled: this.isDevModeRequested(),
         timeScale: 1
@@ -124,9 +128,10 @@ export class GameScene extends Phaser.Scene {
     this.playerSystem = new PlayerSystem(this, this.player);
     this.enemySystem = new EnemySystem(this, this.player, difficulty);
     this.spawnSystem = new SpawnSystem(this, this.player, this.enemySystem, this.state);
+    this.pickupSystem = new PickupSystem(this, this.player);
+    this.runEventSystem = new RunEventSystem(this, this.player, this.enemySystem, this.pickupSystem, this.state);
     this.weaponSystem = new WeaponSystem(this, this.player, this.enemySystem, this.state.weaponLevels, this.state.evolvedWeapons);
     this.expSystem = new ExpSystem(this, this.player, this.state);
-    this.pickupSystem = new PickupSystem(this, this.player);
     this.upgradeSystem = new UpgradeSystem(this, this.state);
     this.achievementSystem = new AchievementSystem(this.state);
     new AudioFeedbackSystem(this);
@@ -242,6 +247,7 @@ export class GameScene extends Phaser.Scene {
     this.updatePlayerGroundingEffects(time);
     this.enemySystem.setElapsedSec(this.state.elapsedSec);
     this.spawnSystem.update(this.state.elapsedSec);
+    this.runEventSystem.update(this.state.elapsedSec);
     this.enemySystem.update();
     this.weaponSystem.update();
     this.expSystem.update();

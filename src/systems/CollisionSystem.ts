@@ -23,6 +23,7 @@ import {
 } from "../data/buildPathSynergy";
 import { expDropMultiplierFor } from "../data/runPacing";
 import { expDropBalanceMultiplier } from "../data/runBalance";
+import { runEventPacingOverlay } from "../data/runEvents";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
 
@@ -160,7 +161,17 @@ export class CollisionSystem {
   private killEnemy(enemy: Enemy): void {
     this.state.kills += 1;
     const score = Math.round(enemy.config.score * enemy.rewardMultiplier);
-    const expMultiplier = expDropMultiplierFor(this.state.elapsedSec, this.scene.time.now, this.state.respiteUntilMs);
+    const eventOverlay = runEventPacingOverlay(
+      this.state.activeRunEventId,
+      this.state.activeRunEventUntilMs,
+      this.scene.time.now
+    );
+    const expMultiplier = expDropMultiplierFor(
+      this.state.elapsedSec,
+      this.scene.time.now,
+      this.state.respiteUntilMs,
+      eventOverlay
+    );
     const exp = Math.round(
       enemy.config.exp * enemy.rewardMultiplier * expMultiplier * expDropBalanceMultiplier(Boolean(enemy.config.isBoss))
     );

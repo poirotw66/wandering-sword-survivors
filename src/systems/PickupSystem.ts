@@ -17,11 +17,19 @@ export class PickupSystem {
       return;
     }
 
+    this.spawnHealthAt(x, y, 12);
+  }
+
+  spawnHealthAt(x: number, y: number, amount: number): void {
+    if (this.player.stats.hp >= this.player.stats.maxHp) {
+      return;
+    }
+
     const pickup = this.healthPickups.get(x, y, "heart") as HealthPickup | null;
     if (pickup) {
-      pickup.spawn(x, y, 12);
+      pickup.spawn(x, y, amount);
     } else {
-      new HealthPickup(this.scene, x, y, 12);
+      new HealthPickup(this.scene, x, y, amount);
     }
   }
 
