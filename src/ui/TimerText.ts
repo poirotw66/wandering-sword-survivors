@@ -21,4 +21,8 @@ export class TimerText {
   setPosition(x: number, y: number): void {
     this.text.setPosition(x, y);
   }
+
+  setFontSize(size: string): void {
+    this.text.setFontSize(size);
+  }
 }

@@ -46,6 +46,7 @@ export function playerDisplayHeight(): number {
   return isTouchDevice() ? 78 : 66;
 }
 
-export function minionDisplayDiameter(): number {
-  return isTouchDevice() ? 36 : 32;
+/** Minions use the same on-screen height as the player. */
+export function minionDisplayHeight(): number {
+  return playerDisplayHeight();
 }

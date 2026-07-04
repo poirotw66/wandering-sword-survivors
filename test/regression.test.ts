@@ -25,7 +25,7 @@ import {
   qiKillHealAmount,
   wineComboCooldownShaveMs
 } from "../src/data/buildPathSynergy";
-import { getRenderResolution, isNarrowViewport, isTouchDevice, playerDisplayHeight } from "../src/utils/display";
+import { getRenderResolution, isNarrowViewport, isTouchDevice, minionDisplayHeight, playerDisplayHeight } from "../src/utils/display";
 import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
 import { bossPresentationFor, isBossEnemyId } from "../src/data/bossPresentation";
 import { eliteTraitFor } from "../src/data/eliteTraits";
@@ -1219,6 +1219,7 @@ describe("game regression rules", () => {
     expect(isNarrowViewport(390)).toBe(true);
     expect(isNarrowViewport(1280)).toBe(false);
     expect(playerDisplayHeight()).toBeGreaterThan(60);
+    expect(minionDisplayHeight()).toBe(playerDisplayHeight());
   });
 
   it("unlocks run modifiers through renown and boss milestones", () => {
