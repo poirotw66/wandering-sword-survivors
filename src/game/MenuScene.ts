@@ -137,10 +137,10 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(width / 2, goalTextY, formatNextGoalLine(nextRunGoal(record)), {
         fontFamily: UI_FONT,
-        fontSize: layout.tight ? "12px" : "13px",
+        fontSize: layout.mobileHub ? "11px" : layout.tight ? "12px" : "13px",
         color: "#84f7b2",
         align: "center",
-        wordWrap: { width: layout.panelWidth - 96 }
+        wordWrap: { width: layout.panelWidth - (layout.mobileHub ? 32 : 96) }
       })
       .setDepth(9)
       .setOrigin(0.5, layout.showDifficultyHint ? 0 : 0.5);
@@ -579,21 +579,29 @@ export class MenuScene extends Phaser.Scene {
     if (!bounds.contains(pointer.x, pointer.y)) {
       return;
     }
-    this.runConfigDragging = true;
+    this.runConfigPointerId = pointer.id;
     this.runConfigDragStartY = pointer.y;
     this.runConfigDragStartScroll = this.runConfigScrollY;
+    this.runConfigDragging = false;
   };
 
   private handleRunConfigPointerMove = (pointer: Phaser.Input.Pointer): void => {
-    if (!this.runConfigDragging || !this.runConfigContent) {
+    if (!this.runConfigContent || pointer.id !== this.runConfigPointerId) {
       return;
     }
     const delta = this.runConfigDragStartY - pointer.y;
+    if (!this.runConfigDragging && Math.abs(delta) < 10) {
+      return;
+    }
+    this.runConfigDragging = true;
     this.setRunConfigScroll(this.runConfigDragStartScroll + delta);
   };
 
-  private handleRunConfigPointerUp = (): void => {
-    this.runConfigDragging = false;
+  private handleRunConfigPointerUp = (pointer: Phaser.Input.Pointer): void => {
+    if (pointer.id === this.runConfigPointerId) {
+      this.runConfigPointerId = -1;
+      this.runConfigDragging = false;
+    }
   };
 
   private handleRunConfigWheel = (
