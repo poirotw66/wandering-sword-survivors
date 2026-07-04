@@ -31,6 +31,14 @@ import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import { drawGoalRibbon, drawScrollPanel, drawSectionTabCentered, drawHubBorderFrame, drawVerticalCouplet, drawInkSwordStrokes, spawnHubPetals, paintHubMapLayer, HUB, paintMenuBackdrop } from "../ui/menuHubTheme";
 import { mountHubBgm } from "../audio/mountHubBgm";
 import { titleProgressFor } from "../data/metaProgression";
+import {
+  normalizeRunModifier,
+  rollRunModifierChoices,
+  runModifierDescription,
+  runModifierLabel,
+  runModifierSectionLabel,
+  type RunModifierId
+} from "../data/runModifiers";
 
 const START_STYLE_ICONS: Record<StartStyleId, string> = {
   swordSect: "icon-build-sword",
@@ -39,7 +47,7 @@ const START_STYLE_ICONS: Record<StartStyleId, string> = {
   wineSwordSect: "icon-build-wine"
 };
 
-const RUN_ZONE_H = 300;
+const RUN_ZONE_H = 360;
 const ZONE_GAP = 18;
 
 type HubZone = {
@@ -77,6 +85,8 @@ type HubLayout = {
 export class MenuScene extends Phaser.Scene {
   private selectedDifficulty = 1;
   private selectedStartStyle: StartStyleId = DEFAULT_START_STYLE;
+  private runModifierChoices: RunModifierId[] = [];
+  private selectedRunModifier: RunModifierId = "ironTrial";
   private shopOverlay?: Phaser.GameObjects.Container;
   private shopScrollY = 0;
   private shopMaxScroll = 0;
@@ -99,6 +109,12 @@ export class MenuScene extends Phaser.Scene {
     this.selectedStartStyle = normalizeStartStyle(
       record,
       window.localStorage?.getItem("sword-survivors-start-style")
+    );
+    this.runModifierChoices = rollRunModifierChoices(record, 3);
+    this.selectedRunModifier = normalizeRunModifier(
+      record,
+      this.runModifierChoices,
+      window.localStorage?.getItem("sword-survivors-run-modifier")
     );
 
     const layout = this.computeLayout(width, height);
@@ -435,7 +451,86 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5, 0);
 
     const styleRowTop = styleLabelY + labelGap;
+    const styleRows = this.startStyleGridRows(record, innerWidth, layout);
+    const tileHeight = layout.tight ? 66 : layout.compact ? 72 : 78;
+    const rowGap = 8;
+    const styleGridHeight = styleRows * (tileHeight + rowGap) - rowGap;
     this.createStartStyleButtons(record, width, styleRowTop, innerWidth, layout);
+
+    const modifierLabelY = styleRowTop + styleGridHeight + (layout.tight ? 8 : 12);
+    this.add
+      .text(width / 2, modifierLabelY, `— ${runModifierSectionLabel()} —`, {
+        fontFamily: TITLE_FONT,
+        fontSize: layout.tight ? "12px" : "13px",
+        color: "#84f7b2"
+      })
+      .setDepth(9)
+      .setOrigin(0.5, 0);
+    this.createRunModifierButtons(width, modifierLabelY + labelGap, innerWidth, layout);
+  }
+
+  private startStyleGridRows(
+    record: ReturnType<typeof AchievementSystem.readRecord>,
+    innerWidth: number,
+    layout: HubLayout
+  ): number {
+    const options = startStyleOptions(record);
+    const columns = innerWidth < 440 || layout.tight ? 2 : options.length;
+    return Math.ceil(options.length / columns);
+  }
+
+  private createRunModifierButtons(
+    width: number,
+    buttonY: number,
+    innerWidth: number,
+    layout: HubLayout
+  ): void {
+    const choices = this.runModifierChoices;
+    const tileHeight = layout.tight ? 54 : 58;
+    const tileWidth = Math.min(120, Math.max(72, (innerWidth - 16) / Math.max(1, choices.length)));
+    const gap = Math.max(6, (innerWidth - tileWidth * choices.length) / Math.max(1, choices.length - 1));
+    const startX = width / 2 - (tileWidth * choices.length + gap * (choices.length - 1)) / 2 + tileWidth / 2;
+
+    choices.forEach((modifierId, index) => {
+      const selected = this.selectedRunModifier === modifierId;
+      const x = startX + index * (tileWidth + gap);
+      const container = this.add.container(x, buttonY).setDepth(9);
+      const bg = this.add
+        .rectangle(0, 0, tileWidth, tileHeight, selected ? 0xf7c66b : 0x141c28, selected ? 1 : 0.96)
+        .setStrokeStyle(2, selected ? 0xffe09a : 0x5a9a78);
+      const label = `${runModifierLabel(modifierId)}\n${runModifierDescription(modifierId)}`;
+      const text = this.add
+        .text(0, 0, label, {
+          fontFamily: UI_FONT,
+          fontSize: layout.tight ? "10px" : "11px",
+          color: selected ? "#10121f" : "#b8f7d8",
+          align: "center",
+          lineSpacing: 2,
+          wordWrap: { width: tileWidth - 8 }
+        })
+        .setOrigin(0.5);
+      container.add([bg, text]);
+      container.setSize(tileWidth, tileHeight);
+      container.setInteractive(
+        new Phaser.Geom.Rectangle(-tileWidth / 2, -tileHeight / 2, tileWidth, tileHeight),
+        Phaser.Geom.Rectangle.Contains
+      );
+      container.on("pointerover", () => {
+        if (!selected) {
+          bg.setStrokeStyle(2, 0x84f7b2);
+        }
+        this.tweens.add({ targets: container, scaleX: 1.03, scaleY: 1.03, duration: 90, ease: "Sine.easeOut" });
+      });
+      container.on("pointerout", () => {
+        bg.setStrokeStyle(2, selected ? 0xffe09a : 0x5a9a78);
+        this.tweens.add({ targets: container, scaleX: 1, scaleY: 1, duration: 90, ease: "Sine.easeOut" });
+      });
+      container.on("pointerdown", () => {
+        this.selectedRunModifier = modifierId;
+        window.localStorage?.setItem("sword-survivors-run-modifier", modifierId);
+        this.scene.restart();
+      });
+    });
   }
 
   private createDifficultyButtons(
@@ -616,6 +711,7 @@ export class MenuScene extends Phaser.Scene {
         t("menuHubRunSummary", {
           difficulty: this.selectedDifficulty,
           style: styleTitle,
+          modifier: runModifierLabel(this.selectedRunModifier),
           title: t(bonuses.titleKey)
         }),
         {
@@ -902,6 +998,10 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private startRun(): void {
-    this.scene.start("GameScene", { difficultyLevel: this.selectedDifficulty, startStyleId: this.selectedStartStyle });
+    this.scene.start("GameScene", {
+      difficultyLevel: this.selectedDifficulty,
+      startStyleId: this.selectedStartStyle,
+      runModifierId: this.selectedRunModifier
+    });
   }
 }

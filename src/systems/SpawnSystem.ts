@@ -1,8 +1,9 @@
 import Phaser from "phaser";
 import { BOSS_SCHEDULE, SPAWN_DENSITY, SPAWN_WAVES, type BossScheduleEntry } from "../data/waves";
-import { pressureWaveIndex, RUN_PACING, spawnPacingModifiers } from "../data/runPacing";
+import { pressureWaveIndex, RUN_PACING, isSegmentThemeEnemy, spawnPacingModifiers } from "../data/runPacing";
 import { eliteSpawnChance, spawnPressureMultiplier } from "../data/runBalance";
 import { runEventPacingOverlay } from "../data/runEvents";
+import { runModifierEliteBonus, runModifierThemeIntervalMultiplier } from "../data/runModifiers";
 import type { GameState } from "../game/GameState";
 import type { EnemySystem } from "./EnemySystem";
 import type { Player } from "../entities/Player";
@@ -52,11 +53,17 @@ export class SpawnSystem {
         continue;
       }
 
+      let intervalMultiplier = pacing.intervalMultiplier;
+      const themeModifier = runModifierThemeIntervalMultiplier(this.state.runModifierId);
+      if (isSegmentThemeEnemy(elapsedSec, wave.enemyId) && themeModifier !== 1) {
+        intervalMultiplier *= themeModifier;
+      }
+
       const key = `${wave.enemyId}-${wave.startTimeSec}`;
       const last = this.lastSpawn.get(key) ?? -Infinity;
       const pressureMultiplier = spawnPressureMultiplier(elapsedSec);
       const spawnInterval =
-        wave.spawnIntervalMs * pressureMultiplier * SPAWN_DENSITY.intervalScale * pacing.intervalMultiplier;
+        wave.spawnIntervalMs * pressureMultiplier * SPAWN_DENSITY.intervalScale * intervalMultiplier;
       if (this.scene.time.now - last < spawnInterval) {
         continue;
       }
@@ -76,7 +83,8 @@ export class SpawnSystem {
           break;
         }
         const point = this.randomSpawnPoint();
-        const eliteChance = eliteSpawnChance(elapsedSec);
+        const eliteChance =
+          eliteSpawnChance(elapsedSec) + runModifierEliteBonus(this.state.runModifierId);
         this.enemySystem.spawn(wave.enemyId, point.x, point.y, Math.random() < eliteChance);
       }
     }
