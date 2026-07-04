@@ -30,6 +30,7 @@ import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
 import { drawGoalRibbon, drawScrollPanel, drawSectionTabCentered, drawHubBorderFrame, drawVerticalCouplet, drawInkSwordStrokes, spawnHubPetals, paintHubMapLayer, HUB, paintMenuBackdrop } from "../ui/menuHubTheme";
 import { mountHubBgm } from "../audio/mountHubBgm";
+import { isMobileHubLayout, isTouchDevice, safeInset } from "../utils/display";
 import { titleProgressFor } from "../data/metaProgression";
 import {
   normalizeRunModifier,
@@ -79,6 +80,7 @@ type HubLayout = {
   hidePitch: boolean;
   compact: boolean;
   tight: boolean;
+  mobileHub: boolean;
   showDifficultyHint: boolean;
 };
 
@@ -92,6 +94,15 @@ export class MenuScene extends Phaser.Scene {
   private shopMaxScroll = 0;
   private shopContent?: Phaser.GameObjects.Container;
   private shopContentBaseY = 0;
+  private runConfigContent?: Phaser.GameObjects.Container;
+  private runConfigScrollY = 0;
+  private runConfigMaxScroll = 0;
+  private runConfigContentBaseY = 0;
+  private runConfigDragStartY = 0;
+  private runConfigDragStartScroll = 0;
+  private runConfigDragging = false;
+  private runConfigScrollBoundsRect?: Phaser.Geom.Rectangle;
+  private runConfigPointerId = -1;
 
   constructor() {
     super("MenuScene");
@@ -156,6 +167,17 @@ export class MenuScene extends Phaser.Scene {
 
   shutdown(): void {
     this.scale.off("resize", this.onResize, this);
+    this.teardownRunConfigScroll();
+  }
+
+  private teardownRunConfigScroll(): void {
+    this.input.off("pointerdown", this.handleRunConfigPointerDown, this);
+    this.input.off("pointermove", this.handleRunConfigPointerMove, this);
+    this.input.off("pointerup", this.handleRunConfigPointerUp, this);
+    this.input.off("wheel", this.handleRunConfigWheel, this);
+    this.runConfigContent = undefined;
+    this.runConfigScrollBoundsRect = undefined;
+    this.runConfigDragging = false;
   }
 
   private onResize = (): void => {
@@ -183,9 +205,21 @@ export class MenuScene extends Phaser.Scene {
   }
 
   private buildMetrics(height: number, width: number, showHint: boolean): HubMetrics {
+    const mobileHub = isMobileHubLayout(width, height);
     const tight = height < 780;
     const compact = height < 940;
-    void width;
+    if (mobileHub) {
+      return {
+        topBarH: 48 + safeInset("top"),
+        headerH: 40,
+        goalH: showHint ? 34 : 20,
+        runH: 240,
+        summaryH: 28,
+        actionsH: 104,
+        footerH: 8 + safeInset("bottom"),
+        gap: 5
+      };
+    }
     return {
       topBarH: tight ? 54 : compact ? 60 : 64,
       headerH: tight ? 68 : compact ? 80 : 92,
@@ -240,8 +274,25 @@ export class MenuScene extends Phaser.Scene {
     showDifficultyHint: boolean,
     stackActions: boolean,
     compact: boolean,
-    tight: boolean
+    tight: boolean,
+    mobileHub: boolean
   ): HubLayout {
+    let runH = metrics.runH;
+    if (mobileHub) {
+      const fixed =
+        metrics.topBarH +
+        metrics.headerH +
+        metrics.gap +
+        metrics.goalH +
+        metrics.gap +
+        metrics.summaryH +
+        metrics.gap +
+        metrics.actionsH +
+        metrics.gap +
+        metrics.footerH;
+      runH = Math.max(200, height - fixed - metrics.gap);
+    }
+
     const topBar: HubZone = { y: 0, height: metrics.topBarH };
     const header: HubZone = { y: metrics.topBarH + metrics.gap, height: metrics.headerH };
     const footer: HubZone = { y: height - metrics.footerH, height: metrics.footerH };
@@ -256,15 +307,17 @@ export class MenuScene extends Phaser.Scene {
 
     const middleTop = header.y + header.height + metrics.gap;
     const middleBottom = summary.y - metrics.gap;
-    const blockH = metrics.goalH + metrics.gap + metrics.runH;
-    const blockTop = middleTop + Math.max(0, Math.floor((middleBottom - middleTop - blockH) / 2));
+    const blockH = metrics.goalH + metrics.gap + runH;
+    const blockTop = mobileHub
+      ? middleTop
+      : middleTop + Math.max(0, Math.floor((middleBottom - middleTop - blockH) / 2));
     const goal: HubZone = { y: blockTop, height: metrics.goalH };
-    const run: HubZone = { y: goal.y + metrics.goalH + metrics.gap, height: metrics.runH };
+    const run: HubZone = { y: goal.y + metrics.goalH + metrics.gap, height: runH };
     const middlePad = middleBottom - middleTop - blockH;
-    const hidePitch = tight || middlePad < 32 || width < 640;
+    const hidePitch = mobileHub || tight || middlePad < 32 || width < 640;
 
     return {
-      panelWidth: Math.min(900, width - 48),
+      panelWidth: Math.min(mobileHub ? width - 20 : 900, width - (mobileHub ? 20 : 48)),
       topBar,
       header,
       goal,
@@ -272,26 +325,37 @@ export class MenuScene extends Phaser.Scene {
       summary,
       actions,
       footer,
-      stackActions,
+      stackActions: stackActions || mobileHub,
       hidePitch,
-      compact,
-      tight,
-      showDifficultyHint
+      compact: compact || mobileHub,
+      tight: tight || mobileHub,
+      mobileHub,
+      showDifficultyHint: mobileHub ? false : showDifficultyHint
     };
   }
 
   private computeLayout(width: number, height: number): HubLayout {
     const showDifficultyHint =
       AchievementSystem.readRecord().totalRenown < DIFFICULTY_CONFIGS[DIFFICULTY_CONFIGS.length - 1].renownRequired;
-    const tight = height < 780;
-    const compact = height < 940;
-    let stackActions = width < 480;
+    const mobileHub = isMobileHubLayout(width, height);
+    const tight = height < 780 || mobileHub;
+    const compact = height < 940 || mobileHub;
+    let stackActions = width < 480 || mobileHub;
     let metrics = this.fitMetrics(this.buildMetrics(height, width, showDifficultyHint), height, showDifficultyHint);
 
     for (let attempt = 0; attempt < 8; attempt += 1) {
-      const layout = this.layoutFromMetrics(metrics, height, width, showDifficultyHint, stackActions, compact, tight);
+      const layout = this.layoutFromMetrics(
+        metrics,
+        height,
+        width,
+        showDifficultyHint,
+        stackActions,
+        compact,
+        tight,
+        mobileHub
+      );
       const blockBottom = layout.run.y + layout.run.height;
-      if (blockBottom <= layout.summary.y - 4 && layout.header.y + layout.header.height <= layout.goal.y - 4) {
+      if (mobileHub || (blockBottom <= layout.summary.y - 4 && layout.header.y + layout.header.height <= layout.goal.y - 4)) {
         return layout;
       }
       metrics.runH = Math.max(272, metrics.runH - 8);
@@ -301,7 +365,7 @@ export class MenuScene extends Phaser.Scene {
       stackActions = stackActions || width < 520;
     }
 
-    return this.layoutFromMetrics(metrics, height, width, showDifficultyHint, true, true, true);
+    return this.layoutFromMetrics(metrics, height, width, showDifficultyHint, true, true, true, mobileHub);
   }
 
   private zoneCenter(zone: HubZone): number {
@@ -331,8 +395,10 @@ export class MenuScene extends Phaser.Scene {
     record: ReturnType<typeof AchievementSystem.readRecord>,
     bonuses: ReturnType<typeof metaBonusesFromShop>
   ): void {
-    const sideReserve = Math.min(168, Math.max(120, width * 0.2));
-    const renownY = layout.topBar.y + layout.topBar.height * 0.36;
+    const sideReserve = layout.mobileHub ? 72 : Math.min(168, Math.max(120, width * 0.2));
+    const renownY = layout.mobileHub
+      ? layout.topBar.y + layout.topBar.height * 0.58
+      : layout.topBar.y + layout.topBar.height * 0.36;
     const controlsY = layout.topBar.y + layout.topBar.height * 0.72;
     this.add
       .rectangle(width / 2, layout.topBar.y + layout.topBar.height / 2, width, layout.topBar.height, HUB.inkMid, 0.88)
@@ -345,47 +411,51 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(width / 2, renownY, t("metaProgressionLine", { title: t(bonuses.titleKey), renown: record.totalRenown, next: nextLine }), {
         fontFamily: UI_FONT,
-        fontSize: layout.compact ? "10px" : "11px",
+        fontSize: layout.mobileHub ? "9px" : layout.compact ? "10px" : "11px",
         color: "#9eb4c8",
         align: "center",
-        lineSpacing: 3,
-        wordWrap: { width: Math.max(200, width - sideReserve * 2) }
+        lineSpacing: layout.mobileHub ? 2 : 3,
+        wordWrap: { width: Math.max(180, width - sideReserve * 2) }
       })
       .setDepth(11)
       .setOrigin(0.5);
-    this.createLanguageToggle(width, layout.topBar.y + 8);
-    this.createAudioControls(width, controlsY, layout.compact, sideReserve);
+    this.createLanguageToggle(width, layout.topBar.y + (layout.mobileHub ? 6 : 8));
+    this.createAudioControls(width, controlsY, layout.compact, sideReserve, layout.mobileHub);
   }
 
   private paintHeader(width: number, layout: HubLayout): void {
     const headerCenter = this.zoneCenter(layout.header);
-    const titleY = headerCenter - (layout.hidePitch ? 14 : layout.compact ? 22 : 26);
+    const titleY = layout.mobileHub ? headerCenter : headerCenter - (layout.hidePitch ? 14 : layout.compact ? 22 : 26);
     const subtitleY = headerCenter + (layout.hidePitch ? 10 : 4);
     const pitchY = subtitleY + (layout.compact ? 28 : 32);
 
-    this.add
-      .rectangle(width / 2, titleY + 8, Math.min(420, layout.panelWidth * 0.55), 2, HUB.gold, 0.35)
-      .setDepth(4);
+    if (!layout.mobileHub) {
+      this.add
+        .rectangle(width / 2, titleY + 8, Math.min(420, layout.panelWidth * 0.55), 2, HUB.gold, 0.35)
+        .setDepth(4);
+    }
     this.add
       .text(width / 2, titleY, t("title"), {
         fontFamily: TITLE_FONT,
-        fontSize: layout.compact ? "36px" : "46px",
+        fontSize: layout.mobileHub ? "26px" : layout.compact ? "36px" : "46px",
         color: "#f7efd8",
         fontStyle: "700"
       })
-      .setPadding(0, 10, 0, 10)
+      .setPadding(0, layout.mobileHub ? 2 : 10, 0, layout.mobileHub ? 2 : 10)
       .setDepth(9)
       .setOrigin(0.5);
-    this.add
-      .text(width / 2, subtitleY, `— ${t("menuSubtitle")} —`, {
-        fontFamily: TITLE_FONT,
-        fontSize: layout.compact ? "16px" : "18px",
-        color: "#c9a24d",
-        fontStyle: "italic"
-      })
-      .setPadding(0, 4, 0, 4)
-      .setDepth(9)
-      .setOrigin(0.5);
+    if (!layout.mobileHub && !layout.hidePitch) {
+      this.add
+        .text(width / 2, subtitleY, `— ${t("menuSubtitle")} —`, {
+          fontFamily: TITLE_FONT,
+          fontSize: layout.compact ? "16px" : "18px",
+          color: "#c9a24d",
+          fontStyle: "italic"
+        })
+        .setPadding(0, 4, 0, 4)
+        .setDepth(9)
+        .setOrigin(0.5);
+    }
     if (!layout.hidePitch) {
       this.add
         .text(width / 2, pitchY, t("menuPitch"), {
@@ -419,138 +489,242 @@ export class MenuScene extends Phaser.Scene {
     width: number,
     layout: HubLayout
   ): void {
-    const { contentTop, innerWidth } = this.addSectionPanel(
+    const { contentTop, innerWidth, innerLeft, panelBottom } = this.addSectionPanel(
       width / 2,
       layout.run,
       layout.panelWidth,
       t("menuHubRunSection")
     );
 
-    const labelGap = layout.tight ? 14 : 18;
-    const diffLabelY = contentTop + 4;
-    this.add
-      .text(width / 2, diffLabelY, `— ${t("menuHubDifficultyRow")} —`, {
-        fontFamily: TITLE_FONT,
-        fontSize: layout.tight ? "12px" : "13px",
-        color: "#9ec8e8"
-      })
-      .setDepth(9)
-      .setOrigin(0.5, 0);
+    this.teardownRunConfigScroll();
+    this.runConfigScrollY = 0;
+    const maskTop = contentTop + 2;
+    const maskHeight = Math.max(120, panelBottom - maskTop - 6);
+    const host = layout.mobileHub ? this.add.container(width / 2, contentTop).setDepth(9) : undefined;
+    if (host) {
+      this.runConfigContent = host;
+      this.runConfigContentBaseY = contentTop;
+      const maskShape = this.make.graphics({});
+      maskShape.fillStyle(0xffffff);
+      maskShape.fillRect(innerLeft, maskTop, innerWidth, maskHeight);
+      host.setMask(maskShape.createGeometryMask());
+      this.input.on("pointerdown", this.handleRunConfigPointerDown, this);
+      this.input.on("pointermove", this.handleRunConfigPointerMove, this);
+      this.input.on("pointerup", this.handleRunConfigPointerUp, this);
+      this.input.on("wheel", this.handleRunConfigWheel, this);
+    }
 
-    const difficultyY = diffLabelY + labelGap + (layout.tight ? 20 : 22);
-    this.createDifficultyButtons(unlocked, width, difficultyY, innerWidth, layout);
+    const labelGap = layout.mobileHub ? 10 : layout.tight ? 14 : 18;
+    let cursorY = 4;
+    const sectionCenterX = host ? 0 : width / 2;
 
-    const styleLabelY = difficultyY + (layout.tight ? 56 : 62);
-    this.add
-      .text(width / 2, styleLabelY, `— ${startStyleLabel()} —`, {
-        fontFamily: TITLE_FONT,
-        fontSize: layout.tight ? "12px" : "13px",
-        color: "#d8b4ff"
-      })
-      .setDepth(9)
-      .setOrigin(0.5, 0);
+    const diffLabel = this.hubText(sectionCenterX, cursorY, `— ${t("menuHubDifficultyRow")} —`, {
+      fontFamily: TITLE_FONT,
+      fontSize: layout.mobileHub ? "11px" : layout.tight ? "12px" : "13px",
+      color: "#9ec8e8"
+    }, host).setOrigin(0.5, 0);
+    cursorY += diffLabel.height + labelGap;
 
-    const styleRowTop = styleLabelY + labelGap;
-    const styleRows = this.startStyleGridRows(record, innerWidth, layout);
-    const tileHeight = layout.tight ? 66 : layout.compact ? 72 : 78;
-    const rowGap = 8;
-    const styleGridHeight = styleRows * (tileHeight + rowGap) - rowGap;
-    this.createStartStyleButtons(record, width, styleRowTop, innerWidth, layout);
+    const difficultyBottom = this.createDifficultyButtons(
+      unlocked,
+      sectionCenterX,
+      cursorY + (layout.mobileHub ? 18 : layout.tight ? 20 : 22),
+      innerWidth,
+      layout,
+      host
+    );
+    cursorY = difficultyBottom + (layout.mobileHub ? 10 : layout.tight ? 14 : 18);
 
-    const modifierLabelY = styleRowTop + styleGridHeight + (layout.tight ? 8 : 12);
-    this.add
-      .text(width / 2, modifierLabelY, `— ${runModifierSectionLabel()} —`, {
-        fontFamily: TITLE_FONT,
-        fontSize: layout.tight ? "12px" : "13px",
-        color: "#84f7b2"
-      })
-      .setDepth(9)
-      .setOrigin(0.5, 0);
-    this.createRunModifierButtons(width, modifierLabelY + labelGap, innerWidth, layout);
+    const styleLabel = this.hubText(sectionCenterX, cursorY, `— ${startStyleLabel()} —`, {
+      fontFamily: TITLE_FONT,
+      fontSize: layout.mobileHub ? "11px" : layout.tight ? "12px" : "13px",
+      color: "#d8b4ff"
+    }, host).setOrigin(0.5, 0);
+    cursorY += styleLabel.height + labelGap;
+
+    const styleBottom = this.createStartStyleButtons(record, sectionCenterX, cursorY, innerWidth, layout, host);
+    cursorY = styleBottom + (layout.mobileHub ? 8 : layout.tight ? 8 : 12);
+
+    const modifierLabel = this.hubText(sectionCenterX, cursorY, `— ${runModifierSectionLabel()} —`, {
+      fontFamily: TITLE_FONT,
+      fontSize: layout.mobileHub ? "11px" : layout.tight ? "12px" : "13px",
+      color: "#84f7b2"
+    }, host).setOrigin(0.5, 0);
+    cursorY += modifierLabel.height + labelGap;
+
+    const contentBottom = this.createRunModifierButtons(sectionCenterX, cursorY, innerWidth, layout, host);
+    this.runConfigMaxScroll = host ? Math.max(0, contentBottom - maskHeight + 12) : 0;
+    if (host) {
+      this.runConfigScrollBoundsRect = new Phaser.Geom.Rectangle(innerLeft, maskTop, innerWidth, maskHeight);
+    }
   }
 
-  private startStyleGridRows(
-    record: ReturnType<typeof AchievementSystem.readRecord>,
-    innerWidth: number,
-    layout: HubLayout
-  ): number {
-    const options = startStyleOptions(record);
-    const columns = innerWidth < 440 || layout.tight ? 2 : options.length;
-    return Math.ceil(options.length / columns);
+  private hubText(
+    x: number,
+    y: number,
+    content: string,
+    style: Phaser.Types.GameObjects.Text.TextStyle,
+    host?: Phaser.GameObjects.Container
+  ): Phaser.GameObjects.Text {
+    const text = this.add.text(x, y, content, style).setDepth(9);
+    host?.add(text);
+    return text;
+  }
+
+  private handleRunConfigPointerDown = (pointer: Phaser.Input.Pointer): void => {
+    if (!this.runConfigContent || this.shopOverlay) {
+      return;
+    }
+    const bounds = this.runConfigScrollBounds();
+    if (!bounds.contains(pointer.x, pointer.y)) {
+      return;
+    }
+    this.runConfigDragging = true;
+    this.runConfigDragStartY = pointer.y;
+    this.runConfigDragStartScroll = this.runConfigScrollY;
+  };
+
+  private handleRunConfigPointerMove = (pointer: Phaser.Input.Pointer): void => {
+    if (!this.runConfigDragging || !this.runConfigContent) {
+      return;
+    }
+    const delta = this.runConfigDragStartY - pointer.y;
+    this.setRunConfigScroll(this.runConfigDragStartScroll + delta);
+  };
+
+  private handleRunConfigPointerUp = (): void => {
+    this.runConfigDragging = false;
+  };
+
+  private handleRunConfigWheel = (
+    _pointer: Phaser.Input.Pointer,
+    _objects: unknown,
+    _dx: number,
+    dy: number
+  ): void => {
+    if (!this.runConfigContent || this.shopOverlay) {
+      return;
+    }
+    this.setRunConfigScroll(this.runConfigScrollY + dy * 0.35);
+  };
+
+  private runConfigScrollBounds(): Phaser.Geom.Rectangle {
+    return this.runConfigScrollBoundsRect ?? new Phaser.Geom.Rectangle(0, 0, 0, 0);
+  }
+
+  private setRunConfigScroll(next: number): void {
+    if (!this.runConfigContent) {
+      return;
+    }
+    this.runConfigScrollY = Phaser.Math.Clamp(next, 0, this.runConfigMaxScroll);
+    this.runConfigContent.setY(this.runConfigContentBaseY - this.runConfigScrollY);
   }
 
   private createRunModifierButtons(
-    width: number,
-    buttonY: number,
+    centerX: number,
+    startY: number,
     innerWidth: number,
-    layout: HubLayout
-  ): void {
+    layout: HubLayout,
+    host?: Phaser.GameObjects.Container
+  ): number {
     const choices = this.runModifierChoices;
-    const tileHeight = layout.tight ? 54 : 58;
+    const stacked = layout.mobileHub;
+    const tileHeight = layout.mobileHub ? 46 : layout.tight ? 54 : 58;
+    const rowGap = layout.mobileHub ? 6 : 0;
+
+    if (stacked) {
+      let bottom = startY;
+      choices.forEach((modifierId, index) => {
+        const y = startY + index * (tileHeight + rowGap) + tileHeight / 2;
+        const tileWidth = innerWidth - 8;
+        bottom = y + tileHeight / 2;
+        this.createRunModifierTile(modifierId, centerX, y, tileWidth, tileHeight, layout, host);
+      });
+      return bottom + 4;
+    }
+
     const tileWidth = Math.min(120, Math.max(72, (innerWidth - 16) / Math.max(1, choices.length)));
     const gap = Math.max(6, (innerWidth - tileWidth * choices.length) / Math.max(1, choices.length - 1));
-    const startX = width / 2 - (tileWidth * choices.length + gap * (choices.length - 1)) / 2 + tileWidth / 2;
+    const startX = centerX - (tileWidth * choices.length + gap * (choices.length - 1)) / 2 + tileWidth / 2;
 
     choices.forEach((modifierId, index) => {
-      const selected = this.selectedRunModifier === modifierId;
       const x = startX + index * (tileWidth + gap);
-      const container = this.add.container(x, buttonY).setDepth(9);
-      const bg = this.add
-        .rectangle(0, 0, tileWidth, tileHeight, selected ? 0xf7c66b : 0x141c28, selected ? 1 : 0.96)
-        .setStrokeStyle(2, selected ? 0xffe09a : 0x5a9a78);
-      const label = `${runModifierLabel(modifierId)}\n${runModifierDescription(modifierId)}`;
-      const text = this.add
-        .text(0, 0, label, {
-          fontFamily: UI_FONT,
-          fontSize: layout.tight ? "10px" : "11px",
-          color: selected ? "#10121f" : "#b8f7d8",
-          align: "center",
-          lineSpacing: 2,
-          wordWrap: { width: tileWidth - 8 }
-        })
-        .setOrigin(0.5);
-      container.add([bg, text]);
-      container.setSize(tileWidth, tileHeight);
-      container.setInteractive(
-        new Phaser.Geom.Rectangle(-tileWidth / 2, -tileHeight / 2, tileWidth, tileHeight),
-        Phaser.Geom.Rectangle.Contains
-      );
-      container.on("pointerover", () => {
-        if (!selected) {
-          bg.setStrokeStyle(2, 0x84f7b2);
-        }
-        this.tweens.add({ targets: container, scaleX: 1.03, scaleY: 1.03, duration: 90, ease: "Sine.easeOut" });
-      });
-      container.on("pointerout", () => {
-        bg.setStrokeStyle(2, selected ? 0xffe09a : 0x5a9a78);
-        this.tweens.add({ targets: container, scaleX: 1, scaleY: 1, duration: 90, ease: "Sine.easeOut" });
-      });
-      container.on("pointerdown", () => {
-        this.selectedRunModifier = modifierId;
-        window.localStorage?.setItem("sword-survivors-run-modifier", modifierId);
-        this.scene.restart();
-      });
+      this.createRunModifierTile(modifierId, x, startY + tileHeight / 2, tileWidth, tileHeight, layout, host);
+    });
+    return startY + tileHeight + 4;
+  }
+
+  private createRunModifierTile(
+    modifierId: RunModifierId,
+    x: number,
+    y: number,
+    tileWidth: number,
+    tileHeight: number,
+    layout: HubLayout,
+    host?: Phaser.GameObjects.Container
+  ): void {
+    const selected = this.selectedRunModifier === modifierId;
+    const container = this.add.container(x, y).setDepth(9);
+    host?.add(container);
+    const bg = this.add
+      .rectangle(0, 0, tileWidth, tileHeight, selected ? 0xf7c66b : 0x141c28, selected ? 1 : 0.96)
+      .setStrokeStyle(2, selected ? 0xffe09a : 0x5a9a78);
+    const label = layout.mobileHub
+      ? `${runModifierLabel(modifierId)} · ${runModifierDescription(modifierId)}`
+      : `${runModifierLabel(modifierId)}\n${runModifierDescription(modifierId)}`;
+    const text = this.add
+      .text(0, 0, label, {
+        fontFamily: UI_FONT,
+        fontSize: layout.mobileHub ? "10px" : layout.tight ? "10px" : "11px",
+        color: selected ? "#10121f" : "#b8f7d8",
+        align: "center",
+        lineSpacing: 2,
+        wordWrap: { width: tileWidth - 8 }
+      })
+      .setOrigin(0.5);
+    container.add([bg, text]);
+    container.setSize(tileWidth, tileHeight);
+    container.setInteractive(
+      new Phaser.Geom.Rectangle(-tileWidth / 2, -tileHeight / 2, tileWidth, tileHeight),
+      Phaser.Geom.Rectangle.Contains
+    );
+    container.on("pointerover", () => {
+      if (!selected) {
+        bg.setStrokeStyle(2, 0x84f7b2);
+      }
+      this.tweens.add({ targets: container, scaleX: 1.03, scaleY: 1.03, duration: 90, ease: "Sine.easeOut" });
+    });
+    container.on("pointerout", () => {
+      bg.setStrokeStyle(2, selected ? 0xffe09a : 0x5a9a78);
+      this.tweens.add({ targets: container, scaleX: 1, scaleY: 1, duration: 90, ease: "Sine.easeOut" });
+    });
+    container.on("pointerdown", () => {
+      this.selectedRunModifier = modifierId;
+      window.localStorage?.setItem("sword-survivors-run-modifier", modifierId);
+      this.scene.restart();
     });
   }
 
   private createDifficultyButtons(
     unlocked: number[],
-    width: number,
+    centerX: number,
     buttonY: number,
     innerWidth: number,
-    layout: HubLayout
-  ): void {
+    layout: HubLayout,
+    host?: Phaser.GameObjects.Container
+  ): number {
     const displays = difficultyDisplays(AchievementSystem.readRecord());
-    const tileHeight = layout.tight ? 40 : 44;
+    const tileHeight = layout.mobileHub ? 36 : layout.tight ? 40 : 44;
     const tileWidth = Math.min(88, Math.max(58, (innerWidth - 20) / displays.length));
     const gap = Math.max(6, (innerWidth - tileWidth * displays.length) / Math.max(1, displays.length - 1));
-    const startX = width / 2 - (tileWidth * displays.length + gap * (displays.length - 1)) / 2 + tileWidth / 2;
+    const startX = centerX - (tileWidth * displays.length + gap * (displays.length - 1)) / 2 + tileWidth / 2;
 
     displays.forEach((difficulty, index) => {
       const isUnlocked = unlocked.includes(difficulty.level);
       const selected = this.selectedDifficulty === difficulty.level;
       const x = startX + index * (tileWidth + gap);
       const container = this.add.container(x, buttonY).setDepth(9);
+      host?.add(container);
       const bg = this.add
         .rectangle(0, 0, tileWidth, tileHeight, selected ? 0xf7c66b : 0x141c28, selected ? 1 : 0.96)
         .setStrokeStyle(2, selected ? 0xffe09a : isUnlocked ? HUB.swordBlue : 0x3a4254);
@@ -597,29 +771,33 @@ export class MenuScene extends Phaser.Scene {
         });
       }
     });
+    return buttonY + tileHeight / 2 + 4;
   }
 
   private createStartStyleButtons(
     record: ReturnType<typeof AchievementSystem.readRecord>,
-    width: number,
+    centerX: number,
     rowTop: number,
     innerWidth: number,
-    layout: HubLayout
-  ): void {
+    layout: HubLayout,
+    host?: Phaser.GameObjects.Container
+  ): number {
     const options = startStyleOptions(record);
-    const tileHeight = layout.tight ? 66 : layout.compact ? 72 : 78;
-    const rowGap = 8;
-    const columns = innerWidth < 440 || layout.tight ? 2 : options.length;
+    const tileHeight = layout.mobileHub ? 52 : layout.tight ? 66 : layout.compact ? 72 : 78;
+    const rowGap = layout.mobileHub ? 6 : 8;
+    const columns = layout.mobileHub || innerWidth < 440 || layout.tight ? 2 : options.length;
     const tileWidth = Math.floor((innerWidth - (columns - 1) * 10) / columns);
-    const gridLeft = width / 2 - innerWidth / 2;
+    const gridLeft = centerX - innerWidth / 2;
 
     options.forEach((option, index) => {
       const col = index % columns;
       const row = Math.floor(index / columns);
       const x = gridLeft + col * (tileWidth + 10) + tileWidth / 2;
       const y = rowTop + row * (tileHeight + rowGap) + tileHeight / 2;
-      this.createStartStyleTile(option, x, y, tileWidth, tileHeight, layout);
+      this.createStartStyleTile(option, x, y, tileWidth, tileHeight, layout, host);
     });
+    const rows = Math.ceil(options.length / columns);
+    return rowTop + rows * (tileHeight + rowGap) - rowGap;
   }
 
   private createStartStyleTile(
@@ -628,18 +806,20 @@ export class MenuScene extends Phaser.Scene {
     y: number,
     tileWidth: number,
     tileHeight: number,
-    layout: HubLayout
+    layout: HubLayout,
+    host?: Phaser.GameObjects.Container
   ): void {
     const selected = this.selectedStartStyle === option.id;
-    const iconSize = layout.tight ? 24 : layout.compact ? 28 : 32;
-    const titleSize = layout.tight ? 10 : layout.compact ? 11 : 12;
-    const subSize = layout.tight ? 9 : 10;
+    const iconSize = layout.mobileHub ? 20 : layout.tight ? 24 : layout.compact ? 28 : 32;
+    const titleSize = layout.mobileHub ? 9 : layout.tight ? 10 : layout.compact ? 11 : 12;
+    const subSize = layout.mobileHub ? 8 : layout.tight ? 9 : 10;
     const halfH = tileHeight / 2;
     const textWidth = tileWidth - 12;
-    const iconY = -halfH + 8 + iconSize / 2;
-    const titleY = iconY + iconSize / 2 + 5;
-    const subY = titleY + (layout.tight ? 12 : 14);
+    const iconY = -halfH + 6 + iconSize / 2;
+    const titleY = iconY + iconSize / 2 + (layout.mobileHub ? 3 : 5);
+    const subY = titleY + (layout.mobileHub ? 10 : layout.tight ? 12 : 14);
     const container = this.add.container(x, y).setDepth(9);
+    host?.add(container);
     const bg = this.add
       .rectangle(0, 0, tileWidth, tileHeight, selected ? 0xf7c66b : 0x141c28, selected ? 1 : 0.96)
       .setStrokeStyle(2, selected ? 0xffe09a : option.unlocked ? HUB.qiPurple : 0x3a4254);
@@ -782,23 +962,25 @@ export class MenuScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     const footerCenterY = this.zoneCenter(layout.footer);
-    this.add
-      .text(width / 2, footerCenterY - 10, t("menuStartHint"), {
-        fontFamily: UI_FONT,
-        fontSize: "12px",
-        color: "#6f8296"
-      })
-      .setOrigin(0.5);
-    this.add
-      .text(width / 2, footerCenterY + 12, t("controls"), {
-        fontFamily: UI_FONT,
-        fontSize: "13px",
-        color: "#6f8296",
-        align: "center",
-        lineSpacing: 4
-      })
-      .setPadding(0, 4, 0, 4)
-      .setOrigin(0.5);
+    if (!isTouchDevice()) {
+      this.add
+        .text(width / 2, footerCenterY - 10, t("menuStartHint"), {
+          fontFamily: UI_FONT,
+          fontSize: "12px",
+          color: "#6f8296"
+        })
+        .setOrigin(0.5);
+      this.add
+        .text(width / 2, footerCenterY + 12, t("controls"), {
+          fontFamily: UI_FONT,
+          fontSize: "13px",
+          color: "#6f8296",
+          align: "center",
+          lineSpacing: 4
+        })
+        .setPadding(0, 4, 0, 4)
+        .setOrigin(0.5);
+    }
 
     start.on("pointerover", () => start.setBackgroundColor("#ffd36a"));
     start.on("pointerout", () => start.setBackgroundColor("#f7c66b"));
@@ -824,12 +1006,12 @@ export class MenuScene extends Phaser.Scene {
 
   private createLanguageToggle(width: number, y: number): void {
     const language = this.add
-      .text(width - 16, y, t("languageToggle"), {
+      .text(width - 12, y, t("languageToggle"), {
         fontFamily: UI_FONT,
-        fontSize: "14px",
+        fontSize: "12px",
         color: "#f7c66b",
         backgroundColor: "#192033",
-        padding: { left: 10, right: 10, top: 6, bottom: 6 }
+        padding: { left: 8, right: 8, top: 5, bottom: 5 }
       })
       .setOrigin(1, 0)
       .setDepth(12)
@@ -840,7 +1022,7 @@ export class MenuScene extends Phaser.Scene {
     });
   }
 
-  private createAudioControls(width: number, y: number, compact: boolean, sideReserve: number): void {
+  private createAudioControls(width: number, y: number, compact: boolean, sideReserve: number, mobileHub = false): void {
     const settings = readAudioSettings();
     const label = settings.muted
       ? t("audioMutedLabel")
@@ -849,18 +1031,20 @@ export class MenuScene extends Phaser.Scene {
           music: Math.round(settings.musicVolume * 100)
         });
     const maxControlWidth = Math.max(96, sideReserve - 12);
-    this.add
-      .text(14, y, t("audioSettingsButton"), {
-        fontFamily: UI_FONT,
-        fontSize: "11px",
-        color: "#aac7d8"
-      })
-      .setOrigin(0, 0)
-      .setDepth(12);
+    if (!mobileHub) {
+      this.add
+        .text(14, y, t("audioSettingsButton"), {
+          fontFamily: UI_FONT,
+          fontSize: "11px",
+          color: "#aac7d8"
+        })
+        .setOrigin(0, 0)
+        .setDepth(12);
+    }
     const status = this.add
-      .text(14, y + (compact ? 16 : 18), label, {
+      .text(mobileHub ? 12 : 14, mobileHub ? y - 8 : y + (compact ? 16 : 18), mobileHub ? (settings.muted ? t("audioMutedLabel") : "♪") : label, {
         fontFamily: UI_FONT,
-        fontSize: "10px",
+        fontSize: mobileHub ? "12px" : "10px",
         color: settings.muted ? "#ff7687" : "#d8e2eb",
         backgroundColor: "#192033",
         padding: { left: 6, right: 6, top: 3, bottom: 3 },
@@ -875,7 +1059,7 @@ export class MenuScene extends Phaser.Scene {
       this.scene.restart();
     });
 
-    if (width < 900) {
+    if (width < 900 || mobileHub) {
       return;
     }
 

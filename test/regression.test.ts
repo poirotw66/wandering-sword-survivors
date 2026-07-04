@@ -25,7 +25,7 @@ import {
   qiKillHealAmount,
   wineComboCooldownShaveMs
 } from "../src/data/buildPathSynergy";
-import { getRenderResolution, isNarrowViewport, isTouchDevice, minionDisplayHeight, playerDisplayHeight } from "../src/utils/display";
+import { getRenderResolution, isMobileHubLayout, isNarrowViewport, isTouchDevice, minionDisplayHeight, playerDisplayHeight } from "../src/utils/display";
 import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
 import { bossPresentationFor, isBossEnemyId } from "../src/data/bossPresentation";
 import { eliteTraitFor } from "../src/data/eliteTraits";
@@ -1218,6 +1218,8 @@ describe("game regression rules", () => {
     expect(typeof isTouchDevice()).toBe("boolean");
     expect(isNarrowViewport(390)).toBe(true);
     expect(isNarrowViewport(1280)).toBe(false);
+    expect(isMobileHubLayout(390, 844)).toBe(true);
+    expect(isMobileHubLayout(1280, 900)).toBe(false);
     expect(playerDisplayHeight()).toBeGreaterThan(60);
     expect(minionDisplayHeight()).toBe(playerDisplayHeight());
   });

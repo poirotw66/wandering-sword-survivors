@@ -22,6 +22,11 @@ export function isCompactViewport(width = window.innerWidth, height = window.inn
   return width < 900 || height < 700;
 }
 
+/** Menu hub uses a scrollable, compact layout on phones and narrow viewports. */
+export function isMobileHubLayout(width = window.innerWidth, height = window.innerHeight): boolean {
+  return isNarrowViewport(width) || (isTouchDevice() && height < 920);
+}
+
 export function safeInset(side: "top" | "right" | "bottom" | "left"): number {
   if (typeof document === "undefined") {
     return 0;
