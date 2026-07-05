@@ -139,7 +139,14 @@ export class GameScene extends Phaser.Scene {
     this.spawnSystem = new SpawnSystem(this, this.player, this.enemySystem, this.state);
     this.pickupSystem = new PickupSystem(this, this.player);
     this.runEventSystem = new RunEventSystem(this, this.player, this.enemySystem, this.pickupSystem, this.state);
-    this.weaponSystem = new WeaponSystem(this, this.player, this.enemySystem, this.state.weaponLevels, this.state.evolvedWeapons);
+    this.weaponSystem = new WeaponSystem(
+      this,
+      this.player,
+      this.enemySystem,
+      this.state.weaponLevels,
+      this.state.evolvedWeapons,
+      () => this.state.elapsedSec
+    );
     this.expSystem = new ExpSystem(this, this.player, this.state);
     this.upgradeSystem = new UpgradeSystem(this, this.state);
     this.achievementSystem = new AchievementSystem(this.state);

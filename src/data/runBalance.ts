@@ -30,6 +30,11 @@ export const RUN_BALANCE = {
     minionDropMultiplier: 1.05,
     earlyLevelEaseBoost: 1.06
   },
+  /** Early-run outgoing damage boost; fades so late-run pressure stays unchanged. */
+  earlyWeaponDamage: {
+    peakMultiplier: 2.15,
+    fadeSec: 360
+  },
   buildPath: {
     swordCritBurst: { level5: 0.26, level8: 0.38 },
     qiKillHeal: { level3: 2, level8: 4 },
@@ -71,4 +76,10 @@ export function earlyLevelExpEase(level: number): number {
   const baseEase = 0.7 + (level / 30) * 0.25;
   const boosted = 1 - (1 - baseEase) / RUN_BALANCE.exp.earlyLevelEaseBoost;
   return boosted;
+}
+
+export function earlyOutgoingDamageMultiplier(elapsedSec: number): number {
+  const { peakMultiplier, fadeSec } = RUN_BALANCE.earlyWeaponDamage;
+  const progress = clamp(elapsedSec / fadeSec, 0, 1);
+  return 1 + (1 - progress) * (peakMultiplier - 1);
 }

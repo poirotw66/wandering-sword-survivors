@@ -41,6 +41,7 @@ import {
   bossHpMultiplier,
   eliteSpawnChance,
   earlyLevelExpEase,
+  earlyOutgoingDamageMultiplier,
   RUN_BALANCE,
   spawnPressureMultiplier
 } from "../src/data/runBalance";
@@ -1000,6 +1001,10 @@ describe("game regression rules", () => {
     expect(eliteSpawnChance(1800)).toBeLessThanOrEqual(RUN_BALANCE.eliteSpawn.capChance);
     expect(spawnPressureMultiplier(0)).toBe(1);
     expect(spawnPressureMultiplier(1800)).toBeCloseTo(RUN_BALANCE.spawnPressure.floor);
+    expect(earlyOutgoingDamageMultiplier(0)).toBeCloseTo(RUN_BALANCE.earlyWeaponDamage.peakMultiplier);
+    expect(earlyOutgoingDamageMultiplier(RUN_BALANCE.earlyWeaponDamage.fadeSec)).toBe(1);
+    expect(earlyOutgoingDamageMultiplier(180)).toBeGreaterThan(1);
+    expect(earlyOutgoingDamageMultiplier(180)).toBeLessThan(RUN_BALANCE.earlyWeaponDamage.peakMultiplier);
     expect(bossHpMultiplier("minorBoss")).toBeLessThan(1);
     expect(bossHpMultiplier("finalBoss")).toBeLessThan(bossHpMultiplier("minorBoss"));
     expect(earlyLevelExpEase(1)).toBeLessThan(earlyLevelExpEase(20));
