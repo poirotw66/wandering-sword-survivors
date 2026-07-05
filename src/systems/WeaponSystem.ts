@@ -5,6 +5,7 @@ import { playEvolutionFireBurst } from "../data/evolutionVfx";
 import type { Enemy } from "../entities/Enemy";
 import type { Player } from "../entities/Player";
 import { Projectile } from "../entities/Projectile";
+import { earlyOutgoingDamageMultiplier } from "../data/runBalance";
 import { angleToVector } from "../utils/math";
 import type { EnemySystem } from "./EnemySystem";
 
@@ -18,7 +19,8 @@ export class WeaponSystem {
     private readonly player: Player,
     private readonly enemySystem: EnemySystem,
     private readonly weaponLevels: Map<WeaponId, number>,
-    private readonly evolvedWeapons: Map<WeaponId, EvolutionId>
+    private readonly evolvedWeapons: Map<WeaponId, EvolutionId>,
+    private readonly elapsedSec: () => number = () => 0
   ) {
     this.projectiles = scene.physics.add.group({ classType: Projectile, runChildUpdate: false });
     weaponLevels.set("magicBolt", 1);
@@ -85,7 +87,7 @@ export class WeaponSystem {
     const angle = Phaser.Math.Angle.Between(this.player.x, this.player.y, target.x, target.y);
     for (let i = 0; i < count; i += 1) {
       this.spawnProjectile("magicBolt", angle + (i - (count - 1) / 2) * 0.18, {
-        damage: (evolved ? 30 : 18) + level * (evolved ? 7 : 5),
+        damage: (evolved ? 32 : 24) + level * (evolved ? 7 : 6),
         speed: evolved ? 540 : 470,
         pierce: (evolved ? 4 : 1) + Math.floor(level / 4),
         durationMs: evolved ? 1550 : 1300,
@@ -444,7 +446,11 @@ export class WeaponSystem {
   }
 
   private rollDamage(baseDamage: number): { damage: number; crit: boolean; combo: boolean } {
-    let damage = baseDamage * this.player.stats.damageMultiplier * this.player.stats.burstMultiplier;
+    let damage =
+      baseDamage *
+      this.player.stats.damageMultiplier *
+      this.player.stats.burstMultiplier *
+      earlyOutgoingDamageMultiplier(this.elapsedSec());
     let crit = false;
     let combo = false;
     if (Math.random() < this.player.stats.critChance) {

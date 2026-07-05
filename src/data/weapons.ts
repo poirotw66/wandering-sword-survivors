@@ -29,7 +29,7 @@ export const WEAPON_CONFIGS: Record<WeaponId, WeaponConfig> = {
     name: "Sword Qi",
     iconKey: "icon-weapon-bolt",
     availableInUpgradePool: true,
-    baseDamage: 18,
+    baseDamage: 24,
     cooldownMs: 650,
     projectileSpeed: 460,
     projectileCount: 1,
