@@ -30,6 +30,8 @@ export class BootScene extends Phaser.Scene {
     this.load.image("enemy-green", `${basePath}/enemy-green.png`);
     this.load.image("boss-master", `${basePath}/boss-master.png`);
     this.load.image("bolt", `${basePath}/sword-qi.png`);
+    this.load.image("boss-needle", `${basePath}/boss-needle.png`);
+    this.load.image("boss-rune", `${basePath}/boss-rune.png`);
     this.load.image("blade", `${basePath}/orbit-swords.png`);
     this.load.image("palm-wave", `${basePath}/palm-wave.png`);
     this.load.image("strike", `${basePath}/sword-flash.png`);
@@ -172,6 +174,8 @@ export class BootScene extends Phaser.Scene {
     if (!this.textures.exists("bolt")) {
       this.createCircleTexture("bolt", 14, 0x9ee7ff, 0xffffff);
     }
+    this.createBossNeedleTexture();
+    this.createBossRuneTexture();
     if (!this.textures.exists("gem")) {
       this.createCircleTexture("gem", 12, 0x84f7b2, 0xffffff);
     }
@@ -245,6 +249,60 @@ export class BootScene extends Phaser.Scene {
     graphics.fillCircle(size / 2, size / 2, size / 2 - 3);
     graphics.strokeCircle(size / 2, size / 2, size / 2 - 3);
     graphics.generateTexture(key, size, size);
+    graphics.destroy();
+  }
+
+  private createBossNeedleTexture(): void {
+    if (this.textures.exists("boss-needle")) {
+      return;
+    }
+
+    const width = 40;
+    const height = 10;
+    const graphics = this.add.graphics();
+    graphics.fillStyle(0xffffff, 0.95);
+    graphics.fillEllipse(width / 2, height / 2, width - 6, 3.5);
+    graphics.lineStyle(1.5, 0xff5aa8, 0.9);
+    graphics.strokeEllipse(width / 2, height / 2, width - 2, height - 2);
+    graphics.fillStyle(0xff2f86, 0.55);
+    graphics.fillEllipse(width - 6, height / 2, 8, 2.5);
+    graphics.generateTexture("boss-needle", width, height);
+    graphics.destroy();
+  }
+
+  private createBossRuneTexture(): void {
+    if (this.textures.exists("boss-rune")) {
+      return;
+    }
+
+    const size = 96;
+    const graphics = this.add.graphics();
+    const center = size / 2;
+    graphics.lineStyle(2, 0xe8c8ff, 0.85);
+    graphics.strokeCircle(center, center, 38);
+    graphics.strokeCircle(center, center, 28);
+    graphics.lineStyle(1.5, 0xb86bff, 0.7);
+    for (let i = 0; i < 6; i += 1) {
+      const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+      const inner = 16;
+      const outer = 42;
+      graphics.lineBetween(
+        center + Math.cos(angle) * inner,
+        center + Math.sin(angle) * inner,
+        center + Math.cos(angle) * outer,
+        center + Math.sin(angle) * outer
+      );
+      const markAngle = angle + Math.PI / 6;
+      graphics.lineBetween(
+        center + Math.cos(markAngle) * 22,
+        center + Math.sin(markAngle) * 22,
+        center + Math.cos(markAngle) * 30,
+        center + Math.sin(markAngle) * 30
+      );
+    }
+    graphics.fillStyle(0xb86bff, 0.18);
+    graphics.fillCircle(center, center, 24);
+    graphics.generateTexture("boss-rune", size, size);
     graphics.destroy();
   }
 

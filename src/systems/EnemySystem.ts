@@ -2,6 +2,19 @@ import Phaser from "phaser";
 import { type EnemyId } from "../data/enemies";
 import { archetypeConfigFor, minionBehaviorFor, type MinionArchetypeConfig } from "../data/minionBehaviors";
 import { bossSkillConfig, bossSkillCooldown, bossSkillProfileFor, finalPhaseFor, type BossSkillConfig } from "../data/bossSkills";
+import {
+  playBossDashLunge,
+  playBossDashTelegraph,
+  playBossFanImpact,
+  playBossFanLingerZone,
+  playBossFanTelegraph,
+  playBossFinalPhaseBurst,
+  playBossNeedleLaunchBurst,
+  playBossNeedleTelegraph,
+  playBossOrbitCharge,
+  playBossSummonBurst,
+  playBossSummonTelegraph
+} from "../data/bossVfx";
 import { bossIdentityFor, type GuardFormationConfig, type OrbitingNeedlesConfig } from "../data/bossIdentity";
 import type { DifficultyConfig } from "../data/metaProgression";
 import type { RunModifierId } from "../data/runModifiers";
@@ -285,6 +298,24 @@ export class EnemySystem {
       if (!projectile.active) {
         return true;
       }
+      if (projectile.isBossNeedle && Phaser.Math.Between(0, 100) < 34) {
+        const trail = this.scene.add
+          .image(projectile.x, projectile.y, "boss-needle")
+          .setTint(projectile.tintTopLeft)
+          .setRotation(projectile.rotation)
+          .setScale(projectile.scaleX * 0.85, projectile.scaleY * 0.85)
+          .setAlpha(0.35)
+          .setDepth(14)
+          .setBlendMode(Phaser.BlendModes.ADD);
+        this.scene.tweens.add({
+          targets: trail,
+          alpha: 0,
+          scaleX: trail.scaleX * 0.4,
+          scaleY: trail.scaleY * 0.4,
+          duration: 120,
+          onComplete: () => trail.destroy()
+        });
+      }
       if (now >= projectile.expiresAt) {
         projectile.expire();
       }
@@ -347,29 +378,17 @@ export class EnemySystem {
     const lockX = pursuitLockMs ? this.player.x : enemy.x;
     const lockY = pursuitLockMs ? this.player.y : enemy.y;
     const angle = Phaser.Math.Angle.Between(enemy.x, enemy.y, lockX, lockY);
-    const warning = this.scene.add
-      .rectangle(enemy.x, enemy.y, config.range, config.width, config.color, 0.3)
-      .setRotation(angle)
-      .setDepth(12);
-    if (pursuitLockMs) {
-      const marker = this.scene.add.circle(lockX, lockY, 24, config.color, 0.38).setDepth(13);
-      this.scene.tweens.add({
-        targets: marker,
-        alpha: { from: 0.45, to: 0.1 },
-        scale: { from: 0.8, to: 1.25 },
-        duration: windupMs,
-        onComplete: () => marker.destroy()
-      });
-    }
+    playBossDashTelegraph(
+      this.scene,
+      enemy.x,
+      enemy.y,
+      angle,
+      config,
+      windupMs,
+      pursuitLockMs ? lockX : undefined,
+      pursuitLockMs ? lockY : undefined
+    );
     this.emitTechniqueStarted(enemy, config, pursuitLockMs ? "bossTechniquePursuitLock" : config.labelKey);
-    this.scene.tweens.add({
-      targets: warning,
-      alpha: { from: 0.34, to: 0.08 },
-      scaleX: { from: 0.35, to: 1 },
-      duration: windupMs,
-      yoyo: true,
-      onComplete: () => warning.destroy()
-    });
     this.showCastLabel(enemy, t(pursuitLockMs ? "bossTechniquePursuitLock" : config.labelKey), config.color);
     this.scene.time.delayedCall(windupMs, () => {
       if (!enemy.active) {
@@ -378,6 +397,7 @@ export class EnemySystem {
       const dashAngle = Phaser.Math.Angle.Between(enemy.x, enemy.y, lockX, lockY);
       this.dashUntil.set(enemy, this.scene.time.now + 520);
       enemy.setVelocity(Math.cos(dashAngle) * 360, Math.sin(dashAngle) * 360);
+      playBossDashLunge(this.scene, enemy.x, enemy.y, dashAngle, config.color);
       this.emitTechniqueEnded(enemy);
     });
   }
@@ -385,32 +405,18 @@ export class EnemySystem {
   private performFanStrike(enemy: Enemy, config: BossSkillConfig): void {
     const originAngle = Phaser.Math.Angle.Between(enemy.x, enemy.y, this.player.x, this.player.y);
     const lingerMs = bossIdentityFor(enemy.enemyId)?.fanLingerMs;
-    const arcs: Phaser.GameObjects.Arc[] = [];
+    const wedge = playBossFanTelegraph(this.scene, enemy.x, enemy.y, originAngle, config, config.windupMs);
     const lingerZones: { x: number; y: number; radius: number }[] = [];
     for (let i = -2; i <= 2; i += 1) {
-      const angle = originAngle + i * 0.22;
-      const arcX = enemy.x + Math.cos(angle) * 92;
-      const arcY = enemy.y + Math.sin(angle) * 92;
-      const arc = this.scene.add
-        .arc(arcX, arcY, config.width / 2, -18, 18, false, config.color, 0.28)
-        .setRotation(angle)
-        .setDepth(12);
-      arcs.push(arc);
-      lingerZones.push({ x: arcX, y: arcY, radius: config.width / 2 });
-      this.scene.tweens.add({
-        targets: arc,
-        alpha: { from: 0.12, to: 0.38 },
-        scale: { from: 0.7, to: 1.2 },
-        duration: config.windupMs,
-        yoyo: true
-      });
+      const angle = originAngle + i * (config.arcRadians / 5);
+      const arcX = enemy.x + Math.cos(angle) * config.range * 0.55;
+      const arcY = enemy.y + Math.sin(angle) * config.range * 0.55;
+      lingerZones.push({ x: arcX, y: arcY, radius: config.width / 3 });
     }
     this.emitTechniqueStarted(enemy, config, lingerMs ? "bossTechniqueFanLinger" : config.labelKey);
     this.showCastLabel(enemy, t(lingerMs ? "bossTechniqueFanLinger" : config.labelKey), config.color);
     this.scene.time.delayedCall(config.windupMs, () => {
-      for (const arc of arcs) {
-        arc.destroy();
-      }
+      wedge.destroy();
       if (!enemy.active) {
         return;
       }
@@ -424,6 +430,7 @@ export class EnemySystem {
           this.scene.events.emit("player-damaged");
         }
       }
+      playBossFanImpact(this.scene, enemy.x, enemy.y, originAngle, config);
       if (lingerMs) {
         this.spawnFanLingerZones(enemy, lingerZones, config, lingerMs);
       }
@@ -437,9 +444,7 @@ export class EnemySystem {
     config: BossSkillConfig,
     lingerMs: number
   ): void {
-    const visuals = zones.map((zone) =>
-      this.scene.add.circle(zone.x, zone.y, zone.radius, config.color, 0.16).setDepth(8)
-    );
+    const visuals = zones.map((zone) => playBossFanLingerZone(this.scene, zone.x, zone.y, zone.radius, config.color, lingerMs));
     const tickCount = Math.max(1, Math.floor(lingerMs / 400));
     let ticks = 0;
     const tickEvent = this.scene.time.addEvent({
@@ -469,21 +474,7 @@ export class EnemySystem {
     const needleCount = Math.round(config.width) + (inFinalPhase ? 6 : 0);
     this.emitTechniqueStarted(enemy, config, sectorRadians ? "bossTechniqueSectorNeedle" : config.labelKey);
     this.showCastLabel(enemy, t(sectorRadians ? "bossTechniqueSectorNeedle" : config.labelKey), config.color);
-    for (let i = 0; i < needleCount; i += 1) {
-      const angle = sectorRadians
-        ? centerAngle - sectorRadians / 2 + (sectorRadians * i) / Math.max(1, needleCount - 1)
-        : (Math.PI * 2 * i) / needleCount;
-      this.showLineTelegraph(enemy.x, enemy.y, angle, sectorRadians ? 180 : 92, 4, config.color, config.windupMs);
-    }
-    const pulse = this.scene.add.circle(enemy.x, enemy.y, 48, config.color, 0.24).setDepth(12);
-    this.scene.tweens.add({
-      targets: pulse,
-      alpha: { from: 0.34, to: 0.05 },
-      scale: { from: 0.7, to: 1.8 },
-      duration: config.windupMs,
-      yoyo: true,
-      onComplete: () => pulse.destroy()
-    });
+    playBossNeedleTelegraph(this.scene, enemy.x, enemy.y, centerAngle, config, config.windupMs, sectorRadians, needleCount);
     this.scene.time.delayedCall(config.windupMs, () => {
       if (!enemy.active) {
         this.emitTechniqueEnded(enemy);
@@ -491,6 +482,7 @@ export class EnemySystem {
       }
       const damage = Math.round(enemy.config.damage * enemy.damageMultiplier * config.damageMultiplier);
       const speed = config.range + (inFinalPhase ? 60 : 0);
+      playBossNeedleLaunchBurst(this.scene, enemy.x, enemy.y);
       for (let i = 0; i < needleCount; i += 1) {
         const angle = sectorRadians
           ? centerAngle - sectorRadians / 2 + (sectorRadians * i) / Math.max(1, needleCount - 1) + Phaser.Math.FloatBetween(-0.03, 0.03)
@@ -512,7 +504,7 @@ export class EnemySystem {
     originX = enemy.x,
     originY = enemy.y
   ): void {
-    const pooled = this.enemyProjectiles.get(originX, originY, "bolt") as EnemyProjectile | null;
+    const pooled = this.enemyProjectiles.get(originX, originY, "boss-needle") as EnemyProjectile | null;
     const projectile = pooled ?? new EnemyProjectile(this.scene, originX, originY);
     projectile.fire({
       x: originX,
@@ -522,7 +514,8 @@ export class EnemySystem {
       velocityY: Math.sin(angle) * speed,
       tint,
       durationMs,
-      scale: BOSS_NEEDLE_PROJECTILE_SCALE
+      scale: BOSS_NEEDLE_PROJECTILE_SCALE,
+      textureKey: "boss-needle"
     });
     if (!pooled) {
       this.enemyProjectiles.add(projectile);
@@ -533,15 +526,7 @@ export class EnemySystem {
     const guardFormation = bossIdentityFor(enemy.enemyId)?.guardFormation;
     this.emitTechniqueStarted(enemy, config, guardFormation ? "bossTechniqueGuardFormation" : config.labelKey);
     this.showCastLabel(enemy, t(guardFormation ? "bossTechniqueGuardFormation" : config.labelKey), config.color);
-    const pulse = this.scene.add.circle(enemy.x, enemy.y, config.range, config.color, 0.18).setDepth(11);
-    this.scene.tweens.add({
-      targets: pulse,
-      alpha: { from: 0.3, to: 0.04 },
-      scale: { from: 0.45, to: 1.35 },
-      duration: config.windupMs,
-      yoyo: true,
-      onComplete: () => pulse.destroy()
-    });
+    playBossSummonTelegraph(this.scene, enemy.x, enemy.y, config.range, config.windupMs);
     this.scene.time.delayedCall(config.windupMs, () => {
       if (guardFormation) {
         this.summonGuardFormation(enemy, guardFormation);
@@ -566,14 +551,7 @@ export class EnemySystem {
       guards.push(guard);
     }
     this.bossGuards.set(boss, guards);
-    const pulse = this.scene.add.circle(boss.x, boss.y, 132, 0xf7c66b, 0.22).setDepth(11);
-    this.scene.tweens.add({
-      targets: pulse,
-      alpha: 0,
-      scale: 1.5,
-      duration: 360,
-      onComplete: () => pulse.destroy()
-    });
+    playBossSummonBurst(this.scene, boss.x, boss.y, 0xf7c66b, true);
   }
 
   private summonMinions(enemy: Enemy): void {
@@ -588,14 +566,7 @@ export class EnemySystem {
       const summoned = this.spawn(i % 2 === 0 ? "bat" : "slime", x, y, enemy.enemyId === "finalBoss");
       summoned.setTint(0xff9bd2);
     }
-    const pulse = this.scene.add.circle(enemy.x, enemy.y, 132, 0xb86bff, 0.22).setDepth(11);
-    this.scene.tweens.add({
-      targets: pulse,
-      alpha: 0,
-      scale: 1.5,
-      duration: 360,
-      onComplete: () => pulse.destroy()
-    });
+    playBossSummonBurst(this.scene, enemy.x, enemy.y, 0xb86bff, false);
   }
 
   private performOrbitingNeedles(enemy: Enemy, config: OrbitingNeedlesConfig): void {
@@ -607,7 +578,7 @@ export class EnemySystem {
       const originX = enemy.x + Math.cos(orbitAngle) * config.orbitRadius;
       const originY = enemy.y + Math.sin(orbitAngle) * config.orbitRadius;
       const shootAngle = Phaser.Math.Angle.Between(originX, originY, this.player.x, this.player.y);
-      this.showRingTelegraph(originX, originY, 14, 0xff2f86, 420);
+      playBossOrbitCharge(this.scene, originX, originY, 420);
       this.scene.time.delayedCall(420, () => {
         if (!enemy.active) {
           return;
@@ -629,18 +600,8 @@ export class EnemySystem {
     this.scene.events.emit("boss-technique-started", label, 0xff2f86, enemy.enemyId);
     this.showCastLabel(enemy, label, 0xff2f86);
     enemy.setTint(0xff2f86);
-    const pulse = this.scene.add.circle(enemy.x, enemy.y, 178, 0xff2f86, 0.22).setDepth(14);
-    this.scene.tweens.add({
-      targets: pulse,
-      alpha: 0,
-      scale: 1.9,
-      duration: 720,
-      ease: "Sine.easeOut",
-      onComplete: () => {
-        pulse.destroy();
-        this.scene.events.emit("boss-technique-ended", enemy.enemyId);
-      }
-    });
+    playBossFinalPhaseBurst(this.scene, enemy.x, enemy.y);
+    this.scene.time.delayedCall(720, () => this.scene.events.emit("boss-technique-ended", enemy.enemyId));
   }
 
   private showCastLabel(enemy: Enemy, label: string, color: number): void {
