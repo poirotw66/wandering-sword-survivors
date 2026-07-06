@@ -1,7 +1,7 @@
 ---
 id: 010-enemy-behavior-archetypes
 title: Enemy Behavior Archetypes
-status: in_progress
+status: done
 owner: openab
 created: 2026-06-29
 updated: 2026-06-29
