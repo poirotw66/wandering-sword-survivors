@@ -4,7 +4,7 @@ import { evolutionVfxFor } from "./evolutionVfxProfiles";
 
 export { EVOLUTION_VFX, evolutionVfxFor, type EvolutionVfxProfile } from "./evolutionVfxProfiles";
 
-function playSlashDepth(scene: Phaser.Scene, x: number, y: number, color: number, angle: number, intense = false): void {
+export function playSlashDepth(scene: Phaser.Scene, x: number, y: number, color: number, angle: number, intense = false): void {
   const ghost = scene.add.rectangle(x, y, intense ? 84 : 68, intense ? 12 : 9, color, intense ? 0.28 : 0.2).setDepth(16).setRotation(angle);
   scene.tweens.add({
     targets: ghost,

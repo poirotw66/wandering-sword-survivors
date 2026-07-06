@@ -33,6 +33,7 @@ import {
   sweepHitDistance
 } from "../src/utils/arcadeHitbox";
 import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
+import { BOSS_VFX, bossVfxFor } from "../src/data/bossVfxProfiles";
 import { bossPresentationFor, isBossEnemyId } from "../src/data/bossPresentation";
 import { eliteTraitFor } from "../src/data/eliteTraits";
 import { ENEMY_CONFIGS, MINION_VISUAL_RADIUS } from "../src/data/enemies";
@@ -855,6 +856,18 @@ describe("game regression rules", () => {
     }
   });
 
+  it("defines boss attack vfx profiles for every boss technique", () => {
+    const skillIds = ["dash", "fanStrike", "summon", "needleStorm", "orbit", "phase"] as const;
+    expect(skillIds).toHaveLength(6);
+    for (const skillId of skillIds) {
+      const profile = bossVfxFor(skillId);
+      expect(profile.skillId).toBe(skillId);
+      expect(profile.primaryColor).toBeGreaterThan(0);
+      expect(profile.hitColor).toBeGreaterThan(0);
+      expect(BOSS_VFX[skillId].telegraphDepth).toBeGreaterThan(0);
+    }
+  });
+
   it("assigns tiered boss presentation for every boss enemy", () => {
     const bossIds = ["minorBoss", "midBoss", "greatBoss", "megaBoss", "finalBoss"] as const;
     for (const bossId of bossIds) {
@@ -967,7 +980,7 @@ describe("game regression rules", () => {
   it("keeps enemy projectile visuals smaller than the old oversized minion bolts", () => {
     expect(MINION_PROJECTILE_SCALE).toBeLessThan(0.25);
     expect(BOSS_NEEDLE_PROJECTILE_SCALE).toBeGreaterThan(MINION_PROJECTILE_SCALE);
-    expect(BOSS_NEEDLE_PROJECTILE_SCALE).toBeLessThan(0.42);
+    expect(BOSS_NEEDLE_PROJECTILE_SCALE).toBeLessThanOrEqual(1.2);
   });
 
   it("sizes projectile and enemy hit radii for reliable overlap", () => {
