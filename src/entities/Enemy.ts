@@ -4,6 +4,7 @@ import { combatHpMultiplier } from "../data/runBalance";
 import { bossPresentationFor } from "../data/bossPresentation";
 import { eliteTraitFor } from "../data/eliteTraits";
 import { minionDisplayHeight } from "../utils/display";
+import { enemyHitRadius, syncArcadeCircleBody } from "../utils/arcadeHitbox";
 import { t } from "../i18n";
 
 export class Enemy extends Phaser.Physics.Arcade.Sprite {
@@ -65,14 +66,13 @@ export class Enemy extends Phaser.Physics.Arcade.Sprite {
       const scale = this.config.radius / 150;
       this.setScale(this.isElite ? scale * 1.22 : scale);
       const bodyRadius = 95;
-      this.setCircle(bodyRadius, this.width / 2 - bodyRadius, this.height / 2 - bodyRadius);
+      syncArcadeCircleBody(this, bodyRadius);
     } else {
       const displayHeight = minionDisplayHeight() * (this.isElite ? 1.12 : 1);
       const aspect = this.frame.width / this.frame.height;
       const displayWidth = displayHeight * aspect;
       this.setDisplaySize(displayWidth, displayHeight);
-      const bodyRadius = displayHeight * 0.38;
-      this.setCircle(bodyRadius, this.displayWidth / 2 - bodyRadius, this.displayHeight / 2 - bodyRadius);
+      syncArcadeCircleBody(this, enemyHitRadius(displayHeight, this.isElite));
     }
     this.setDepth(this.config.isBoss || this.isElite ? 18 : 10);
     this.ensureStatusUi();
