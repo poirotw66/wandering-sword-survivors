@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { MINION_PROJECTILE_SCALE } from "../data/enemyProjectileVisual";
 
 export class EnemyProjectile extends Phaser.Physics.Arcade.Sprite {
   damage = 1;
@@ -9,7 +10,7 @@ export class EnemyProjectile extends Phaser.Physics.Arcade.Sprite {
     scene.add.existing(this);
     scene.physics.add.existing(this);
     this.setDepth(15);
-    this.setCircle(6);
+    this.setCircle(5);
   }
 
   fire(options: {
@@ -20,12 +21,14 @@ export class EnemyProjectile extends Phaser.Physics.Arcade.Sprite {
     velocityY: number;
     tint: number;
     durationMs: number;
+    scale?: number;
   }): void {
+    const scale = options.scale ?? MINION_PROJECTILE_SCALE;
     this.damage = options.damage;
     this.expiresAt = this.scene.time.now + options.durationMs;
     this.setPosition(options.x, options.y);
     this.setTint(options.tint);
-    this.setScale(0.55);
+    this.setScale(scale);
     this.setAlpha(0.9);
     this.setActive(true);
     this.setVisible(true);

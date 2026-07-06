@@ -8,6 +8,7 @@ import type { RunModifierId } from "../data/runModifiers";
 import { runModifierEnemySpeedMultiplier } from "../data/runModifiers";
 import { timeCombatScale } from "../data/timeCombatScale";
 import { Enemy } from "../entities/Enemy";
+import { BOSS_NEEDLE_PROJECTILE_SCALE } from "../data/enemyProjectileVisual";
 import { EnemyProjectile } from "../entities/EnemyProjectile";
 import type { Player } from "../entities/Player";
 import { t } from "../i18n";
@@ -520,9 +521,9 @@ export class EnemySystem {
       velocityX: Math.cos(angle) * speed,
       velocityY: Math.sin(angle) * speed,
       tint,
-      durationMs
+      durationMs,
+      scale: BOSS_NEEDLE_PROJECTILE_SCALE
     });
-    projectile.setScale(0.42);
     if (!pooled) {
       this.enemyProjectiles.add(projectile);
     }

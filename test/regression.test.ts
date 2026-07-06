@@ -32,6 +32,7 @@ import { eliteTraitFor } from "../src/data/eliteTraits";
 import { ENEMY_CONFIGS, MINION_VISUAL_RADIUS } from "../src/data/enemies";
 import { formatBossBuildPathRewardMessage, grantRandomBuildPathLevel } from "../src/data/bossBuildPathReward";
 import { archetypeConfigFor, ordinaryEnemyBehaviorMap } from "../src/data/minionBehaviors";
+import { BOSS_NEEDLE_PROJECTILE_SCALE, MINION_PROJECTILE_SCALE } from "../src/data/enemyProjectileVisual";
 import { difficultyDisplays, titleProgressFor } from "../src/data/metaProgression";
 import { applyStartStyleBonus, nextRunGoal, normalizeStartStyle, renownShopRows, startStyleOptions } from "../src/data/metaChoices";
 import { SPAWN_DENSITY, SPAWN_WAVES } from "../src/data/waves";
@@ -954,6 +955,12 @@ describe("game regression rules", () => {
     expect(eliteTank.actionMs).toBeGreaterThan(normalTank.actionMs);
     expect(eliteRanger.cooldownMs).toBeLessThan(normalRanger.cooldownMs);
     expect(archetypeConfigFor("chaser", true).speedMultiplier).toBe(1);
+  });
+
+  it("keeps enemy projectile visuals smaller than the old oversized minion bolts", () => {
+    expect(MINION_PROJECTILE_SCALE).toBeLessThan(0.25);
+    expect(BOSS_NEEDLE_PROJECTILE_SCALE).toBeGreaterThan(MINION_PROJECTILE_SCALE);
+    expect(BOSS_NEEDLE_PROJECTILE_SCALE).toBeLessThan(0.42);
   });
 
   it("uses elevated spawn density tuning for busier on-screen waves", () => {
