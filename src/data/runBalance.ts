@@ -4,31 +4,39 @@ import { clamp } from "../utils/math";
 
 export const RUN_BALANCE = {
   eliteSpawn: {
-    baseChance: 0.04,
-    growthPerSec: 0.000048,
-    capChance: 0.11
+    baseChance: 0.045,
+    growthPerSec: 0.000062,
+    capChance: 0.14
   },
   spawnPressure: {
-    lateRamp: 0.35,
-    floor: 0.65
+    lateRamp: 0.42,
+    floor: 0.55
   },
   bossHpMultiplier: {
-    minorBoss: 0.92,
-    midBoss: 0.9,
-    greatBoss: 0.88,
-    megaBoss: 0.86,
-    finalBoss: 0.85
+    minorBoss: 0.96,
+    midBoss: 0.94,
+    greatBoss: 0.92,
+    megaBoss: 0.9,
+    finalBoss: 0.88
   },
   bossSkillCooldownScale: 1.1,
   timeCombat: {
-    hpScaleMax: 1.18,
-    damageScaleMax: 0.92,
-    easingPower: 1.35
+    hpScaleMax: 1.68,
+    damageScaleMax: 1.28,
+    easingPower: 1.2,
+    lateRampStartSec: 540,
+    lateRampBonus: 0.42,
+    lateRampPower: 0.85,
+    lateRampCap: 1.12
   },
   pressureWaveSpawnMultiplier: 1.4,
   exp: {
-    minionDropMultiplier: 1.05,
-    earlyLevelEaseBoost: 1.06
+    minionDropMultiplier: 1.15,
+    earlyLevelEaseBoost: 1.38,
+    earlyDrop: {
+      peakMultiplier: 1.55,
+      fadeSec: 300
+    }
   },
   /** Early-run outgoing damage boost; fades so late-run pressure stays unchanged. */
   earlyWeaponDamage: {
@@ -70,12 +78,18 @@ export function expDropBalanceMultiplier(isBoss: boolean): number {
 }
 
 export function earlyLevelExpEase(level: number): number {
-  if (level >= 30) {
+  if (level >= 22) {
     return 1;
   }
-  const baseEase = 0.7 + (level / 30) * 0.25;
+  const baseEase = 0.42 + (level / 18) * 0.48;
   const boosted = 1 - (1 - baseEase) / RUN_BALANCE.exp.earlyLevelEaseBoost;
   return boosted;
+}
+
+export function earlyExpDropMultiplier(elapsedSec: number): number {
+  const { peakMultiplier, fadeSec } = RUN_BALANCE.exp.earlyDrop;
+  const progress = clamp(elapsedSec / fadeSec, 0, 1);
+  return 1 + (1 - progress) * (peakMultiplier - 1);
 }
 
 export function earlyOutgoingDamageMultiplier(elapsedSec: number): number {

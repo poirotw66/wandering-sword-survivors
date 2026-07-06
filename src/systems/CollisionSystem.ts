@@ -22,7 +22,7 @@ import {
   swordCritBurstDamage
 } from "../data/buildPathSynergy";
 import { expDropMultiplierFor } from "../data/runPacing";
-import { expDropBalanceMultiplier } from "../data/runBalance";
+import { earlyExpDropMultiplier, expDropBalanceMultiplier } from "../data/runBalance";
 import { runEventPacingOverlay } from "../data/runEvents";
 import { runModifierExpMultiplier, runModifierScoreMultiplier } from "../data/runModifiers";
 import {
@@ -221,6 +221,7 @@ export class CollisionSystem {
         enemy.rewardMultiplier *
         expMultiplier *
         expDropBalanceMultiplier(Boolean(enemy.config.isBoss)) *
+        earlyExpDropMultiplier(this.state.elapsedSec) *
         runModifierExpMultiplier(this.state.runModifierId)
     );
     this.state.score += score;

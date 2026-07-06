@@ -48,6 +48,7 @@ import {
   bossHpMultiplier,
   eliteSpawnChance,
   earlyLevelExpEase,
+  earlyExpDropMultiplier,
   earlyOutgoingDamageMultiplier,
   RUN_BALANCE,
   spawnPressureMultiplier
@@ -987,16 +988,16 @@ describe("game regression rules", () => {
   it("scales enemy hp and damage with elapsed run time", () => {
     expect(timeCombatScale(0)).toEqual({ hp: 1, damage: 1 });
     const mid = timeCombatScale(900);
-    expect(mid.hp).toBeCloseTo(1.463, 2);
-    expect(mid.damage).toBeCloseTo(1.362, 2);
+    expect(mid.hp).toBeCloseTo(1.975, 2);
+    expect(mid.damage).toBeCloseTo(1.743, 2);
     const end = timeCombatScale(1800);
-    expect(end.hp).toBeCloseTo(2.18, 2);
-    expect(end.damage).toBeCloseTo(1.92, 2);
-    expect(timeCombatScale(3600).hp).toBeCloseTo(2.18, 2);
+    expect(end.hp).toBeCloseTo(2.882, 2);
+    expect(end.damage).toBeCloseTo(2.434, 2);
+    expect(timeCombatScale(3600).hp).toBeCloseTo(2.882, 2);
   });
 
   it("requires progressively more experience for higher levels", () => {
-    expect(expToNextForLevel(1)).toBe(144);
+    expect(expToNextForLevel(1)).toBe(119);
     expect(expToNextForLevel(10)).toBeGreaterThan(expToNextForLevel(5) * 1.5);
     expect(expToNextForLevel(20)).toBeGreaterThan(expToNextForLevel(10) * 1.6);
     expect(expToNextForLevel(35)).toBeGreaterThan(expToNextForLevel(28) * 1.15);
@@ -1022,7 +1023,7 @@ describe("game regression rules", () => {
     expect(eliteSpawnChance(0)).toBeCloseTo(RUN_BALANCE.eliteSpawn.baseChance);
     expect(eliteSpawnChance(1800)).toBeLessThanOrEqual(RUN_BALANCE.eliteSpawn.capChance);
     expect(spawnPressureMultiplier(0)).toBe(1);
-    expect(spawnPressureMultiplier(1800)).toBeCloseTo(RUN_BALANCE.spawnPressure.floor);
+    expect(spawnPressureMultiplier(1800)).toBeCloseTo(1 - RUN_BALANCE.spawnPressure.lateRamp);
     expect(earlyOutgoingDamageMultiplier(0)).toBeCloseTo(RUN_BALANCE.earlyWeaponDamage.peakMultiplier);
     expect(earlyOutgoingDamageMultiplier(RUN_BALANCE.earlyWeaponDamage.fadeSec)).toBe(1);
     expect(earlyOutgoingDamageMultiplier(180)).toBeGreaterThan(1);
@@ -1030,7 +1031,9 @@ describe("game regression rules", () => {
     expect(bossHpMultiplier("minorBoss")).toBeLessThan(1);
     expect(bossHpMultiplier("finalBoss")).toBeLessThan(bossHpMultiplier("minorBoss"));
     expect(earlyLevelExpEase(1)).toBeLessThan(earlyLevelExpEase(20));
-    expect(earlyLevelExpEase(30)).toBe(1);
+    expect(earlyLevelExpEase(22)).toBe(1);
+    expect(earlyExpDropMultiplier(0)).toBeCloseTo(RUN_BALANCE.exp.earlyDrop.peakMultiplier);
+    expect(earlyExpDropMultiplier(RUN_BALANCE.exp.earlyDrop.fadeSec)).toBe(1);
     const qiState = createState({ buildPathLevels: new Map([["qiSect", 3]]) });
     expect(qiKillHealAmount(qiState)).toBe(RUN_BALANCE.buildPath.qiKillHeal.level3);
     expect(wineComboCooldownShaveMs(createState({ buildPathLevels: new Map([["wineSwordSect", 5]]) }))).toBe(
