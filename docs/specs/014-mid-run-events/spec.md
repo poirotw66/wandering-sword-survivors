@@ -1,7 +1,7 @@
 ---
 id: 014-mid-run-events
 title: Mid-Run Random Events
-status: in_progress
+status: done
 owner: openab
 created: 2026-07-03
 updated: 2026-07-03

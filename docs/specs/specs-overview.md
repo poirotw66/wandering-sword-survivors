@@ -11,10 +11,10 @@
 | `007-meta-choice-and-replay-loop` | `prd-001-nightfall-survivors` | done | Adds renown shop tiers, start-style choices, Boss-linked unlocks, and next-run recommendations. |
 | `008-renown-shop-and-meta-unlocks` | `prd-001-nightfall-survivors` | done | Implemented spendable renown, purchasable meta upgrades, save migration, and compact shop UX. |
 | `009-boss-and-enemy-visual-identity` | `prd-001-nightfall-survivors` | done | Implemented ten ordinary wuxia enemy archetypes, unique Boss sprite keys, fallback silhouettes, codex icons, and sprite mapping tests. |
-| `010-enemy-behavior-archetypes` | `prd-001-nightfall-survivors` | in_progress | Introduce four ordinary enemy behavior archetypes (chaser, dasher, tank, ranger), map all sixteen minion factions, and add lightweight telegraphs plus ranged minion attacks. |
-| `011-run-pacing-and-pressure-waves` | `prd-001-nightfall-survivors` | in_progress | Add five-minute pressure waves, post-Boss respite, segment-themed factions, and a 120-minion cap for late-run readability. |
-| `012-boss-identity-per-tier` | `prd-001-nightfall-survivors` | in_progress | Give each Boss tier a signature mechanic: pursuit lock, lingering fan qi, guard formation, sector needle storm, and final-phase orbiting needles. |
-| `013-mid-run-build-synergy` | `prd-001-nightfall-survivors` | in_progress | Unlock build paths earlier, add Lv3/5/8 milestones, HUD evolution preview, and soft third-path weighting. |
-| `014-mid-run-events` | `prd-001-nightfall-survivors` | in_progress | Random mid-run encounters: ambush, qi surge, formation lull, hermit gift, and bandit cache. |
-| `015-balance-pass` | `prd-001-nightfall-survivors` | in_progress | Centralized balance knobs for elites, bosses, time scaling, exp, and build-path parity. |
-| `016-replay-variety` | `prd-001-nightfall-survivors` | in_progress | Per-run Jianghu encounter modifiers rolled at the menu with renown and boss unlocks. |
+| `010-enemy-behavior-archetypes` | `prd-001-nightfall-survivors` | done | Introduce four ordinary enemy behavior archetypes (chaser, dasher, tank, ranger), map all sixteen minion factions, and add lightweight telegraphs plus ranged minion attacks. |
+| `011-run-pacing-and-pressure-waves` | `prd-001-nightfall-survivors` | done | Add five-minute pressure waves, post-Boss respite, segment-themed factions, and a 120-minion cap for late-run readability. |
+| `012-boss-identity-per-tier` | `prd-001-nightfall-survivors` | done | Give each Boss tier a signature mechanic: pursuit lock, lingering fan qi, guard formation, sector needle storm, and final-phase orbiting needles. |
+| `013-mid-run-build-synergy` | `prd-001-nightfall-survivors` | done | Unlock build paths earlier, add Lv3/5/8 milestones, HUD evolution preview, and soft third-path weighting. |
+| `014-mid-run-events` | `prd-001-nightfall-survivors` | done | Random mid-run encounters: ambush, qi surge, formation lull, hermit gift, and bandit cache. |
+| `015-balance-pass` | `prd-001-nightfall-survivors` | done | Centralized balance knobs for elites, bosses, time scaling, exp, and build-path parity. |
+| `016-replay-variety` | `prd-001-nightfall-survivors` | done | Per-run Jianghu encounter modifiers rolled at the menu with renown and boss unlocks. |

@@ -2,7 +2,7 @@
 
 | Field | Value |
 | --- | --- |
-| Status | in_progress |
+| Status | done |
 | Created | 2026-07-03 |
 | PRD | `prd-001-nightfall-survivors` |
 

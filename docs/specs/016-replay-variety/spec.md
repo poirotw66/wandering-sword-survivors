@@ -1,7 +1,7 @@
 ---
 id: 016-replay-variety
 title: Replay Variety
-status: in_progress
+status: done
 owner: openab
 created: 2026-07-03
 updated: 2026-07-03

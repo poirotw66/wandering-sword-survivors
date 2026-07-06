@@ -1,7 +1,7 @@
 ---
 id: 011-run-pacing-and-pressure-waves
 title: Run Pacing and Pressure Waves
-status: in_progress
+status: done
 owner: openab
 created: 2026-07-03
 updated: 2026-07-03
