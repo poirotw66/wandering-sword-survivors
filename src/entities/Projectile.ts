@@ -1,6 +1,7 @@
 import Phaser from "phaser";
 import type { EvolutionId } from "../data/evolutions";
 import type { WeaponId } from "../data/weapons";
+import { projectileHitRadius, syncArcadeCircleBody } from "../utils/arcadeHitbox";
 
 export class Projectile extends Phaser.Physics.Arcade.Sprite {
   weaponId: WeaponId = "magicBolt";
@@ -47,6 +48,7 @@ export class Projectile extends Phaser.Physics.Arcade.Sprite {
     this.setPosition(options.x, options.y);
     this.setScale(options.scale ?? 1);
     this.setTint(options.tint ?? 0xffffff);
+    syncArcadeCircleBody(this, projectileHitRadius(this.displayWidth, this.displayHeight));
     this.setActive(true);
     this.setVisible(true);
     this.setAlpha(0.96);

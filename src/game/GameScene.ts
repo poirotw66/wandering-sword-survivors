@@ -48,6 +48,7 @@ export class GameScene extends Phaser.Scene {
   private pickupSystem!: PickupSystem;
   private upgradeSystem!: UpgradeSystem;
   private achievementSystem!: AchievementSystem;
+  private collisionSystem!: CollisionSystem;
   private playerGroundFx?: Phaser.GameObjects.Graphics;
   private playerShadow?: Phaser.GameObjects.Ellipse;
   private devText?: Phaser.GameObjects.Text;
@@ -151,7 +152,7 @@ export class GameScene extends Phaser.Scene {
     this.upgradeSystem = new UpgradeSystem(this, this.state);
     this.achievementSystem = new AchievementSystem(this.state);
     new AudioFeedbackSystem(this);
-    new CollisionSystem(
+    this.collisionSystem = new CollisionSystem(
       this,
       this.player,
       this.state,
@@ -266,6 +267,7 @@ export class GameScene extends Phaser.Scene {
     this.runEventSystem.update(this.state.elapsedSec);
     this.enemySystem.update();
     this.weaponSystem.update();
+    this.collisionSystem.reconcileProjectileHits(delta);
     this.expSystem.update();
     this.pickupSystem.update();
     this.refreshDevText();

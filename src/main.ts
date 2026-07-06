@@ -35,7 +35,9 @@ const config = {
   physics: {
     default: "arcade",
     arcade: {
-      debug: false
+      debug: false,
+      fps: 60,
+      fixedStep: true
     }
   },
   scene: [BootScene, MenuScene, CollectionScene, GameScene, UIScene, GameOverScene]

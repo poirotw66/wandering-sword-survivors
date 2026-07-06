@@ -25,6 +25,12 @@ import { expDropMultiplierFor } from "../data/runPacing";
 import { expDropBalanceMultiplier } from "../data/runBalance";
 import { runEventPacingOverlay } from "../data/runEvents";
 import { runModifierExpMultiplier, runModifierScoreMultiplier } from "../data/runModifiers";
+import {
+  enemyHitRadius,
+  projectileHitRadius,
+  shouldSweepFastProjectile,
+  sweepHitDistance
+} from "../utils/arcadeHitbox";
 
 type ArcadeOverlapObject = Phaser.Types.Physics.Arcade.GameObjectWithBody | Phaser.Physics.Arcade.Body | Phaser.Physics.Arcade.StaticBody | Phaser.Tilemaps.Tile;
 
@@ -34,7 +40,7 @@ export class CollisionSystem {
     private readonly player: Player,
     private readonly state: GameState,
     private readonly enemySystem: EnemySystem,
-    weaponSystem: WeaponSystem,
+    private readonly weaponSystem: WeaponSystem,
     private readonly expSystem: ExpSystem,
     private readonly pickupSystem: PickupSystem,
     private readonly achievementSystem: AchievementSystem
@@ -52,9 +58,44 @@ export class CollisionSystem {
     scene.physics.add.overlap(player, pickupSystem.healthPickups, this.playerCollectsHealth, undefined, this);
   }
 
+  reconcileProjectileHits(deltaMs: number): void {
+    this.weaponSystem.projectiles.children.each((child) => {
+      const projectile = child as Projectile;
+      if (!projectile.active || !projectile.body) {
+        return true;
+      }
+
+      const projectileRadius = projectileHitRadius(projectile.displayWidth, projectile.displayHeight);
+      const speed = Math.hypot(projectile.body.velocity.x, projectile.body.velocity.y);
+      const sweepAll = projectile.weaponId === "orbitBlade" || speed < 40;
+      if (!sweepAll && !shouldSweepFastProjectile(speed, deltaMs, projectileRadius)) {
+        return true;
+      }
+
+      this.enemySystem.enemies.children.each((enemyChild) => {
+        const enemy = enemyChild as Enemy;
+        if (!enemy.active || projectile.hitIds.has(enemy)) {
+          return true;
+        }
+
+        const enemyRadius = enemy.config.isBoss
+          ? Math.max(enemy.displayWidth, enemy.displayHeight) * 0.34
+          : enemyHitRadius(enemy.displayHeight, enemy.isElite);
+        const hitDistance = sweepHitDistance(enemyRadius, projectileRadius);
+        if (Phaser.Math.Distance.Between(projectile.x, projectile.y, enemy.x, enemy.y) <= hitDistance) {
+          this.applyProjectileHit(projectile, enemy);
+        }
+        return true;
+      });
+      return true;
+    });
+  }
+
   private projectileHitsEnemy(projectileObject: ArcadeOverlapObject, enemyObject: ArcadeOverlapObject): void {
-    const projectile = projectileObject as Projectile;
-    const enemy = enemyObject as Enemy;
+    this.applyProjectileHit(projectileObject as Projectile, enemyObject as Enemy);
+  }
+
+  private applyProjectileHit(projectile: Projectile, enemy: Enemy): void {
     if (!projectile.active || !enemy.active || projectile.hitIds.has(enemy)) {
       return;
     }

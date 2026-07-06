@@ -26,6 +26,12 @@ import {
   wineComboCooldownShaveMs
 } from "../src/data/buildPathSynergy";
 import { getRenderResolution, isMobileHubLayout, isNarrowViewport, isTouchDevice, minionDisplayHeight, playerDisplayHeight } from "../src/utils/display";
+import {
+  enemyHitRadius,
+  projectileHitRadius,
+  shouldSweepFastProjectile,
+  sweepHitDistance
+} from "../src/utils/arcadeHitbox";
 import { EVOLUTION_VFX, evolutionVfxFor } from "../src/data/evolutionVfxProfiles";
 import { bossPresentationFor, isBossEnemyId } from "../src/data/bossPresentation";
 import { eliteTraitFor } from "../src/data/eliteTraits";
@@ -961,6 +967,15 @@ describe("game regression rules", () => {
     expect(MINION_PROJECTILE_SCALE).toBeLessThan(0.25);
     expect(BOSS_NEEDLE_PROJECTILE_SCALE).toBeGreaterThan(MINION_PROJECTILE_SCALE);
     expect(BOSS_NEEDLE_PROJECTILE_SCALE).toBeLessThan(0.42);
+  });
+
+  it("sizes projectile and enemy hit radii for reliable overlap", () => {
+    expect(projectileHitRadius(28, 28)).toBe(14);
+    expect(projectileHitRadius(6, 6)).toBe(10);
+    expect(enemyHitRadius(78, false)).toBeCloseTo(32.76);
+    expect(sweepHitDistance(30, 12)).toBe(42);
+    expect(shouldSweepFastProjectile(470, 16, 12)).toBe(true);
+    expect(shouldSweepFastProjectile(0, 16, 12)).toBe(false);
   });
 
   it("uses elevated spawn density tuning for busier on-screen waves", () => {
