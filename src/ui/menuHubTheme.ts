@@ -73,6 +73,46 @@ export function paintMenuBackdrop(scene: Phaser.Scene, width: number, height: nu
   }
 }
 
+export function paintInkSwordAtmosphere(scene: Phaser.Scene, width: number, height: number, depth = 2): void {
+  const beamX = width * 0.52;
+  const glow = scene.add
+    .rectangle(beamX, height * 0.42, Math.max(36, width * 0.035), height * 1.15, HUB.goldBright, 0.05)
+    .setDepth(depth)
+    .setAngle(16);
+  const core = scene.add
+    .rectangle(beamX, height * 0.42, 3, height * 1.05, HUB.gold, 0.34)
+    .setDepth(depth + 1)
+    .setAngle(16);
+  scene.tweens.add({
+    targets: [glow, core],
+    alpha: { from: 0.22, to: 0.42 },
+    duration: 3200,
+    yoyo: true,
+    repeat: -1,
+    ease: "Sine.easeInOut"
+  });
+
+  const sparkCount = width >= 900 ? 7 : 4;
+  for (let i = 0; i < sparkCount; i += 1) {
+    const t = (i + 1) / (sparkCount + 1);
+    const localY = -height * 0.45 + t * height * 0.9;
+    const rad = Phaser.Math.DegToRad(16);
+    const x = beamX + Math.sin(rad) * localY + Phaser.Math.Between(-8, 8);
+    const y = height * 0.42 + Math.cos(rad) * localY;
+    const spark = scene.add.circle(x, y, Phaser.Math.Between(1, 2), HUB.parchment, 0.35).setDepth(depth + 2);
+    scene.tweens.add({
+      targets: spark,
+      alpha: { from: 0.08, to: 0.45 },
+      y: spark.y + Phaser.Math.Between(8, 24),
+      duration: Phaser.Math.Between(2400, 4200),
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut",
+      delay: i * 180
+    });
+  }
+}
+
 export function drawScrollPanel(
   scene: Phaser.Scene,
   centerX: number,

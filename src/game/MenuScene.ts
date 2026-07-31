@@ -28,7 +28,7 @@ import {
 import { readAudioSettings, writeAudioSettings, type AudioSettings } from "../data/audioSettings";
 import { AchievementSystem } from "../systems/AchievementSystem";
 import { TITLE_FONT, UI_FONT } from "../ui/textStyle";
-import { drawGoalRibbon, drawScrollPanel, drawSectionTabCentered, drawHubBorderFrame, drawVerticalCouplet, drawInkSwordStrokes, spawnHubPetals, paintHubMapLayer, HUB, paintMenuBackdrop } from "../ui/menuHubTheme";
+import { drawGoalRibbon, drawScrollPanel, drawSectionTabCentered, drawHubBorderFrame, drawVerticalCouplet, drawInkSwordStrokes, spawnHubPetals, paintHubMapLayer, HUB, paintMenuBackdrop, paintInkSwordAtmosphere } from "../ui/menuHubTheme";
 import { mountHubBgm } from "../audio/mountHubBgm";
 import { isMobileHubLayout, isTouchDevice, safeInset } from "../utils/display";
 import { titleProgressFor } from "../data/metaProgression";
@@ -82,6 +82,11 @@ type HubLayout = {
   tight: boolean;
   mobileHub: boolean;
   showDifficultyHint: boolean;
+  dualColumn: boolean;
+  brandX: number;
+  brandWidth: number;
+  settingsCenterX: number;
+  settingsWidth: number;
 };
 
 export class MenuScene extends Phaser.Scene {
@@ -131,34 +136,40 @@ export class MenuScene extends Phaser.Scene {
     const layout = this.computeLayout(width, height);
     this.paintBackground(width, height, layout);
     this.createTopBar(width, layout, record, bonuses);
-    this.paintHeader(width, layout);
-    drawGoalRibbon(this, width / 2, layout.goal.y, layout.goal.height, Math.min(layout.panelWidth - 48, 640));
-    const goalTextY = layout.showDifficultyHint ? layout.goal.y + 10 : this.zoneCenter(layout.goal);
-    this.add
-      .text(width / 2, goalTextY, formatNextGoalLine(nextRunGoal(record)), {
-        fontFamily: UI_FONT,
-        fontSize: layout.mobileHub ? "11px" : layout.tight ? "12px" : "13px",
-        color: "#84f7b2",
-        align: "center",
-        wordWrap: { width: layout.panelWidth - (layout.mobileHub ? 32 : 96) }
-      })
-      .setDepth(9)
-      .setOrigin(0.5, layout.showDifficultyHint ? 0 : 0.5);
-    if (layout.showDifficultyHint) {
+    if (layout.dualColumn) {
+      this.paintBrandColumn(width, layout, record, bonuses);
+      this.createRunConfigPanel(record, unlocked, layout);
+      this.createFooterHints(width, layout);
+    } else {
+      this.paintHeader(width, layout);
+      drawGoalRibbon(this, width / 2, layout.goal.y, layout.goal.height, Math.min(layout.panelWidth - 48, 640));
+      const goalTextY = layout.showDifficultyHint ? layout.goal.y + 10 : this.zoneCenter(layout.goal);
       this.add
-        .text(width / 2, layout.goal.y + layout.goal.height - 8, t("difficultyHint"), {
+        .text(width / 2, goalTextY, formatNextGoalLine(nextRunGoal(record)), {
           fontFamily: UI_FONT,
-          fontSize: "10px",
-          color: "#566678",
+          fontSize: layout.mobileHub ? "11px" : layout.tight ? "12px" : "13px",
+          color: "#84f7b2",
           align: "center",
-          wordWrap: { width: layout.panelWidth - 96 }
+          wordWrap: { width: layout.panelWidth - (layout.mobileHub ? 32 : 96) }
         })
         .setDepth(9)
-        .setOrigin(0.5, 1);
+        .setOrigin(0.5, layout.showDifficultyHint ? 0 : 0.5);
+      if (layout.showDifficultyHint) {
+        this.add
+          .text(width / 2, layout.goal.y + layout.goal.height - 8, t("difficultyHint"), {
+            fontFamily: UI_FONT,
+            fontSize: "10px",
+            color: "#566678",
+            align: "center",
+            wordWrap: { width: layout.panelWidth - 96 }
+          })
+          .setDepth(9)
+          .setOrigin(0.5, 1);
+      }
+      this.createRunConfigPanel(record, unlocked, layout);
+      this.createSelectionSummary(bonuses, width, layout);
+      this.createActionFooter(width, layout);
     }
-    this.createRunConfigPanel(record, unlocked, width, layout);
-    this.createSelectionSummary(bonuses, width, layout);
-    this.createActionFooter(width, layout, record);
 
     mountHubBgm(this);
     this.scale.off("resize", this.onResize, this);
@@ -315,9 +326,43 @@ export class MenuScene extends Phaser.Scene {
     const run: HubZone = { y: goal.y + metrics.goalH + metrics.gap, height: runH };
     const middlePad = middleBottom - middleTop - blockH;
     const hidePitch = mobileHub || tight || middlePad < 32 || width < 640;
+    const dualColumn = !mobileHub && width >= 900;
+    const contentLeft = dualColumn ? Math.max(48, width * 0.06) : width / 2 - Math.min(mobileHub ? width - 20 : 900, width - (mobileHub ? 20 : 48)) / 2;
+    const panelWidth = Math.min(mobileHub ? width - 20 : 900, width - (mobileHub ? 20 : 48));
+    const brandWidth = dualColumn ? Math.min(460, width * 0.42) : panelWidth;
+    const settingsWidth = dualColumn ? Math.min(420, Math.max(300, width * 0.34)) : panelWidth;
+    const settingsCenterX = dualColumn ? width - Math.max(48, width * 0.06) - settingsWidth / 2 : width / 2;
+    const brandX = dualColumn ? contentLeft : width / 2;
+
+    if (dualColumn) {
+      const contentTop = metrics.topBarH + Math.max(metrics.gap, 12);
+      const contentBottom = height - metrics.footerH - 8;
+      const dualRunH = Math.max(320, contentBottom - contentTop);
+      return {
+        panelWidth,
+        topBar,
+        header: { y: contentTop, height: dualRunH },
+        goal: { y: contentTop, height: 0 },
+        run: { y: contentTop, height: dualRunH },
+        summary: { y: contentBottom, height: 0 },
+        actions: { y: contentBottom, height: 0 },
+        footer,
+        stackActions: false,
+        hidePitch: false,
+        compact,
+        tight,
+        mobileHub,
+        showDifficultyHint: false,
+        dualColumn: true,
+        brandX,
+        brandWidth,
+        settingsCenterX,
+        settingsWidth
+      };
+    }
 
     return {
-      panelWidth: Math.min(mobileHub ? width - 20 : 900, width - (mobileHub ? 20 : 48)),
+      panelWidth,
       topBar,
       header,
       goal,
@@ -330,7 +375,12 @@ export class MenuScene extends Phaser.Scene {
       compact: compact || mobileHub,
       tight: tight || mobileHub,
       mobileHub,
-      showDifficultyHint: mobileHub ? false : showDifficultyHint
+      showDifficultyHint: mobileHub ? false : showDifficultyHint,
+      dualColumn: false,
+      brandX: width / 2,
+      brandWidth: panelWidth,
+      settingsCenterX: width / 2,
+      settingsWidth: panelWidth
     };
   }
 
@@ -378,12 +428,15 @@ export class MenuScene extends Phaser.Scene {
     if (!layout.tight) {
       paintHubMapLayer(this, width, height, 1, width >= 900 ? 0.05 : 0.03);
     }
+    if (!layout.mobileHub) {
+      paintInkSwordAtmosphere(this, width, height, 2);
+    }
     drawHubBorderFrame(this, width, height, 3);
     if (!layout.tight) {
       drawInkSwordStrokes(this, width, height, 2);
       spawnHubPetals(this, width, height, layout.compact ? 4 : 6);
     }
-    if (!layout.tight && width >= 900 && panelLeft > 108) {
+    if (!layout.tight && width >= 900 && panelLeft > 108 && !layout.dualColumn) {
       drawVerticalCouplet(this, 42, height * 0.44, t("menuHubCoupletLeft").split(""), 4);
       drawVerticalCouplet(this, width - 42, height * 0.44, t("menuHubCoupletRight").split(""), 4);
     }
@@ -415,12 +468,188 @@ export class MenuScene extends Phaser.Scene {
         color: "#9eb4c8",
         align: "center",
         lineSpacing: layout.mobileHub ? 2 : 3,
-        wordWrap: { width: Math.max(180, width - sideReserve * 2) }
+        wordWrap: { width: Math.max(160, width - sideReserve * 2 - (layout.mobileHub ? 40 : 80)) }
       })
       .setDepth(11)
       .setOrigin(0.5);
+    this.createTopNavChips(record, layout);
     this.createLanguageToggle(width, layout.topBar.y + (layout.mobileHub ? 6 : 8));
-    this.createAudioControls(width, controlsY, layout.compact, sideReserve, layout.mobileHub);
+    if (layout.dualColumn) {
+      this.createCompactMuteChip(width, layout.topBar.y + 8);
+    } else {
+      this.createAudioControls(width, controlsY, layout.compact, sideReserve, layout.mobileHub);
+    }
+  }
+
+  private createTopNavChips(record: ReturnType<typeof AchievementSystem.readRecord>, layout: HubLayout): void {
+    const y = layout.topBar.y + (layout.mobileHub ? 6 : 8);
+    const chipStyle = {
+      fontFamily: UI_FONT,
+      fontSize: layout.mobileHub ? "10px" : "11px",
+      color: "#f7c66b",
+      backgroundColor: "#192033",
+      padding: { left: 8, right: 8, top: 4, bottom: 4 }
+    } as const;
+    const languageReserve = layout.mobileHub ? 92 : 108;
+    let right = this.scale.width - languageReserve;
+
+    const collection = this.add
+      .text(right, y, t("collectionButton"), {
+        ...chipStyle,
+        color: "#aac7d8"
+      })
+      .setOrigin(1, 0)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true });
+    collection.on("pointerover", () => collection.setColor("#f7c66b"));
+    collection.on("pointerout", () => collection.setColor("#aac7d8"));
+    collection.on("pointerdown", () => this.scene.start("CollectionScene"));
+
+    right -= collection.width + 8;
+    const shop = this.add
+      .text(right, y, t("renownShopButton"), chipStyle)
+      .setOrigin(1, 0)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true });
+    shop.on("pointerover", () => shop.setColor("#ffd36a"));
+    shop.on("pointerout", () => shop.setColor("#f7c66b"));
+    shop.on("pointerdown", () => this.openRenownShop(record));
+  }
+
+  private paintBrandColumn(
+    _width: number,
+    layout: HubLayout,
+    record: ReturnType<typeof AchievementSystem.readRecord>,
+    bonuses: ReturnType<typeof metaBonusesFromShop>
+  ): void {
+    const x = layout.brandX;
+    const top = layout.run.y + 18;
+    const title = t("title");
+    const titleLines = title.length > 6 ? `${title.slice(0, Math.ceil(title.length / 2))}\n${title.slice(Math.ceil(title.length / 2))}` : title;
+
+    this.add
+      .text(x, top, t("menuBrandEyebrow"), {
+        fontFamily: UI_FONT,
+        fontSize: "12px",
+        color: "#c9a24d"
+      })
+      .setDepth(9)
+      .setOrigin(0, 0);
+
+    const titleText = this.add
+      .text(x, top + 28, titleLines, {
+        fontFamily: TITLE_FONT,
+        fontSize: layout.compact ? "40px" : "48px",
+        color: "#f7efd8",
+        fontStyle: "700",
+        lineSpacing: 8
+      })
+      .setPadding(0, 8, 0, 8)
+      .setDepth(9)
+      .setOrigin(0, 0);
+
+    this.add
+      .rectangle(x, titleText.y + titleText.height + 10, Math.min(180, layout.brandWidth * 0.45), 2, HUB.gold, 0.45)
+      .setOrigin(0, 0.5)
+      .setDepth(8);
+
+    this.add
+      .text(x, titleText.y + titleText.height + 24, t("menuSubtitle"), {
+        fontFamily: TITLE_FONT,
+        fontSize: "17px",
+        color: "#c9a24d",
+        fontStyle: "italic"
+      })
+      .setDepth(9)
+      .setOrigin(0, 0);
+
+    this.add
+      .text(x, titleText.y + titleText.height + 54, t("menuPitch"), {
+        fontFamily: UI_FONT,
+        fontSize: "15px",
+        color: "#9eb4c8",
+        lineSpacing: 6,
+        wordWrap: { width: layout.brandWidth - 12 }
+      })
+      .setDepth(9)
+      .setOrigin(0, 0);
+
+    const startY = Math.min(layout.run.y + layout.run.height - 120, titleText.y + titleText.height + 150);
+    const start = this.add
+      .text(x, startY, t("startRun"), {
+        fontFamily: TITLE_FONT,
+        fontSize: "26px",
+        color: "#1a1208",
+        backgroundColor: "#f7c66b",
+        padding: { left: 28, right: 28, top: 12, bottom: 12 }
+      })
+      .setDepth(9)
+      .setOrigin(0, 0)
+      .setInteractive({ useHandCursor: true });
+    start.on("pointerover", () => start.setBackgroundColor("#ffd36a"));
+    start.on("pointerout", () => start.setBackgroundColor("#f7c66b"));
+    start.on("pointerdown", () => this.startRun());
+    this.input.keyboard?.once("keydown-SPACE", () => this.startRun());
+    this.tweens.add({
+      targets: start,
+      scaleX: { from: 1, to: 1.03 },
+      scaleY: { from: 1, to: 1.03 },
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut"
+    });
+
+    const styleTitle = buildPathName(this.selectedStartStyle);
+    this.add
+      .text(
+        x,
+        startY + 58,
+        t("menuHubRunSummary", {
+          difficulty: this.selectedDifficulty,
+          style: styleTitle,
+          modifier: runModifierLabel(this.selectedRunModifier),
+          title: t(bonuses.titleKey)
+        }),
+        {
+          fontFamily: UI_FONT,
+          fontSize: "12px",
+          color: "#aac7d8",
+          wordWrap: { width: layout.brandWidth - 8 }
+        }
+      )
+      .setDepth(9)
+      .setOrigin(0, 0);
+
+    this.add
+      .text(x, startY + 86, formatNextGoalLine(nextRunGoal(record)), {
+        fontFamily: UI_FONT,
+        fontSize: "12px",
+        color: "#84f7b2",
+        wordWrap: { width: layout.brandWidth - 8 }
+      })
+      .setDepth(9)
+      .setOrigin(0, 0);
+  }
+
+  private createCompactMuteChip(width: number, y: number): void {
+    const settings = readAudioSettings();
+    const mute = this.add
+      .text(width - 12, y + 28, settings.muted ? t("audioMutedLabel") : "♪", {
+        fontFamily: UI_FONT,
+        fontSize: "11px",
+        color: settings.muted ? "#ff7687" : "#d8e2eb",
+        backgroundColor: "#192033",
+        padding: { left: 8, right: 8, top: 4, bottom: 4 }
+      })
+      .setOrigin(1, 0)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true });
+    mute.on("pointerdown", () => {
+      const current = readAudioSettings();
+      writeAudioSettings({ ...current, muted: !current.muted });
+      this.scene.restart();
+    });
   }
 
   private paintHeader(width: number, layout: HubLayout): void {
@@ -486,13 +715,12 @@ export class MenuScene extends Phaser.Scene {
   private createRunConfigPanel(
     record: ReturnType<typeof AchievementSystem.readRecord>,
     unlocked: number[],
-    width: number,
     layout: HubLayout
   ): void {
     const { contentTop, innerWidth, innerLeft, panelBottom } = this.addSectionPanel(
-      width / 2,
+      layout.settingsCenterX,
       layout.run,
-      layout.panelWidth,
+      layout.settingsWidth,
       t("menuHubRunSection")
     );
 
@@ -500,7 +728,8 @@ export class MenuScene extends Phaser.Scene {
     this.runConfigScrollY = 0;
     const maskTop = contentTop + 2;
     const maskHeight = Math.max(120, panelBottom - maskTop - 6);
-    const host = layout.mobileHub ? this.add.container(width / 2, contentTop).setDepth(9) : undefined;
+    const needsScrollHost = layout.mobileHub || layout.dualColumn;
+    const host = needsScrollHost ? this.add.container(layout.settingsCenterX, contentTop).setDepth(9) : undefined;
     if (host) {
       this.runConfigContent = host;
       this.runConfigContentBaseY = contentTop;
@@ -514,9 +743,9 @@ export class MenuScene extends Phaser.Scene {
       this.input.on("wheel", this.handleRunConfigWheel, this);
     }
 
-    const labelGap = layout.mobileHub ? 10 : layout.tight ? 14 : 18;
+    const labelGap = layout.mobileHub ? 10 : layout.dualColumn ? 12 : layout.tight ? 14 : 18;
     let cursorY = 4;
-    const sectionCenterX = host ? 0 : width / 2;
+    const sectionCenterX = host ? 0 : layout.settingsCenterX;
 
     const diffLabel = this.hubText(sectionCenterX, cursorY, `— ${t("menuHubDifficultyRow")} —`, {
       fontFamily: TITLE_FONT,
@@ -791,9 +1020,9 @@ export class MenuScene extends Phaser.Scene {
     host?: Phaser.GameObjects.Container
   ): number {
     const options = startStyleOptions(record);
-    const tileHeight = layout.mobileHub ? 52 : layout.tight ? 66 : layout.compact ? 72 : 78;
+    const columns = layout.mobileHub || layout.dualColumn || innerWidth < 440 || layout.tight ? 2 : options.length;
+    const tileHeight = layout.mobileHub ? 52 : layout.dualColumn ? 58 : layout.tight ? 66 : layout.compact ? 72 : 78;
     const rowGap = layout.mobileHub ? 6 : 8;
-    const columns = layout.mobileHub || innerWidth < 440 || layout.tight ? 2 : options.length;
     const tileWidth = Math.floor((innerWidth - (columns - 1) * 10) / columns);
     const gridLeft = centerX - innerWidth / 2;
 
@@ -916,17 +1145,9 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5);
   }
 
-  private createActionFooter(
-    width: number,
-    layout: HubLayout,
-    record: ReturnType<typeof AchievementSystem.readRecord>
-  ): void {
+  private createActionFooter(width: number, layout: HubLayout): void {
     const stackedFooter = layout.stackActions || layout.tight || width < 560;
     const startY = layout.actions.y + (stackedFooter ? 8 : layout.tight ? 10 : 14);
-    const secondaryY = stackedFooter ? startY + 48 : layout.actions.y + layout.actions.height - (layout.tight ? 12 : 16);
-    const pairHalf = stackedFooter ? 86 : Math.min(110, layout.panelWidth * 0.14);
-    const shopX = width / 2 - pairHalf - 8;
-    const collectionX = width / 2 + pairHalf + 8;
 
     this.add
       .rectangle(width / 2, layout.actions.y - 6, layout.panelWidth, 1, HUB.goldDim, 0.45)
@@ -945,60 +1166,9 @@ export class MenuScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setInteractive({ useHandCursor: true });
 
-    const shop = this.add
-      .text(shopX, secondaryY, t("renownShopButton"), {
-        fontFamily: TITLE_FONT,
-        fontSize: "18px",
-        color: "#1a1208",
-        backgroundColor: "#f7c66b",
-        padding: { left: 20, right: 20, top: 10, bottom: 10 }
-      })
-      .setDepth(9)
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    const collection = this.add
-      .text(collectionX, secondaryY, t("collectionButton"), {
-        fontFamily: TITLE_FONT,
-        fontSize: "18px",
-        color: "#f7c66b",
-        backgroundColor: "#101820",
-        padding: { left: 20, right: 20, top: 10, bottom: 10 }
-      })
-      .setDepth(9)
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    const footerCenterY = this.zoneCenter(layout.footer);
-    if (!isTouchDevice()) {
-      this.add
-        .text(width / 2, footerCenterY - 10, t("menuStartHint"), {
-          fontFamily: UI_FONT,
-          fontSize: "12px",
-          color: "#6f8296"
-        })
-        .setOrigin(0.5);
-      this.add
-        .text(width / 2, footerCenterY + 12, t("controls"), {
-          fontFamily: UI_FONT,
-          fontSize: "13px",
-          color: "#6f8296",
-          align: "center",
-          lineSpacing: 4
-        })
-        .setPadding(0, 4, 0, 4)
-        .setOrigin(0.5);
-    }
-
     start.on("pointerover", () => start.setBackgroundColor("#ffd36a"));
     start.on("pointerout", () => start.setBackgroundColor("#f7c66b"));
     start.on("pointerdown", () => this.startRun());
-    shop.on("pointerover", () => shop.setBackgroundColor("#ffd36a"));
-    shop.on("pointerout", () => shop.setBackgroundColor("#f7c66b"));
-    shop.on("pointerdown", () => this.openRenownShop(record));
-    collection.on("pointerover", () => collection.setColor("#ffd36a"));
-    collection.on("pointerout", () => collection.setColor("#f7c66b"));
-    collection.on("pointerdown", () => this.scene.start("CollectionScene"));
     this.input.keyboard?.once("keydown-SPACE", () => this.startRun());
 
     this.tweens.add({
@@ -1010,6 +1180,34 @@ export class MenuScene extends Phaser.Scene {
       repeat: -1,
       ease: "Sine.easeInOut"
     });
+
+    this.createFooterHints(width, layout);
+  }
+
+  private createFooterHints(width: number, layout: HubLayout): void {
+    if (isTouchDevice()) {
+      return;
+    }
+    const footerCenterY = this.zoneCenter(layout.footer);
+    this.add
+      .text(width / 2, footerCenterY - (layout.dualColumn ? 0 : 10), t("menuStartHint"), {
+        fontFamily: UI_FONT,
+        fontSize: "12px",
+        color: "#6f8296"
+      })
+      .setOrigin(0.5);
+    if (!layout.dualColumn) {
+      this.add
+        .text(width / 2, footerCenterY + 12, t("controls"), {
+          fontFamily: UI_FONT,
+          fontSize: "13px",
+          color: "#6f8296",
+          align: "center",
+          lineSpacing: 4
+        })
+        .setPadding(0, 4, 0, 4)
+        .setOrigin(0.5);
+    }
   }
 
   private createLanguageToggle(width: number, y: number): void {
