@@ -78,6 +78,9 @@ For each issue, note: **time mark**, **build path**, **difficulty**, **device**.
 | Wine sword sect | | | | |
 | Mobile HUD | | | | |
 | Mobile hub | | | | |
+| Mobile pause/status chips | | | | |
+| Mobile upgrade scroll vs pick | | | | |
+| Boss bar vs loadout overlap | | | | |
 
 ## Pass Criteria
 

@@ -15,7 +15,16 @@ import { VirtualJoystick } from "../ui/VirtualJoystick";
 import { formatCompactNumber } from "../utils/math";
 import { evolutionPreviewLine } from "../data/buildPathSynergy";
 import type { BossLegacySummary } from "../data/bossLegacy";
-import { isCompactViewport, isNarrowViewport, isTouchDevice, joystickRadius, safeInset } from "../utils/display";
+import {
+  getSafeInsets,
+  isCompactViewport,
+  isMobileCombatLayout,
+  isNarrowViewport,
+  isTouchDevice,
+  joystickRadius,
+  refreshSafeInsets,
+  safeInset
+} from "../utils/display";
 
 export class UIScene extends Phaser.Scene {
   private state!: GameState;
@@ -37,8 +46,12 @@ export class UIScene extends Phaser.Scene {
   private legacyPanel?: Phaser.GameObjects.Container;
   private bossIntroPanel?: Phaser.GameObjects.Container;
   private pauseOverlay!: Phaser.GameObjects.Container;
+  private pauseHintText!: Phaser.GameObjects.Text;
   private upgradePanel!: UpgradePanel;
   private virtualJoystick?: VirtualJoystick;
+  private pauseChip?: Phaser.GameObjects.Text;
+  private statusChip?: Phaser.GameObjects.Text;
+  private bossBarVisible = false;
 
   constructor() {
     super("UIScene");
@@ -89,6 +102,7 @@ export class UIScene extends Phaser.Scene {
       .setScrollFactor(0);
     this.loadoutBar = new LoadoutBar(this, 24, 0);
     this.statusPanel = new StatusPanel(this);
+    this.statusPanel.setDismissHandler(() => this.events.emit("ui-toggle-status"));
     this.levelText.setText(t("hudPlayerLevel", { level: state.level }));
     this.bossText = this.add
       .text(this.scale.width / 2, 62, "", { fontFamily: UI_FONT, fontSize: "21px", color: "#ff7687", fontStyle: "700" })
@@ -98,6 +112,7 @@ export class UIScene extends Phaser.Scene {
     this.bossBar = this.createBossBar();
     this.pauseOverlay = this.createPauseOverlay();
     this.upgradePanel = new UpgradePanel(this);
+    this.createTouchHudChips();
     this.virtualJoystick = new VirtualJoystick(this, 88, this.scale.height - 108, (x, y) => {
       this.scene.get("GameScene").events.emit("virtual-move", x, y);
     });
@@ -116,7 +131,10 @@ export class UIScene extends Phaser.Scene {
       );
     });
     this.events.on("hide-upgrades", () => this.upgradePanel.hide());
-    this.events.on("pause-changed", (paused: boolean) => this.pauseOverlay.setVisible(paused));
+    this.events.on("pause-changed", (paused: boolean) => {
+      this.pauseOverlay.setVisible(paused);
+      this.pauseHintText?.setText(isTouchDevice() ? t("pauseHintTouch") : t("pauseHint"));
+    });
     this.events.on("status-changed", (visible: boolean) => {
       this.statusPanel.setVisible(visible, this.state);
     });
@@ -159,12 +177,12 @@ export class UIScene extends Phaser.Scene {
       })
     );
     this.layoutHud();
-    const narrow = isNarrowViewport(this.scale.width);
+    const mobile = isMobileCombatLayout(this.scale.width, this.scale.height);
     const rewardSuffix =
       this.state.difficultyRewardMultiplier > 1
         ? `  ×${Math.round(this.state.difficultyRewardMultiplier * 100)}%`
         : "";
-    if (narrow) {
+    if (mobile) {
       this.scoreText.setText(
         `${t("renown")} ${this.state.score}${rewardSuffix}\n${t("defeated")} ${this.state.kills}`
       );
@@ -179,7 +197,6 @@ export class UIScene extends Phaser.Scene {
         banish: this.state.banishCharges
       })
     );
-    this.hudHintText.setVisible(!isNarrowViewport(this.scale.width));
     const preview = evolutionPreviewLine(this.state);
     this.evolutionPreviewText.setText(preview ?? "");
     this.evolutionPreviewText.setVisible(Boolean(preview));
@@ -188,46 +205,58 @@ export class UIScene extends Phaser.Scene {
   }
 
   private resize(): void {
+    refreshSafeInsets();
     const width = this.scale.width;
+    const height = this.scale.height;
+    const insets = getSafeInsets();
     this.expBar.resize(width);
     this.layoutHud();
     if (this.virtualJoystick) {
-      const insetLeft = safeInset("left");
-      const insetBottom = safeInset("bottom");
       const radius = joystickRadius();
       this.virtualJoystick.setPosition(
-        insetLeft + radius + 20,
-        this.scale.height - insetBottom - radius - 20
+        insets.left + radius + 20,
+        height - insets.bottom - radius - 20
       );
     }
     if (this.pauseOverlay) {
-      this.pauseOverlay.setPosition(width / 2, this.scale.height / 2);
+      this.pauseOverlay.setPosition(width / 2, height / 2);
       const bg = this.pauseOverlay.getByName("pause-bg") as Phaser.GameObjects.Rectangle | null;
-      bg?.setSize(width, this.scale.height);
+      bg?.setSize(width, height);
     }
-    if (this.bossBar) {
-      this.bossBar.setPosition(width / 2, this.scale.height - 40);
-      const bossScale = isNarrowViewport(width) ? Math.min(1, (width - 32) / 420) : 1;
-      this.bossBar.setScale(bossScale);
-    }
+    this.layoutBossBar();
     if (this.bossText) {
-      const insetTop = safeInset("top");
-      this.bossText.setPosition(width / 2, insetTop + (isNarrowViewport(width) ? 72 : 62));
+      this.bossText.setPosition(width / 2, insets.top + (isMobileCombatLayout(width, height) ? 72 : 62));
     }
+  }
+
+  private layoutBossBar(): void {
+    if (!this.bossBar) {
+      return;
+    }
+    const width = this.scale.width;
+    const height = this.scale.height;
+    const insets = getSafeInsets();
+    const mobile = isMobileCombatLayout(width, height);
+    const bossScale = mobile ? Math.min(1, (width - 32) / 420) : 1;
+    this.bossBar.setScale(bossScale);
+    const barY = height - insets.bottom - (mobile ? 34 : 40);
+    this.bossBar.setPosition(width / 2, barY);
   }
 
   private layoutHud(): void {
     const width = this.scale.width;
     const height = this.scale.height;
-    const insetLeft = safeInset("left");
-    const insetRight = safeInset("right");
-    const insetTop = safeInset("top");
-    const insetBottom = safeInset("bottom");
+    const insets = getSafeInsets();
+    const insetLeft = insets.left;
+    const insetRight = insets.right;
+    const insetTop = insets.top;
+    const insetBottom = insets.bottom;
+    const mobile = isMobileCombatLayout(width, height);
     const narrow = isNarrowViewport(width);
-    const margin = narrow ? 10 : 16;
-    const topY = insetTop + (narrow ? 10 : 18);
+    const margin = mobile ? 10 : 16;
+    const topY = insetTop + (mobile ? 10 : 18);
 
-    if (narrow) {
+    if (mobile) {
       const columnGap = 8;
       const leftColumnWidth = Math.min(128, width * 0.3);
       const rightColumnWidth = Math.min(108, width * 0.28);
@@ -256,13 +285,15 @@ export class UIScene extends Phaser.Scene {
       });
 
       this.hudHintText.setPosition(rightX, topY + 44);
+      this.hudHintText.setVisible(false);
 
       this.loadoutBar.setCompactMode(true);
       this.loadoutBar.setDisplayScale(1);
       const loadoutW = this.loadoutBar.getWidth();
       const loadoutH = this.loadoutBar.getHeight();
+      const bossReserve = this.bossBarVisible ? 70 : 12;
       const loadoutX = width - insetRight - margin - loadoutW;
-      const loadoutY = height - insetBottom - loadoutH - 48;
+      const loadoutY = height - insetBottom - loadoutH - bossReserve;
       this.loadoutBar.setPosition(loadoutX, loadoutY);
 
       const preview = evolutionPreviewLine(this.state);
@@ -272,6 +303,12 @@ export class UIScene extends Phaser.Scene {
         wordWrap: { width: Math.min(leftColumnWidth + 40, centerX - leftX - columnGap) }
       });
       this.evolutionPreviewText.setVisible(Boolean(preview));
+
+      if (this.pauseChip && this.statusChip) {
+        const chipY = topY + 62;
+        this.pauseChip.setPosition(rightX, chipY).setVisible(true);
+        this.statusChip.setPosition(rightX - this.pauseChip.width - 8, chipY).setVisible(true);
+      }
     } else {
       this.healthBar.setBarWidth(200);
       const hpLeft = insetLeft + margin;
@@ -290,12 +327,13 @@ export class UIScene extends Phaser.Scene {
       this.difficultyText.setPosition(width / 2, topY + 28);
       this.difficultyText.setFontSize("12px");
 
-      this.scoreText.setPosition(width - 24, topY + 8);
+      this.scoreText.setPosition(width - insetRight - 24, topY + 8);
       this.scoreText.setOrigin(1, 0);
       this.scoreText.setFontSize("18px");
       this.scoreText.setStyle({ wordWrap: { width: 0 } });
 
-      this.hudHintText.setPosition(width - 24, topY + 30);
+      this.hudHintText.setPosition(width - insetRight - 24, topY + 30);
+      this.hudHintText.setVisible(!narrow);
 
       this.loadoutBar.setCompactMode(false);
       this.loadoutBar.setDisplayScale(1);
@@ -306,37 +344,76 @@ export class UIScene extends Phaser.Scene {
       this.evolutionPreviewText.setStyle({
         wordWrap: { width: Math.min(320, width - loadoutLeft - 24) }
       });
+
+      this.pauseChip?.setVisible(false);
+      this.statusChip?.setVisible(false);
     }
 
-    if (isTouchDevice() && !narrow) {
+    this.layoutBossBar();
+
+    if (isTouchDevice() && !mobile) {
       this.scoreText.setFontSize("16px");
       this.bossText.setFontSize("18px");
-    } else if (!narrow) {
+    } else if (!mobile) {
       this.bossText.setFontSize("21px");
     } else {
       this.bossText.setFontSize("17px");
     }
   }
 
+  private createTouchHudChips(): void {
+    if (!isTouchDevice()) {
+      return;
+    }
+    const chipStyle = {
+      fontFamily: UI_FONT,
+      fontSize: "12px",
+      color: "#f7c66b",
+      backgroundColor: "#192033cc",
+      padding: { left: 10, right: 10, top: 6, bottom: 6 }
+    } as const;
+    this.pauseChip = this.add
+      .text(0, 0, t("hudPauseButton"), chipStyle)
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(860)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.pauseChip.on("pointerdown", () => this.events.emit("ui-toggle-pause"));
+
+    this.statusChip = this.add
+      .text(0, 0, t("hudStatusButton"), {
+        ...chipStyle,
+        color: "#aac7d8"
+      })
+      .setOrigin(1, 0)
+      .setScrollFactor(0)
+      .setDepth(860)
+      .setInteractive({ useHandCursor: true })
+      .setVisible(false);
+    this.statusChip.on("pointerdown", () => this.events.emit("ui-toggle-status"));
+  }
+
   private createPauseOverlay(): Phaser.GameObjects.Container {
     const { width, height } = this.scale;
     const container = this.add.container(width / 2, height / 2).setDepth(900).setScrollFactor(0).setVisible(false);
-    const bg = this.add.rectangle(0, 0, width, height, 0x050711, 0.68).setName("pause-bg");
+    const bg = this.add.rectangle(0, 0, width, height, 0x050711, 0.68).setName("pause-bg").setInteractive();
+    bg.on("pointerdown", () => this.events.emit("ui-toggle-pause"));
     const title = this.add
       .text(0, -28, t("paused"), {
         fontFamily: TITLE_FONT,
-        fontSize: "46px",
+        fontSize: isTouchDevice() ? "40px" : "46px",
         color: "#f7efd8"
       })
       .setOrigin(0.5);
-    const hint = this.add
-      .text(0, 34, t("pauseHint"), {
+    this.pauseHintText = this.add
+      .text(0, 34, isTouchDevice() ? t("pauseHintTouch") : t("pauseHint"), {
         fontFamily: UI_FONT,
         fontSize: "18px",
         color: "#aac7d8"
       })
       .setOrigin(0.5);
-    container.add([bg, title, hint]);
+    container.add([bg, title, this.pauseHintText]);
     return container;
   }
 
@@ -370,7 +447,9 @@ export class UIScene extends Phaser.Scene {
 
   private updateBossBar(hp: number, maxHp: number, name: string): void {
     const ratio = Phaser.Math.Clamp(hp / maxHp, 0, 1);
-    this.bossBar.setVisible(ratio > 0);
+    const wasVisible = this.bossBarVisible;
+    this.bossBarVisible = ratio > 0;
+    this.bossBar.setVisible(this.bossBarVisible);
     this.bossBarFill.width = 416 * ratio;
     const percent = Math.round(ratio * 100);
     this.bossBarLabel.setText(
@@ -378,6 +457,9 @@ export class UIScene extends Phaser.Scene {
     );
     if (ratio <= 0) {
       this.clearBossTechnique();
+    }
+    if (wasVisible !== this.bossBarVisible) {
+      this.layoutHud();
     }
   }
 
@@ -404,7 +486,8 @@ export class UIScene extends Phaser.Scene {
     const portraitScale = presentation?.portraitScale ?? 1.1;
     const textureKey = this.textures.exists(config.spriteKey) ? config.spriteKey : "boss-master";
 
-    const container = this.add.container(centerX, 118).setDepth(880).setScrollFactor(0).setAlpha(0);
+    const introY = safeInset("top") + (isMobileCombatLayout(this.scale.width, this.scale.height) ? 96 : 118);
+    const container = this.add.container(centerX, introY).setDepth(880).setScrollFactor(0).setAlpha(0);
     const backdrop = this.add.rectangle(0, 0, Math.min(420, this.scale.width - 48), 148, 0x120d18, 0.9).setStrokeStyle(3, frameColor, 0.95);
     const portrait = this.add.image(0, -8, textureKey).setScale(portraitScale);
     const frame = this.add.rectangle(0, -8, portrait.displayWidth + 18, portrait.displayHeight + 18, 0x000000, 0).setStrokeStyle(4, frameColor, 0.92);
@@ -440,7 +523,7 @@ export class UIScene extends Phaser.Scene {
     this.tweens.add({
       targets: container,
       alpha: 1,
-      y: 108,
+      y: introY - 10,
       duration: 280,
       ease: "Back.easeOut"
     });
@@ -473,7 +556,8 @@ export class UIScene extends Phaser.Scene {
     this.legacyPanel?.destroy();
     const { width } = this.scale;
     const panelWidth = Math.min(560, width - 52);
-    const container = this.add.container(width / 2, 120).setDepth(920).setScrollFactor(0);
+    const legacyY = safeInset("top") + (isMobileCombatLayout(width, this.scale.height) ? 88 : 120);
+    const container = this.add.container(width / 2, legacyY).setDepth(920).setScrollFactor(0);
     const bg = this.add.rectangle(0, 0, panelWidth, 118, 0x16101d, 0.92).setStrokeStyle(2, 0xffd36a, 0.9);
     const title = this.add
       .text(0, -46, summary.title, {
@@ -498,7 +582,7 @@ export class UIScene extends Phaser.Scene {
     this.legacyPanel = container;
     this.tweens.add({
       targets: container,
-      y: 96,
+      y: legacyY - 16,
       duration: 180,
       ease: "Sine.easeOut",
       yoyo: true,
