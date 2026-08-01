@@ -140,6 +140,10 @@ export class MenuScene extends Phaser.Scene {
       this.paintBrandColumn(width, layout, record, bonuses);
       this.createRunConfigPanel(record, unlocked, layout);
       this.createFooterHints(width, layout);
+    } else if (layout.mobileHub) {
+      this.paintMobileHeader(width, layout, bonuses, record);
+      this.createRunConfigPanel(record, unlocked, layout);
+      this.createMobileActionDock(width, layout, bonuses);
     } else {
       this.paintHeader(width, layout);
       drawGoalRibbon(this, width / 2, layout.goal.y, layout.goal.height, Math.min(layout.panelWidth - 48, 640));
@@ -147,10 +151,10 @@ export class MenuScene extends Phaser.Scene {
       this.add
         .text(width / 2, goalTextY, formatNextGoalLine(nextRunGoal(record)), {
           fontFamily: UI_FONT,
-          fontSize: layout.mobileHub ? "11px" : layout.tight ? "12px" : "13px",
+          fontSize: layout.tight ? "12px" : "13px",
           color: "#84f7b2",
           align: "center",
-          wordWrap: { width: layout.panelWidth - (layout.mobileHub ? 32 : 96) }
+          wordWrap: { width: layout.panelWidth - 96 }
         })
         .setDepth(9)
         .setOrigin(0.5, layout.showDifficultyHint ? 0 : 0.5);
@@ -220,15 +224,16 @@ export class MenuScene extends Phaser.Scene {
     const tight = height < 780;
     const compact = height < 940;
     if (mobileHub) {
+      void showHint;
       return {
-        topBarH: 48 + safeInset("top"),
-        headerH: 40,
-        goalH: showHint ? 34 : 20,
-        runH: 240,
-        summaryH: 28,
-        actionsH: 104,
-        footerH: 8 + safeInset("bottom"),
-        gap: 5
+        topBarH: 44 + safeInset("top"),
+        headerH: 58,
+        goalH: 0,
+        runH: 280,
+        summaryH: 0,
+        actionsH: 96 + safeInset("bottom"),
+        footerH: 0,
+        gap: 10
       };
     }
     return {
@@ -288,23 +293,41 @@ export class MenuScene extends Phaser.Scene {
     tight: boolean,
     mobileHub: boolean
   ): HubLayout {
-    let runH = metrics.runH;
+    const topBar: HubZone = { y: 0, height: metrics.topBarH };
+    const panelWidth = Math.min(mobileHub ? width - 16 : 900, width - (mobileHub ? 16 : 48));
+
     if (mobileHub) {
-      const fixed =
-        metrics.topBarH +
-        metrics.headerH +
-        metrics.gap +
-        metrics.goalH +
-        metrics.gap +
-        metrics.summaryH +
-        metrics.gap +
-        metrics.actionsH +
-        metrics.gap +
-        metrics.footerH;
-      runH = Math.max(200, height - fixed - metrics.gap);
+      const header: HubZone = { y: metrics.topBarH + metrics.gap, height: metrics.headerH };
+      const actions: HubZone = {
+        y: height - metrics.actionsH,
+        height: metrics.actionsH
+      };
+      const runTop = header.y + header.height + metrics.gap;
+      const runH = Math.max(220, actions.y - metrics.gap - runTop);
+      return {
+        panelWidth,
+        topBar,
+        header,
+        goal: { y: runTop, height: 0 },
+        run: { y: runTop, height: runH },
+        summary: { y: actions.y, height: 0 },
+        actions,
+        footer: { y: height, height: 0 },
+        stackActions: true,
+        hidePitch: true,
+        compact: true,
+        tight: true,
+        mobileHub: true,
+        showDifficultyHint: false,
+        dualColumn: false,
+        brandX: width / 2,
+        brandWidth: panelWidth,
+        settingsCenterX: width / 2,
+        settingsWidth: panelWidth
+      };
     }
 
-    const topBar: HubZone = { y: 0, height: metrics.topBarH };
+    let runH = metrics.runH;
     const header: HubZone = { y: metrics.topBarH + metrics.gap, height: metrics.headerH };
     const footer: HubZone = { y: height - metrics.footerH, height: metrics.footerH };
     const actions: HubZone = {
@@ -319,16 +342,13 @@ export class MenuScene extends Phaser.Scene {
     const middleTop = header.y + header.height + metrics.gap;
     const middleBottom = summary.y - metrics.gap;
     const blockH = metrics.goalH + metrics.gap + runH;
-    const blockTop = mobileHub
-      ? middleTop
-      : middleTop + Math.max(0, Math.floor((middleBottom - middleTop - blockH) / 2));
+    const blockTop = middleTop + Math.max(0, Math.floor((middleBottom - middleTop - blockH) / 2));
     const goal: HubZone = { y: blockTop, height: metrics.goalH };
     const run: HubZone = { y: goal.y + metrics.goalH + metrics.gap, height: runH };
     const middlePad = middleBottom - middleTop - blockH;
     const hidePitch = mobileHub || tight || middlePad < 32 || width < 640;
     const dualColumn = !mobileHub && width >= 900;
-    const contentLeft = dualColumn ? Math.max(48, width * 0.06) : width / 2 - Math.min(mobileHub ? width - 20 : 900, width - (mobileHub ? 20 : 48)) / 2;
-    const panelWidth = Math.min(mobileHub ? width - 20 : 900, width - (mobileHub ? 20 : 48));
+    const contentLeft = dualColumn ? Math.max(48, width * 0.06) : width / 2 - panelWidth / 2;
     const brandWidth = dualColumn ? Math.min(460, width * 0.42) : panelWidth;
     const settingsWidth = dualColumn ? Math.min(420, Math.max(300, width * 0.34)) : panelWidth;
     const settingsCenterX = dualColumn ? width - Math.max(48, width * 0.06) - settingsWidth / 2 : width / 2;
@@ -391,6 +411,18 @@ export class MenuScene extends Phaser.Scene {
     const tight = height < 780 || mobileHub;
     const compact = height < 940 || mobileHub;
     let stackActions = width < 480 || mobileHub;
+    if (mobileHub) {
+      return this.layoutFromMetrics(
+        this.buildMetrics(height, width, showDifficultyHint),
+        height,
+        width,
+        false,
+        true,
+        true,
+        true,
+        true
+      );
+    }
     let metrics = this.fitMetrics(this.buildMetrics(height, width, showDifficultyHint), height, showDifficultyHint);
 
     for (let attempt = 0; attempt < 8; attempt += 1) {
@@ -405,7 +437,7 @@ export class MenuScene extends Phaser.Scene {
         mobileHub
       );
       const blockBottom = layout.run.y + layout.run.height;
-      if (mobileHub || (blockBottom <= layout.summary.y - 4 && layout.header.y + layout.header.height <= layout.goal.y - 4)) {
+      if (blockBottom <= layout.summary.y - 4 && layout.header.y + layout.header.height <= layout.goal.y - 4) {
         return layout;
       }
       metrics.runH = Math.max(272, metrics.runH - 8);
@@ -448,15 +480,19 @@ export class MenuScene extends Phaser.Scene {
     record: ReturnType<typeof AchievementSystem.readRecord>,
     bonuses: ReturnType<typeof metaBonusesFromShop>
   ): void {
-    const sideReserve = layout.mobileHub ? 72 : Math.min(168, Math.max(120, width * 0.2));
-    const renownY = layout.mobileHub
-      ? layout.topBar.y + layout.topBar.height * 0.58
-      : layout.topBar.y + layout.topBar.height * 0.36;
-    const controlsY = layout.topBar.y + layout.topBar.height * 0.72;
     this.add
       .rectangle(width / 2, layout.topBar.y + layout.topBar.height / 2, width, layout.topBar.height, HUB.inkMid, 0.88)
       .setDepth(10)
       .setStrokeStyle(1, HUB.goldDim, 0.35);
+
+    if (layout.mobileHub) {
+      this.createMobileTopBar(width, layout, record, bonuses);
+      return;
+    }
+
+    const sideReserve = Math.min(168, Math.max(120, width * 0.2));
+    const renownY = layout.topBar.y + layout.topBar.height * 0.36;
+    const controlsY = layout.topBar.y + layout.topBar.height * 0.72;
     const progress = titleProgressFor(record.totalRenown);
     const nextLine = progress.isMaxTitle
       ? t("titleProgressMax")
@@ -464,34 +500,181 @@ export class MenuScene extends Phaser.Scene {
     this.add
       .text(width / 2, renownY, t("metaProgressionLine", { title: t(bonuses.titleKey), renown: record.totalRenown, next: nextLine }), {
         fontFamily: UI_FONT,
-        fontSize: layout.mobileHub ? "9px" : layout.compact ? "10px" : "11px",
+        fontSize: layout.compact ? "10px" : "11px",
         color: "#9eb4c8",
         align: "center",
-        lineSpacing: layout.mobileHub ? 2 : 3,
-        wordWrap: { width: Math.max(160, width - sideReserve * 2 - (layout.mobileHub ? 40 : 80)) }
+        lineSpacing: 3,
+        wordWrap: { width: Math.max(160, width - sideReserve * 2 - 80) }
       })
       .setDepth(11)
       .setOrigin(0.5);
     this.createTopNavChips(record, layout);
-    this.createLanguageToggle(width, layout.topBar.y + (layout.mobileHub ? 6 : 8));
+    this.createLanguageToggle(width, layout.topBar.y + 8);
     if (layout.dualColumn) {
       this.createCompactMuteChip(width, layout.topBar.y + 8);
     } else {
-      this.createAudioControls(width, controlsY, layout.compact, sideReserve, layout.mobileHub);
+      this.createAudioControls(width, controlsY, layout.compact, sideReserve, false);
     }
   }
 
-  private createTopNavChips(record: ReturnType<typeof AchievementSystem.readRecord>, layout: HubLayout): void {
-    const y = layout.topBar.y + (layout.mobileHub ? 6 : 8);
+  private createMobileTopBar(
+    width: number,
+    layout: HubLayout,
+    record: ReturnType<typeof AchievementSystem.readRecord>,
+    _bonuses: ReturnType<typeof metaBonusesFromShop>
+  ): void {
+    const chipY = layout.topBar.y + safeInset("top") + 22;
     const chipStyle = {
       fontFamily: UI_FONT,
-      fontSize: layout.mobileHub ? "10px" : "11px",
+      fontSize: "12px",
+      color: "#f7c66b",
+      backgroundColor: "#192033",
+      padding: { left: 10, right: 10, top: 7, bottom: 7 }
+    } as const;
+
+    const muteSettings = readAudioSettings();
+    const mute = this.add
+      .text(12, chipY, muteSettings.muted ? t("audioMutedLabel") : "♪", {
+        ...chipStyle,
+        color: muteSettings.muted ? "#ff7687" : "#d8e2eb"
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true });
+    mute.on("pointerdown", () => {
+      const current = readAudioSettings();
+      writeAudioSettings({ ...current, muted: !current.muted });
+      this.scene.restart();
+    });
+
+    const shop = this.add
+      .text(mute.x + mute.width + 8, chipY, t("menuHubShopShort"), chipStyle)
+      .setOrigin(0, 0.5)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true });
+    shop.on("pointerdown", () => this.openRenownShop(record));
+
+    const codex = this.add
+      .text(shop.x + shop.width + 8, chipY, t("menuHubCodexShort"), {
+        ...chipStyle,
+        color: "#aac7d8"
+      })
+      .setOrigin(0, 0.5)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true });
+    codex.on("pointerdown", () => this.scene.start("CollectionScene"));
+
+    const language = this.add
+      .text(width - 12, chipY, t("languageToggle"), chipStyle)
+      .setOrigin(1, 0.5)
+      .setDepth(12)
+      .setInteractive({ useHandCursor: true });
+    language.on("pointerdown", () => {
+      toggleLocale();
+      this.scene.restart();
+    });
+  }
+
+  private paintMobileHeader(
+    width: number,
+    layout: HubLayout,
+    bonuses: ReturnType<typeof metaBonusesFromShop>,
+    record: ReturnType<typeof AchievementSystem.readRecord>
+  ): void {
+    const centerY = this.zoneCenter(layout.header);
+    this.add
+      .text(width / 2, centerY - 8, t("title"), {
+        fontFamily: TITLE_FONT,
+        fontSize: "28px",
+        color: "#f7efd8",
+        fontStyle: "700"
+      })
+      .setDepth(9)
+      .setOrigin(0.5);
+    this.add
+      .text(
+        width / 2,
+        centerY + 16,
+        t("menuHubRenownShort", { title: t(bonuses.titleKey), renown: record.totalRenown }),
+        {
+          fontFamily: UI_FONT,
+          fontSize: "12px",
+          color: "#9eb4c8"
+        }
+      )
+      .setDepth(9)
+      .setOrigin(0.5);
+  }
+
+  private createMobileActionDock(
+    width: number,
+    layout: HubLayout,
+    bonuses: ReturnType<typeof metaBonusesFromShop>
+  ): void {
+    const dock = layout.actions;
+    this.add
+      .rectangle(width / 2, dock.y + dock.height / 2, width, dock.height, HUB.inkMid, 0.94)
+      .setDepth(10)
+      .setStrokeStyle(1, HUB.goldDim, 0.4);
+    this.add.rectangle(width / 2, dock.y, width, 1, HUB.gold, 0.35).setDepth(11).setOrigin(0.5, 0);
+
+    const styleTitle = buildPathName(this.selectedStartStyle);
+    this.add
+      .text(
+        width / 2,
+        dock.y + 12,
+        t("menuHubRunSummary", {
+          difficulty: this.selectedDifficulty,
+          style: styleTitle,
+          modifier: runModifierLabel(this.selectedRunModifier),
+          title: t(bonuses.titleKey)
+        }),
+        {
+          fontFamily: UI_FONT,
+          fontSize: "11px",
+          color: "#aac7d8",
+          align: "center",
+          wordWrap: { width: width - 28 }
+        }
+      )
+      .setDepth(12)
+      .setOrigin(0.5, 0);
+
+    const start = this.add
+      .text(width / 2, dock.y + 40, t("startRun"), {
+        fontFamily: TITLE_FONT,
+        fontSize: "22px",
+        color: "#1a1208",
+        backgroundColor: "#f7c66b",
+        padding: { left: 36, right: 36, top: 12, bottom: 12 }
+      })
+      .setDepth(12)
+      .setOrigin(0.5, 0)
+      .setInteractive({ useHandCursor: true });
+    start.on("pointerover", () => start.setBackgroundColor("#ffd36a"));
+    start.on("pointerout", () => start.setBackgroundColor("#f7c66b"));
+    start.on("pointerdown", () => this.startRun());
+    this.tweens.add({
+      targets: start,
+      scaleX: { from: 1, to: 1.02 },
+      scaleY: { from: 1, to: 1.02 },
+      duration: 1200,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.easeInOut"
+    });
+  }
+
+  private createTopNavChips(record: ReturnType<typeof AchievementSystem.readRecord>, layout: HubLayout): void {
+    const y = layout.topBar.y + 8;
+    const chipStyle = {
+      fontFamily: UI_FONT,
+      fontSize: "11px",
       color: "#f7c66b",
       backgroundColor: "#192033",
       padding: { left: 8, right: 8, top: 4, bottom: 4 }
     } as const;
-    const languageReserve = layout.mobileHub ? 92 : 108;
-    let right = this.scale.width - languageReserve;
+    let right = this.scale.width - 108;
 
     const collection = this.add
       .text(right, y, t("collectionButton"), {
@@ -743,7 +926,7 @@ export class MenuScene extends Phaser.Scene {
       this.input.on("wheel", this.handleRunConfigWheel, this);
     }
 
-    const labelGap = layout.mobileHub ? 10 : layout.dualColumn ? 12 : layout.tight ? 14 : 18;
+    const labelGap = layout.mobileHub ? 12 : layout.dualColumn ? 12 : layout.tight ? 14 : 18;
     let cursorY = 4;
     const sectionCenterX = host ? 0 : layout.settingsCenterX;
 
@@ -866,8 +1049,8 @@ export class MenuScene extends Phaser.Scene {
   ): number {
     const choices = this.runModifierChoices;
     const stacked = layout.mobileHub;
-    const tileHeight = layout.mobileHub ? 46 : layout.tight ? 54 : 58;
-    const rowGap = layout.mobileHub ? 6 : 0;
+    const tileHeight = layout.mobileHub ? 52 : layout.tight ? 54 : 58;
+    const rowGap = layout.mobileHub ? 8 : 0;
 
     if (stacked) {
       let bottom = startY;
@@ -951,7 +1134,7 @@ export class MenuScene extends Phaser.Scene {
     host?: Phaser.GameObjects.Container
   ): number {
     const displays = difficultyDisplays(AchievementSystem.readRecord());
-    const tileHeight = layout.mobileHub ? 36 : layout.tight ? 40 : 44;
+    const tileHeight = layout.mobileHub ? 42 : layout.tight ? 40 : 44;
     const tileWidth = Math.min(88, Math.max(58, (innerWidth - 20) / displays.length));
     const gap = Math.max(6, (innerWidth - tileWidth * displays.length) / Math.max(1, displays.length - 1));
     const startX = centerX - (tileWidth * displays.length + gap * (displays.length - 1)) / 2 + tileWidth / 2;
@@ -1021,8 +1204,8 @@ export class MenuScene extends Phaser.Scene {
   ): number {
     const options = startStyleOptions(record);
     const columns = layout.mobileHub || layout.dualColumn || innerWidth < 440 || layout.tight ? 2 : options.length;
-    const tileHeight = layout.mobileHub ? 52 : layout.dualColumn ? 58 : layout.tight ? 66 : layout.compact ? 72 : 78;
-    const rowGap = layout.mobileHub ? 6 : 8;
+    const tileHeight = layout.mobileHub ? 60 : layout.dualColumn ? 58 : layout.tight ? 66 : layout.compact ? 72 : 78;
+    const rowGap = layout.mobileHub ? 8 : 8;
     const tileWidth = Math.floor((innerWidth - (columns - 1) * 10) / columns);
     const gridLeft = centerX - innerWidth / 2;
 
