@@ -20,10 +20,13 @@ Strengthen the desktop first viewport as a wuxia title composition while keeping
 
 ## Mobile / narrow
 
-1. Keep scrollable run-config panel
-2. Move Codex / Shop into top bar as compact chips
-3. Brand header stays short; Start remains the large bottom CTA
-4. Hide pitch when space is tight
+Dedicated single-column stack (not a squeezed desktop layout):
+
+1. Top bar: one row of chips only (`♪` / 商店 / 圖鑑 / 語言)
+2. Header: title + short renown line
+3. Middle: scrollable run-config panel takes remaining height
+4. Sticky bottom dock: one-line run summary + large Start CTA
+5. No goal ribbon / separate summary zone / footer hints on phone
 
 ## Out of scope
 
