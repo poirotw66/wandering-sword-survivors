@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import type { UpgradeOption } from "../data/upgrades";
 import { t } from "../i18n";
 import { TITLE_FONT, UI_FONT } from "./textStyle";
-import { isNarrowViewport, isTouchDevice, safeInset } from "../utils/display";
+import { isMobileCombatLayout, safeInset } from "../utils/display";
 
 const DESKTOP_CARD_HEIGHT = 252;
 const MOBILE_CARD_HEIGHT = 172;
@@ -21,6 +21,7 @@ export class UpgradePanel {
   private cardScrollDragStartY = 0;
   private cardScrollDragStartScroll = 0;
   private cardScrollDragging = false;
+  private suppressCardPick = false;
 
   constructor(private readonly scene: Phaser.Scene) {
     this.container = scene.add.container(0, 0).setDepth(1000).setScrollFactor(0).setVisible(false);
@@ -38,9 +39,10 @@ export class UpgradePanel {
     this.currentOptions = options;
     this.currentPick = onPick;
     const { width, height } = this.scene.scale;
-    const mobile = isNarrowViewport(width) || isTouchDevice();
+    const mobile = isMobileCombatLayout(width, height);
     const insetTop = safeInset("top");
     const insetBottom = safeInset("bottom");
+    this.suppressCardPick = false;
     const panelWidth = Math.min(mobile ? width - 20 : 1080, width - (mobile ? 20 : 48));
 
     this.container.setVisible(true);
@@ -278,6 +280,7 @@ export class UpgradePanel {
       return;
     }
     this.cardScrollDragging = true;
+    this.suppressCardPick = true;
     this.setCardScroll(this.cardScrollDragStartScroll + delta);
   };
 
@@ -486,7 +489,22 @@ export class UpgradePanel {
       bg.setStrokeStyle(option.kind === "evolution" ? 3 : 2, theme.stroke);
       this.scene.tweens.add({ targets: card, scaleX: 1, scaleY: 1, duration: 90, ease: "Sine.easeOut" });
     });
-    card.on("pointerdown", () => onPick(option));
+    let pressX = 0;
+    let pressY = 0;
+    card.on("pointerdown", (pointer: Phaser.Input.Pointer) => {
+      pressX = pointer.x;
+      pressY = pointer.y;
+      this.suppressCardPick = false;
+    });
+    card.on("pointerup", (pointer: Phaser.Input.Pointer) => {
+      if (this.suppressCardPick || this.cardScrollDragging) {
+        return;
+      }
+      if (Math.hypot(pointer.x - pressX, pointer.y - pressY) > 12) {
+        return;
+      }
+      onPick(option);
+    });
     if (host) {
       host.add(card);
     } else {

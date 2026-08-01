@@ -25,7 +25,7 @@ import {
   qiKillHealAmount,
   wineComboCooldownShaveMs
 } from "../src/data/buildPathSynergy";
-import { getRenderResolution, isMobileHubLayout, isNarrowViewport, isTouchDevice, minionDisplayHeight, playerDisplayHeight } from "../src/utils/display";
+import { getRenderResolution, isMobileCombatLayout, isMobileHubLayout, isNarrowViewport, isTouchDevice, minionDisplayHeight, playerDisplayHeight } from "../src/utils/display";
 import {
   enemyHitRadius,
   projectileHitRadius,
@@ -1263,6 +1263,8 @@ describe("game regression rules", () => {
     expect(isNarrowViewport(1280)).toBe(false);
     expect(isMobileHubLayout(390, 844)).toBe(true);
     expect(isMobileHubLayout(1280, 900)).toBe(false);
+    expect(isMobileCombatLayout(390, 844)).toBe(true);
+    expect(isMobileCombatLayout(1280, 900)).toBe(false);
     expect(playerDisplayHeight()).toBeGreaterThan(60);
     expect(minionDisplayHeight()).toBe(playerDisplayHeight());
   });

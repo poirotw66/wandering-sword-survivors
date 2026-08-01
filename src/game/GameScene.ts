@@ -214,6 +214,11 @@ export class GameScene extends Phaser.Scene {
     this.input.keyboard?.on("keydown-ESC", () => this.togglePause());
     this.input.keyboard?.on("keydown-P", () => this.toggleStatusPanel());
     this.input.keyboard?.on("keydown-p", () => this.toggleStatusPanel());
+    const uiScene = this.scene.get("UIScene");
+    uiScene.events.off("ui-toggle-pause");
+    uiScene.events.off("ui-toggle-status");
+    uiScene.events.on("ui-toggle-pause", () => this.togglePause());
+    uiScene.events.on("ui-toggle-status", () => this.toggleStatusPanel());
     this.input.keyboard?.on("keydown-F1", () => this.toggleDevMode());
     this.input.keyboard?.on("keydown-L", () => this.devGrantLevel());
     this.input.keyboard?.on("keydown-B", () => this.devSpawnBoss());
