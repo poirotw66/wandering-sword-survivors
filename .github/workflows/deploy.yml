@@ -77,13 +77,18 @@ jobs:
           "$BIN" --version
 
       - name: Godot headless tests
-        run: |
-          "${{ steps.godot.outputs.bin }}" --headless --path godot res://tests/test_runner.tscn
+        env:
+          GODOT_BIN: ${{ steps.godot.outputs.bin }}
+        # scripts/godot-headless-tests.sh runs --import first (fresh .godot),
+        # then content/smoke/full validation with bounded timeouts.
+        run: npm run godot:test
+        timeout-minutes: 10
 
       - name: Export Godot Web (Pages root)
-        run: |
-          mkdir -p export/web
-          "${{ steps.godot.outputs.bin }}" --headless --path godot --export-release "Web" "$GITHUB_WORKSPACE/export/web/index.html"
+        env:
+          GODOT_BIN: ${{ steps.godot.outputs.bin }}
+        run: npm run godot:export-web
+        timeout-minutes: 10
 
       - name: Assemble Pages artifact
         if: github.event_name == 'push'

@@ -14,7 +14,7 @@ npm run godot:test
 npm run godot:export-web
 ```
 
-Open `godot/project.godot` in the Godot editor to play. Hub → 15-minute Mist Ravine chapter.
+`godot:test` / `godot:export-web` run `godot --headless --import` first so a fresh checkout (no committed `godot/.godot/`) builds the global script class cache before scenes run. Open `godot/project.godot` in the Godot editor to play. Hub → 15-minute Mist Ravine chapter.
 
 ### First public build features
 
