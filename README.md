@@ -42,7 +42,7 @@ Deployed Pages layout:
 
 ## CI
 
-`.github/workflows/deploy.yml` runs legacy tests/build, Godot headless tests, Godot Web export, then publishes the combined `site/` artifact.
+`.github/workflows/deploy.yml` runs on `push` and `pull_request` to `main`: legacy tests/build, Godot headless tests, and Godot Web export. Pages artifact upload and deploy run only on `push` to `main`.
 
 ## Docs
 

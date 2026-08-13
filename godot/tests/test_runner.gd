@@ -12,6 +12,9 @@ func _ready() -> void:
 	failures.append_array(_test_final_boss_win_ordering())
 	failures.append_array(_test_distinct_boss_profiles())
 	failures.append_array(_test_wave_validity())
+	failures.append_array(_test_milestone_boss_schedule())
+	failures.append_array(_test_victory_unlock_contract())
+	failures.append_array(_test_start_style_runtime_bonuses())
 	failures.append_array(_test_save_fallback())
 	failures.append_array(_test_cjk_theme_font())
 	if failures.is_empty():
@@ -253,6 +256,90 @@ func _test_wave_validity() -> PackedStringArray:
 	for w in ContentDB.waves:
 		if not ContentDB.enemies.has(w.enemy_id):
 			errs.append("wave enemy missing: %s" % w.enemy_id)
+	return errs
+
+func _test_milestone_boss_schedule() -> PackedStringArray:
+	var errs: PackedStringArray = PackedStringArray()
+	var expected := [
+		{"mark": 300.0, "enemy": "boss.ravine_enforcer"},
+		{"mark": 600.0, "enemy": "boss.sand_hierarch"},
+		{"mark": 900.0, "enemy": "boss.frost_blade_fiend"},
+	]
+	if ContentDB.bosses.size() != expected.size():
+		errs.append("expected %d boss marks, got %d" % [expected.size(), ContentDB.bosses.size()])
+		return errs
+	var prev := -1.0
+	for i in range(expected.size()):
+		var b: BossScheduleEntry = ContentDB.bosses[i]
+		var want: Dictionary = expected[i]
+		if abs(b.mark_sec - float(want["mark"])) > 0.1:
+			errs.append("boss mark[%d] want %.0f got %.1f" % [i, float(want["mark"]), b.mark_sec])
+		if b.enemy_id != str(want["enemy"]):
+			errs.append("boss mark[%d] enemy want %s got %s" % [i, want["enemy"], b.enemy_id])
+		if b.mark_sec <= prev:
+			errs.append("boss marks must be strictly increasing")
+		prev = b.mark_sec
+	return errs
+
+func _test_victory_unlock_contract() -> PackedStringArray:
+	var errs: PackedStringArray = PackedStringArray()
+	var backup: Dictionary = SaveService.data.duplicate(true)
+	SaveService.replace_data_for_test(SaveService.default_save())
+	var before_clears := SaveService.chapter_clears("chapter.mist_ravine")
+	GameState.reset_run()
+	GameState.end_run(true)
+	if not GameState.won:
+		errs.append("end_run(true) must set won")
+	if GameState.phase != GameState.Phase.RESULT:
+		errs.append("victory must enter RESULT phase")
+	for need in ["weapon.nine_flash", "start_style.yi", "manual.clear_mind", "manual.echo_focus"]:
+		if not SaveService.is_unlocked(need):
+			errs.append("victory must unlock %s" % need)
+	if SaveService.chapter_clears("chapter.mist_ravine") != before_clears + 1:
+		errs.append("victory must increment chapter clears")
+	## Defeat path must not grant the same unlocks.
+	SaveService.replace_data_for_test(SaveService.default_save())
+	GameState.reset_run()
+	GameState.end_run(false)
+	if SaveService.is_unlocked("weapon.nine_flash"):
+		errs.append("defeat must not unlock nine_flash")
+	if SaveService.chapter_clears("chapter.mist_ravine") != 0:
+		errs.append("defeat must not record chapter clear")
+	SaveService.replace_data_for_test(backup)
+	SaveService.save()
+	return errs
+
+func _test_start_style_runtime_bonuses() -> PackedStringArray:
+	var errs: PackedStringArray = PackedStringArray()
+	var backup: Dictionary = SaveService.data.duplicate(true)
+	var data: Dictionary = SaveService.default_save()
+	var unlocks: Array = data["unlocked_content_ids"]
+	for id in ["weapon.palm_wave", "weapon.guard_ring", "weapon.nine_flash"]:
+		if id not in unlocks:
+			unlocks.append(id)
+	data["unlocked_content_ids"] = unlocks
+	SaveService.replace_data_for_test(data)
+	var cases := [
+		{"id": "start_style.jian", "tag": Tags.JIAN},
+		{"id": "start_style.qi", "tag": Tags.QI, "stat": "max_hp", "min": 111.0},
+		{"id": "start_style.shen", "tag": Tags.SHEN, "stat": "move_speed", "min": 205.0},
+		{"id": "start_style.yi", "tag": Tags.YI, "stat": "cooldown_mult", "max": 0.96},
+	]
+	for c in cases:
+		GameState.select_start_style(str(c["id"]))
+		GameState.reset_run()
+		if GameState.resonance.preferred_tag != str(c["tag"]):
+			errs.append("%s preferred tag want %s got %s" % [c["id"], c["tag"], GameState.resonance.preferred_tag])
+		if int(GameState.resonance.stacks.get(str(c["tag"]), 0)) < 1:
+			errs.append("%s should seed preferred tag stack" % c["id"])
+		if c.has("stat") and c.has("min"):
+			if float(GameState.player_stats[str(c["stat"])]) < float(c["min"]):
+				errs.append("%s %s too low" % [c["id"], c["stat"]])
+		if c.has("stat") and c.has("max"):
+			if float(GameState.player_stats[str(c["stat"])]) > float(c["max"]):
+				errs.append("%s %s too high" % [c["id"], c["stat"]])
+	SaveService.replace_data_for_test(backup)
+	SaveService.save()
 	return errs
 
 func _test_save_fallback() -> PackedStringArray:

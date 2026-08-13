@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+  pull_request:
+    branches:
+      - main
 
 permissions:
   contents: read
@@ -11,7 +14,7 @@ permissions:
   id-token: write
 
 concurrency:
-  group: pages
+  group: pages-${{ github.event_name }}-${{ github.ref }}
   cancel-in-progress: false
 
 jobs:
@@ -83,6 +86,7 @@ jobs:
           "${{ steps.godot.outputs.bin }}" --headless --path godot --export-release "Web" "$GITHUB_WORKSPACE/export/web/index.html"
 
       - name: Assemble Pages artifact
+        if: github.event_name == 'push'
         run: |
           mkdir -p site/legacy
           cp -R export/web/. site/
@@ -90,11 +94,13 @@ jobs:
           # Small pointer page already is Godot index; legacy playable at /legacy/
 
       - name: Upload artifact
+        if: github.event_name == 'push'
         uses: actions/upload-pages-artifact@v3
         with:
           path: ./site
 
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
     runs-on: ubuntu-latest
