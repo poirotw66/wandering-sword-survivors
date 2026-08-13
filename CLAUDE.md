@@ -4,10 +4,10 @@
 
 | Name | Path | Scope |
 | --- | --- | --- |
-| app | . | src/, public/, package.json, vite.config.ts |
+| app | . | godot/ (primary), legacy/ (Phaser archive), docs/, package.json |
 | docs | ./docs | prds/, specs/ |
 
-Current repo: app
+Current repo: app (Godot remake + legacy Phaser)
 
 ## flow_mode
 
@@ -15,8 +15,9 @@ Current repo: app
 
 ## Test Strategy
 
-- Frontend: TypeScript type check + production build smoke check
-- Dependency: npm audit
+- Godot: `npm run godot:test` (headless content/rules) + optional `npm run godot:export-web`
+- Legacy Frontend: TypeScript type check + production build smoke check (`npm test` / `npm run build`)
+- Dependency: npm audit (legacy)
 - Manual: browser playtest checklist in God Mode report
 
 ## Git

@@ -7,3 +7,13 @@ dist/
 !.env.example
 *.local
 *.DS_Store
+
+# Godot
+godot/.godot/
+godot/export/
+export/
+tools/godot/
+*.tpz
+*.pck
+*.apk
+*.ipa

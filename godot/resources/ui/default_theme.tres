@@ -1,0 +1,10 @@
+[gd_resource type="Theme" load_steps=2 format=3]
+
+[ext_resource type="FontFile" uid="uid://bagg028g73tjs" path="res://assets/fonts/NotoSansTC-Regular.ttf" id="1_font"]
+
+[resource]
+default_font = ExtResource("1_font")
+default_font_size = 18
+Button/fonts/font = ExtResource("1_font")
+Label/fonts/font = ExtResource("1_font")
+RichTextLabel/fonts/normal_font = ExtResource("1_font")

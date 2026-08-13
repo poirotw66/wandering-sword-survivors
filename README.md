@@ -1,71 +1,51 @@
 # Wandering Sword Survivors
 
-A wuxia-themed TypeScript + Phaser 3 survivors-like roguelite prototype based on `ideate.md`.
+Original wuxia survivors-like. The **public product line is Godot 4.7.1** under `godot/`. The Phaser / TypeScript prototype is preserved under `legacy/` and still builds for comparison.
 
-The first playable hero is Linghu Chong, built around sword forms, footwork, inner-force skills, and martial-art upgrades.
+## Godot (primary)
 
-## Run
-
-```bash
-npm install
-npm run dev
-```
-
-Dev playtest mode: open `http://127.0.0.1:5173/?dev=1` for `F1` / `L` / `B` / `N` shortcuts.
-
-## Build
+Requirements: Godot **4.7.1** (Compatibility / GL Compatibility renderer), gameplay viewport **1280×720**.
 
 ```bash
-npm run build
+# Optional local binary used by repo scripts
+# tools/godot/Godot.app  (macOS) or set GODOT_BIN
+
+npm run godot:test
+npm run godot:export-web
 ```
 
-## Serve Build
+Open `godot/project.godot` in the Godot editor to play. Hub → 15-minute Mist Ravine chapter.
+
+### First public build features
+
+- Desktop WASD / arrows + landscape touch stick / dash / rage buttons
+- Automatic martial weapons, two-charge invulnerable dash, resonance-colored rage ultimate
+- XP gems, heal pickups, level-up choices, four tags with tier + cross-tag resonance
+- Waves, four enemy archetypes, three timed bosses with telegraphs, boss mutation unlocks
+- Win / death results, content-unlock-only versioned JSON save, Traditional Chinese UI keys
+- Object pools + data-driven defs with stable string IDs (original names only in UI)
+
+## Legacy Phaser archive
 
 ```bash
-npm run serve
+npm install          # installs via package work at legacy/ when using root proxies
+npm --prefix legacy ci
+npm test             # vitest in legacy/
+npm run build        # Vite build in legacy/
+npm run dev          # legacy Vite dev server
 ```
 
-## Controls
+Deployed Pages layout:
 
-- Move: `WASD` or arrow keys
-- Pick upgrade: mouse or number keys `1`-`3`
-- Pause: `Esc`
-- Restart after game over: `Space` or the button
+- `/` — Godot Web export
+- `/legacy/` — Phaser prototype
 
-## MVP Features
+## CI
 
-- Phaser 3 + Vite + TypeScript setup
-- Player movement and camera follow with `RESIZE` scaling and native-resolution map tiles
-- 16 ordinary enemy factions (Qingcheng, Demonic Cult, Songshan, Huashan, Hengshan, Taishan, river bandits, medicine heretics, Sun-Moon cult, royal guards, Wudang, Shaolin, Emei, beggars, northern riders, poison cult) plus 5 Boss tiers on a 30-minute timeline
-- Minion behavior archetypes: chaser, dasher, tank, ranger
-- Elite enemies: faction tint, 1.22x scale, pulsing aura ring, and label
-- Automatic martial forms: Sword Qi, Circling Sword Guard, Breaking Palm Wave, Nine Swords Flash
-- Martial skill upgrades and 10 evolution forms
-- Generated wuxia sprite art for hero, enemies, bosses, effects, icons, and map tiles
-- Procedural wuxia SFX (`public/assets/audio/wuxia/`) with Web Audio synth fallback
-- Experience gems, level-up choices, HP, score, kills, timer, best score
-- Pause overlay, weapon-level HUD, damage shake, and kill score popups
-- Health pickups, rising wave pressure, and visible boss health bars
-- Meta progression, renown shop, achievements, and collection screen
-
-## GitHub Pages
-
-Workflow: `.github/workflows/deploy.yml` (build on push to `main`, deploy `dist/`).
-
-If the site returns 404, enable Pages in the repo settings:
-
-1. **Settings → Pages → Build and deployment**
-2. Source: **GitHub Actions** (not legacy branch deploy)
-3. Push to `main` or re-run the **Deploy to GitHub Pages** workflow
-
-Regenerate SFX after editing `scripts/generate-sfx.py`:
-
-```bash
-python3 scripts/generate-sfx.py
-```
+`.github/workflows/deploy.yml` runs legacy tests/build, Godot headless tests, Godot Web export, then publishes the combined `site/` artifact.
 
 ## Docs
 
-- `docs/game-content.md` — full content reference (Traditional Chinese)
-- `docs/asset-image-prompts.md` — image generation prompts for sprites
-- `docs/specs/` — feature specs and verification reports
+- `docs/godot-migration-brief.md` — migration + remake status
+- `docs/game-content.md` — Phaser-era content reference (historical)
+- `godot/assets/placeholders/` — isolated geometric stand-ins only (not legacy IP art)
