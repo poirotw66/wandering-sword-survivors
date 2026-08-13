@@ -27,17 +27,72 @@ jobs:
         with:
           node-version: 22
           cache: npm
+          cache-dependency-path: legacy/package-lock.json
 
-      - name: Install
+      - name: Install legacy deps
         run: npm ci
+        working-directory: legacy
 
-      - name: Build
+      - name: Test legacy
+        run: npm test
+        working-directory: legacy
+
+      - name: Build legacy Phaser archive
         run: npm run build
+        working-directory: legacy
+
+      - name: Cache Godot binary
+        id: cache-godot
+        uses: actions/cache@v4
+        with:
+          path: |
+            .tools/godot
+            ~/.local/share/godot/export_templates/4.7.1.stable
+          key: godot-4.7.1-stable-linux-templates-v1
+
+      - name: Install Godot 4.7.1 + export templates
+        if: steps.cache-godot.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p .tools/godot
+          curl -L --fail -o .tools/godot/Godot.zip \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_linux.x86_64.zip
+          unzip -qo .tools/godot/Godot.zip -d .tools/godot
+          curl -L --fail -o .tools/godot/templates.tpz \
+            https://github.com/godotengine/godot-builds/releases/download/4.7.1-stable/Godot_v4.7.1-stable_export_templates.tpz
+          mkdir -p "$HOME/.local/share/godot/export_templates"
+          TMP="$(mktemp -d)"
+          unzip -qo .tools/godot/templates.tpz -d "$TMP"
+          rm -rf "$HOME/.local/share/godot/export_templates/4.7.1.stable"
+          mv "$TMP/templates" "$HOME/.local/share/godot/export_templates/4.7.1.stable"
+
+      - name: Resolve Godot binary
+        id: godot
+        run: |
+          BIN="$(find .tools/godot -type f -name 'Godot*' ! -name '*.zip' ! -name '*.tpz' | head -n1)"
+          chmod +x "$BIN"
+          echo "bin=$BIN" >> "$GITHUB_OUTPUT"
+          "$BIN" --version
+
+      - name: Godot headless tests
+        run: |
+          "${{ steps.godot.outputs.bin }}" --headless --path godot res://tests/test_runner.tscn
+
+      - name: Export Godot Web (Pages root)
+        run: |
+          mkdir -p export/web
+          "${{ steps.godot.outputs.bin }}" --headless --path godot --export-release "Web" "$GITHUB_WORKSPACE/export/web/index.html"
+
+      - name: Assemble Pages artifact
+        run: |
+          mkdir -p site/legacy
+          cp -R export/web/. site/
+          cp -R legacy/dist/. site/legacy/
+          # Small pointer page already is Godot index; legacy playable at /legacy/
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist
+          path: ./site
 
   deploy:
     environment:
