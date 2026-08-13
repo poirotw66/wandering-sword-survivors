@@ -1,4 +1,22 @@
-# 30-Minute Playtest Checklist
+# Playtest Checklists
+
+## Godot first public chapter (15 minutes) — current
+
+Use **`docs/playtest-15min-zh.md`** (Traditional Chinese) for desktop and landscape-mobile manual playtest, balance matrix, metrics, and pass/fail criteria for `chapter.mist_ravine`.
+
+Automated accelerated coverage (all four start styles × 5/10/15 min marks, boss order, mutations, victory unlocks):
+
+```bash
+npm run godot:test
+```
+
+## Legacy Phaser archive (30 minutes) — historical
+
+The checklist below targets the frozen Phaser build under `legacy/` and the old 30-minute timeline. Do not use it as the primary gate for the Godot remake.
+
+---
+
+# 30-Minute Playtest Checklist (legacy Phaser)
 
 Use this checklist after Phase 5 close to validate pacing, balance, and mobile UX before a second balance pass.
 

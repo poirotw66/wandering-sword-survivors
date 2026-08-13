@@ -10,7 +10,7 @@ Phaser / TypeScript remains a **frozen archive** under `legacy/`. The Godot 4.7.
 | Renderer | Compatibility (`gl_compatibility`) |
 | Gameplay viewport | Fixed **1280×720** (`canvas_items` + keep aspect) |
 | Deploy | GitHub Pages: Godot Web at `/`, Phaser at `/legacy/` |
-| CI | `.github/workflows/deploy.yml` builds both + headless Godot tests |
+| CI | `.github/workflows/deploy.yml` on push/PR to `main` (Pages deploy push-only) |
 
 ## First public chapter (15 minutes)
 
@@ -36,13 +36,13 @@ Chapter id: `chapter.mist_ravine` (霧峽十五刻). Duration **900s**. Boss mar
 
 ## Headless tests
 
-`godot/tests/run_tests.gd` covers:
+`npm run godot:test` runs:
 
-1. Content ID uniqueness / required archetypes
-2. Resonance dominant + tie + cross-tag + rage profile
-3. Mutation eligibility
-4. Wave / boss schedule validity + 900s chapter
-5. Save migrate / fallback for corrupt & future versions
+1. `tests/test_runner.tscn` — content IDs, resonance, mutations, wave/boss schedule (300/600/900), victory unlock contract, start-style bonuses, save migrate, CJK font
+2. `tests/run_smoke.tscn` — short accelerated spawn/hit/pool + mutation smoke
+3. `tests/run_full_validation.tscn` — all four start styles through accelerated 5/10/15 min marks, boss order, mutations, victory unlocks
+
+Manual playtest / balance matrix (Traditional Chinese): `docs/playtest-15min-zh.md`
 
 ```bash
 npm run godot:test

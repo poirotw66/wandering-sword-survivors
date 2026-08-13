@@ -14,7 +14,7 @@ npm run godot:test
 npm run godot:export-web
 ```
 
-Open `godot/project.godot` in the Godot editor to play. Hub → 15-minute Mist Ravine chapter.
+`godot:test` / `godot:export-web` run `godot --headless --import` first so a fresh checkout (no committed `godot/.godot/`) builds the global script class cache before scenes run. Open `godot/project.godot` in the Godot editor to play. Hub → 15-minute Mist Ravine chapter.
 
 ### First public build features
 
@@ -42,7 +42,7 @@ Deployed Pages layout:
 
 ## CI
 
-`.github/workflows/deploy.yml` runs legacy tests/build, Godot headless tests, Godot Web export, then publishes the combined `site/` artifact.
+`.github/workflows/deploy.yml` runs on `push` and `pull_request` to `main`: legacy tests/build, Godot headless tests, and Godot Web export. Pages artifact upload and deploy run only on `push` to `main`.
 
 ## Docs
 
