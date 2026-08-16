@@ -17,6 +17,7 @@ var _touch_dir: Vector2 = Vector2.ZERO
 var rage_meter: float = 0.0
 var _weapon_cds: Dictionary = {}
 var _body: Polygon2D
+var _sprite: Sprite2D
 var _hurtbox: Area2D
 
 func _ready() -> void:
@@ -27,6 +28,11 @@ func _ready() -> void:
 	_body.polygon = PackedVector2Array([Vector2(0, -16), Vector2(12, 12), Vector2(-12, 12)])
 	_body.color = Color(0.92, 0.86, 0.7)
 	add_child(_body)
+	_sprite = Sprite2D.new()
+	_sprite.name = "BodySprite"
+	_sprite.z_index = 1
+	add_child(_sprite)
+	ArtCatalog.apply(_sprite, _body, "player_yunhe", 36.0)
 	var cs := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = 12
@@ -75,7 +81,11 @@ func _physics_process(delta: float) -> void:
 		try_rage()
 	_fire_weapons(delta)
 	_iframe = maxf(0.0, _iframe - delta)
-	_body.modulate = Color(1.4, 1.4, 1.6) if _iframe > 0.0 else Color.WHITE
+	var flash := Color(1.4, 1.4, 1.6) if _iframe > 0.0 else Color.WHITE
+	_body.modulate = flash
+	if _sprite:
+		_sprite.modulate = flash
+		_sprite.flip_h = _facing.x < 0.0
 
 func _tick_dash(delta: float) -> void:
 	_dash_time = maxf(0.0, _dash_time - delta)

@@ -8,6 +8,7 @@ var _range_cd: float = 0.0
 var _tank_lock: float = 0.0
 var _alive := false
 var _poly: Polygon2D
+var _sprite: Sprite2D
 var _warn: Polygon2D
 var _boss_skill_cd: float = 2.0
 var _boss_cast: float = 0.0
@@ -26,6 +27,11 @@ func _ensure_built() -> void:
 		_poly.name = "BodyPoly"
 		_poly.polygon = PackedVector2Array([Vector2(-10, -10), Vector2(10, -10), Vector2(10, 10), Vector2(-10, 10)])
 		add_child(_poly)
+	if _sprite == null:
+		_sprite = Sprite2D.new()
+		_sprite.name = "BodySprite"
+		_sprite.z_index = 1
+		add_child(_sprite)
 	if _warn == null:
 		_warn = Polygon2D.new()
 		_warn.name = "WarnPoly"
@@ -47,6 +53,7 @@ func on_pool_release() -> void:
 	_boss_cast = 0.0
 	_boss_signature = ""
 	velocity = Vector2.ZERO
+	ArtCatalog.clear(_sprite, _poly)
 
 func activate(enemy_def: EnemyDef, pos: Vector2) -> void:
 	_ensure_built()
@@ -59,6 +66,8 @@ func activate(enemy_def: EnemyDef, pos: Vector2) -> void:
 	_poly.color = enemy_def.tint
 	var scale_v := 1.0 if not enemy_def.is_boss else 1.8
 	_poly.scale = Vector2(scale_v, scale_v)
+	var px_h := enemy_def.radius * (2.6 if not enemy_def.is_boss else 3.4)
+	ArtCatalog.apply(_sprite, _poly, enemy_def.id, px_h)
 	var cs := get_node("CollisionShape2D") as CollisionShape2D
 	if cs:
 		var sh := CircleShape2D.new()
@@ -139,6 +148,8 @@ func _physics_process(delta: float) -> void:
 	if def.is_boss:
 		_boss_skills(delta, dir)
 	move_and_slide()
+	if _sprite and _sprite.visible and absf(velocity.x) > 8.0:
+		_sprite.flip_h = velocity.x < 0.0
 
 func _tick_boss_cast(delta: float, dir: Vector2) -> void:
 	_boss_cast -= delta

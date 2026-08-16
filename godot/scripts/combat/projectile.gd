@@ -11,6 +11,7 @@ var _orbit_radius: float = 40.0
 var _is_orbit := false
 var _is_strike := false
 var _poly: Polygon2D
+var _sprite: Sprite2D
 var _pull_strength: float = 0.0
 var _heal_on_hit: float = 0.0
 var _heal_target: Node = null
@@ -35,6 +36,13 @@ func _ensure_built() -> void:
 		add_child(_poly)
 	else:
 		_poly = $Poly
+	if not has_node("BodySprite"):
+		_sprite = Sprite2D.new()
+		_sprite.name = "BodySprite"
+		_sprite.z_index = 1
+		add_child(_sprite)
+	else:
+		_sprite = $BodySprite
 	if not has_node("CollisionShape2D"):
 		var cs := CollisionShape2D.new()
 		cs.name = "CollisionShape2D"
@@ -52,6 +60,7 @@ func on_pool_release() -> void:
 	_heal_target = null
 	_return_damage_mult = 0.0
 	set_meta("spent", false)
+	ArtCatalog.clear(_sprite, _poly)
 
 func launch(origin: Vector2, dir: Vector2, dmg: float, spd: float, pierce: int, radius: float, strike: bool) -> void:
 	_ensure_built()
@@ -75,6 +84,9 @@ func launch(origin: Vector2, dir: Vector2, dmg: float, spd: float, pierce: int, 
 			cs.shape = sh
 	if _poly:
 		_poly.color = Color(1.0, 0.55, 0.3) if strike else Color(0.95, 0.85, 0.35)
+	ArtCatalog.apply(_sprite, _poly, "proj_sword_qi", maxf(14.0, radius * 1.2))
+	if _sprite and _sprite.visible and _dir.x != 0.0:
+		_sprite.flip_h = _dir.x < 0.0
 
 func launch_orbit(host: Node2D, dmg: float, radius: float, duration: float, start_angle: float = -1.0) -> void:
 	_ensure_built()
@@ -94,6 +106,7 @@ func launch_orbit(host: Node2D, dmg: float, radius: float, duration: float, star
 		cs.set_deferred("disabled", false)
 	if _poly:
 		_poly.color = Color(0.7, 0.9, 1.0)
+	ArtCatalog.apply(_sprite, _poly, "proj_sword_qi", 16.0)
 
 func configure_effects(pull: float, heal_on_hit: float, heal_target: Node) -> void:
 	_pull_strength = pull
