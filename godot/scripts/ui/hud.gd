@@ -1,6 +1,7 @@
 extends CanvasLayer
 
 var _run: Node = null
+var _root: Control
 var _hp: Label
 var _timer: Label
 var _xp: Label
@@ -22,6 +23,8 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layer = 10
 	_build()
+	get_viewport().size_changed.connect(_layout)
+	_layout()
 	GameState.hud_dirty.connect(_refresh)
 	GameState.upgrade_choices_ready.connect(_show_upgrades)
 	GameState.mutation_choices_ready.connect(_show_mutations)
@@ -30,65 +33,91 @@ func bind_run(run: Node) -> void:
 	_run = run
 
 func _build() -> void:
-	var root := Control.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	root.process_mode = Node.PROCESS_MODE_ALWAYS
-	add_child(root)
+	_root = Control.new()
+	_root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_root.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(_root)
 
-	_hp = _label(root, Vector2(16, 12), "HP")
-	_timer = _label(root, Vector2(560, 12), "00:00")
-	_xp = _label(root, Vector2(16, 40), "XP")
-	_kills = _label(root, Vector2(16, 68), "Kills")
-	_dash = _label(root, Vector2(16, 96), "Dash")
-	_rage = _label(root, Vector2(16, 124), "Rage")
-	_res = _label(root, Vector2(16, 152), "Resonance")
+	_hp = _label(_root, "HP")
+	_timer = _label(_root, "00:00")
+	_xp = _label(_root, "XP")
+	_kills = _label(_root, "Kills")
+	_dash = _label(_root, "Dash")
+	_rage = _label(_root, "Rage")
+	_res = _label(_root, "Resonance")
 
-	_upgrade_panel = _panel(root, LocaleService.t("ui.upgrade_title", "秘笈領悟"), 3)
-	_mutation_panel = _panel(root, LocaleService.t("ui.mutation_title", "Boss 變異賜福"), 2)
-	_result_panel = _panel(root, LocaleService.t("ui.result_title", "結算"), 1)
+	_upgrade_panel = _panel(_root, LocaleService.t("ui.upgrade_title", "秘笈領悟"), 3)
+	_mutation_panel = _panel(_root, LocaleService.t("ui.mutation_title", "Boss 變異賜福"), 2)
+	_result_panel = _panel(_root, LocaleService.t("ui.result_title", "結算"), 1)
 	_upgrade_panel.visible = false
 	_mutation_panel.visible = false
 	_result_panel.visible = false
 
 	_joystick = Control.new()
-	_joystick.position = Vector2(90, 560)
-	_joystick.custom_minimum_size = Vector2(120, 120)
-	root.add_child(_joystick)
+	_joystick.custom_minimum_size = Vector2(128, 128)
+	_root.add_child(_joystick)
 	var joy_bg := ColorRect.new()
-	joy_bg.size = Vector2(120, 120)
+	joy_bg.name = "JoyBg"
+	joy_bg.size = Vector2(128, 128)
 	joy_bg.color = Color(1, 1, 1, 0.12)
 	_joystick.add_child(joy_bg)
 	_knob = ColorRect.new()
-	_knob.size = Vector2(36, 36)
-	_knob.position = Vector2(42, 42)
+	_knob.size = Vector2(40, 40)
+	_knob.position = Vector2(44, 44)
 	_knob.color = Color(1, 1, 1, 0.35)
 	_joystick.add_child(_knob)
 
 	_dash_btn = Button.new()
 	_dash_btn.text = LocaleService.t("ui.dash", "縱步")
-	_dash_btn.position = Vector2(1080, 560)
-	_dash_btn.size = Vector2(120, 56)
+	_dash_btn.custom_minimum_size = Vector2(120, 56)
 	_dash_btn.pressed.connect(func():
 		var p := get_tree().get_first_node_in_group("player")
 		if p and p.has_method("try_dash"):
 			p.call("try_dash")
 	)
-	root.add_child(_dash_btn)
+	_root.add_child(_dash_btn)
 
 	_rage_btn = Button.new()
 	_rage_btn.text = LocaleService.t("ui.rage", "怒意")
-	_rage_btn.position = Vector2(1080, 480)
-	_rage_btn.size = Vector2(120, 56)
+	_rage_btn.custom_minimum_size = Vector2(120, 56)
 	_rage_btn.pressed.connect(func():
 		var p := get_tree().get_first_node_in_group("player")
 		if p and p.has_method("try_rage"):
 			p.call("try_rage")
 	)
-	root.add_child(_rage_btn)
+	_root.add_child(_rage_btn)
 
-func _label(parent: Control, pos: Vector2, text: String) -> Label:
+func _layout() -> void:
+	var safe := DisplayFit.safe_margin(get_viewport())
+	var left := safe.position.x
+	var top := safe.position.y
+	var right := safe.position.x + safe.size.x
+	var bottom := safe.position.y + safe.size.y
+	_hp.position = Vector2(left, top)
+	_timer.position = Vector2(safe.position.x + safe.size.x * 0.5 - 40.0, top)
+	_xp.position = Vector2(left, top + 28)
+	_kills.position = Vector2(left, top + 56)
+	_dash.position = Vector2(left, top + 84)
+	_rage.position = Vector2(left, top + 112)
+	_res.position = Vector2(left, top + 140)
+	for lab in [_hp, _timer, _xp, _kills, _dash, _rage, _res]:
+		lab.size = Vector2(420, 28)
+
+	var panel_w := minf(720.0, safe.size.x - 24.0)
+	var panel_h := minf(460.0, safe.size.y - 24.0)
+	for panel in [_upgrade_panel, _mutation_panel, _result_panel]:
+		panel.size = Vector2(panel_w, panel_h)
+		panel.position = Vector2(safe.position.x + (safe.size.x - panel_w) * 0.5, safe.position.y + (safe.size.y - panel_h) * 0.5)
+
+	_joystick.position = Vector2(left + 24.0, bottom - 152.0)
+	_joystick.size = Vector2(128, 128)
+	_rage_btn.position = Vector2(right - 144.0, bottom - 220.0)
+	_rage_btn.size = Vector2(120, 56)
+	_dash_btn.position = Vector2(right - 144.0, bottom - 152.0)
+	_dash_btn.size = Vector2(120, 56)
+
+func _label(parent: Control, text: String) -> Label:
 	var l := Label.new()
-	l.position = pos
 	l.text = text
 	l.add_theme_font_size_override("font_size", 18)
 	parent.add_child(l)
@@ -96,8 +125,6 @@ func _label(parent: Control, pos: Vector2, text: String) -> Label:
 
 func _panel(parent: Control, title: String, button_count: int) -> Control:
 	var panel := PanelContainer.new()
-	panel.position = Vector2(280, 100)
-	panel.size = Vector2(720, 460)
 	panel.process_mode = Node.PROCESS_MODE_ALWAYS
 	var v := VBoxContainer.new()
 	panel.add_child(v)
@@ -229,19 +256,20 @@ func _input(event: InputEvent) -> void:
 			_on_choice(_mutation_panel, 1)
 	if event is InputEventScreenTouch:
 		var st := event as InputEventScreenTouch
-		if st.pressed and st.position.x < 420.0:
+		var joy_rect := Rect2(_joystick.global_position, _joystick.size).grow(36.0)
+		if st.pressed and joy_rect.has_point(st.position):
 			_touching = true
 			_touch_origin = st.position
 		elif not st.pressed:
 			_touching = false
 			_set_touch_dir(Vector2.ZERO)
-			_knob.position = Vector2(42, 42)
+			_knob.position = Vector2(44, 44)
 	elif event is InputEventScreenDrag and _touching:
 		var sd := event as InputEventScreenDrag
 		var delta: Vector2 = sd.position - _touch_origin
 		if delta.length() > 60.0:
 			delta = delta.normalized() * 60.0
-		_knob.position = Vector2(42, 42) + delta * 0.5
+		_knob.position = Vector2(44, 44) + delta * 0.5
 		_set_touch_dir(delta / 60.0)
 
 func _set_touch_dir(dir: Vector2) -> void:

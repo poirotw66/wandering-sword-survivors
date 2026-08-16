@@ -18,6 +18,7 @@ func _ready() -> void:
 	failures.append_array(_test_save_fallback())
 	failures.append_array(_test_cjk_theme_font())
 	failures.append_array(_test_art_catalog_paths())
+	failures.append_array(_test_display_fit_helpers())
 	if failures.is_empty():
 		print("ALL_TESTS_PASSED")
 		get_tree().quit(0)
@@ -373,7 +374,7 @@ func _test_cjk_theme_font() -> PackedStringArray:
 	if theme == null or theme.default_font == null:
 		errs.append("default theme / CJK font missing")
 		return errs
-	var samples := PackedStringArray(["雲鶴遊俠", "開局 · 霧峽十五刻", "遊俠雲鶴：以劍氣自立，縱步避劫。", "開局路數"])
+	var samples := PackedStringArray(["雲鶴遊俠", "開局 · 霧峽十五刻", "遊俠雲鶴：以劍氣自立，縱步避劫。", "開局路數", "請橫向持機遊玩"])
 	for s in samples:
 		var sz: Vector2 = theme.default_font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 24)
 		if sz.x < float(s.length()) * 8.0:
@@ -414,4 +415,16 @@ func _test_art_catalog_paths() -> PackedStringArray:
 	sample.kind = "manual"
 	if ArtCatalog.icon_id_for_upgrade(sample) != "icon_manual_scroll":
 		errs.append("manual upgrade icon mapping wrong")
+	return errs
+
+func _test_display_fit_helpers() -> PackedStringArray:
+	var errs: PackedStringArray = PackedStringArray()
+	if DisplayFit.design_size() != Vector2(1280, 720):
+		errs.append("design size should stay 1280x720")
+	var safe := DisplayFit.safe_margin(get_viewport())
+	if safe.size.x <= 0.0 or safe.size.y <= 0.0:
+		errs.append("safe margin must be positive")
+	## Headless default window is landscape; portrait gate should stay off.
+	if DisplayFit.is_portrait(get_viewport()):
+		errs.append("headless test viewport should not report portrait")
 	return errs
