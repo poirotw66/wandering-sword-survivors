@@ -14,5 +14,5 @@
 - [x] ArtCatalog wave2 + UI helpers
 - [x] Hub + HUD wiring
 - [x] Generate/process PNGs
-- [ ] `STRICT_ART=1 npm run godot:test`
-- [ ] Commit, push, PR
+- [x] `STRICT_ART=1 npm run godot:test`
+- [x] Commit, push, PR
