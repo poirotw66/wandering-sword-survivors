@@ -13,6 +13,7 @@ godot/.godot/
 godot/export/
 export/
 tools/godot/
+.tools/
 *.tpz
 *.pck
 *.apk

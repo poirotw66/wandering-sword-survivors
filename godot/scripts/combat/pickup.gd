@@ -4,6 +4,7 @@ var kind: String = "xp"
 var amount: int = 2
 var _alive := false
 var _poly: Polygon2D
+var _sprite: Sprite2D
 
 func _ready() -> void:
 	collision_layer = 8
@@ -13,6 +14,10 @@ func _ready() -> void:
 	_poly = Polygon2D.new()
 	_poly.polygon = PackedVector2Array([Vector2(0, -6), Vector2(5, 0), Vector2(0, 6), Vector2(-5, 0)])
 	add_child(_poly)
+	_sprite = Sprite2D.new()
+	_sprite.name = "BodySprite"
+	_sprite.z_index = 1
+	add_child(_sprite)
 	var cs := CollisionShape2D.new()
 	cs.name = "CollisionShape2D"
 	var sh := CircleShape2D.new()
@@ -22,6 +27,7 @@ func _ready() -> void:
 
 func on_pool_release() -> void:
 	_alive = false
+	ArtCatalog.clear(_sprite, _poly)
 
 func activate(pos: Vector2, pickup_kind: String, xp_amount: int) -> void:
 	global_position = pos
@@ -29,6 +35,8 @@ func activate(pos: Vector2, pickup_kind: String, xp_amount: int) -> void:
 	amount = xp_amount
 	_alive = true
 	_poly.color = Color(0.35, 0.95, 0.55) if kind == "xp" else Color(0.95, 0.35, 0.4)
+	var art_id := "pickup_xp" if kind == "xp" else "pickup_heal"
+	ArtCatalog.apply(_sprite, _poly, art_id, 18.0)
 	visible = true
 	set_deferred("monitoring", true)
 	var cs := get_node_or_null("CollisionShape2D") as CollisionShape2D

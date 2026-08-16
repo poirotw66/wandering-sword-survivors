@@ -17,6 +17,7 @@ func _ready() -> void:
 	failures.append_array(_test_start_style_runtime_bonuses())
 	failures.append_array(_test_save_fallback())
 	failures.append_array(_test_cjk_theme_font())
+	failures.append_array(_test_art_catalog_paths())
 	if failures.is_empty():
 		print("ALL_TESTS_PASSED")
 		get_tree().quit(0)
@@ -377,4 +378,40 @@ func _test_cjk_theme_font() -> PackedStringArray:
 		var sz: Vector2 = theme.default_font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 24)
 		if sz.x < float(s.length()) * 8.0:
 			errs.append("CJK string too narrow (possible missing glyphs): %s" % s)
+	return errs
+
+func _test_art_catalog_paths() -> PackedStringArray:
+	var errs: PackedStringArray = PackedStringArray()
+	var strict := OS.get_environment("STRICT_ART") == "1"
+	var present := 0
+	var manifest: PackedStringArray = ArtCatalog.wave1_manifest()
+	manifest.append_array(ArtCatalog.wave2_manifest())
+	for id in manifest:
+		var path := ArtCatalog.path_for(id)
+		if path.is_empty():
+			errs.append("art path empty for %s" % id)
+			continue
+		if not ResourceLoader.exists(path):
+			if strict:
+				errs.append("missing art (STRICT_ART): %s" % path)
+			continue
+		var tex := ArtCatalog.texture_for(id)
+		if tex == null:
+			errs.append("art exists but failed to load: %s" % path)
+		else:
+			present += 1
+	if present == 0 and strict:
+		errs.append("STRICT_ART set but no wave textures loaded")
+	## Fallback contract: missing art must not crash catalog.
+	if ArtCatalog.texture_for("enemy.missing_placeholder_id") != null:
+		errs.append("missing art id should return null")
+	var sample := UpgradeDef.new()
+	sample.kind = "weapon"
+	sample.weapon_id = "weapon.guard_ring"
+	sample.tag = Tags.JIAN
+	if ArtCatalog.icon_id_for_upgrade(sample) != "icon_weapon_guard_ring":
+		errs.append("weapon upgrade icon mapping wrong")
+	sample.kind = "manual"
+	if ArtCatalog.icon_id_for_upgrade(sample) != "icon_manual_scroll":
+		errs.append("manual upgrade icon mapping wrong")
 	return errs
