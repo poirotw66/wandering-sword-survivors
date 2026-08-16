@@ -18,6 +18,7 @@ SaveService="*res://scripts/autoload/save_service.gd"
 ContentDB="*res://scripts/autoload/content_db.gd"
 LocaleService="*res://scripts/autoload/locale_service.gd"
 PoolManager="*res://scripts/autoload/pool_manager.gd"
+OrientationGate="*res://scripts/ui/orientation_gate.gd"
 
 [display]
 window/size/viewport_width=1280
@@ -25,8 +26,8 @@ window/size/viewport_height=720
 window/size/window_width_override=1280
 window/size/window_height_override=720
 window/stretch/mode="canvas_items"
-window/stretch/aspect="keep"
-window/handheld/orientation=0
+window/stretch/aspect="expand"
+window/handheld/orientation=4
 
 [input]
 move_left={
