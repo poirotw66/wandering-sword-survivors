@@ -384,7 +384,9 @@ func _test_art_catalog_paths() -> PackedStringArray:
 	var errs: PackedStringArray = PackedStringArray()
 	var strict := OS.get_environment("STRICT_ART") == "1"
 	var present := 0
-	for id in ArtCatalog.wave1_manifest():
+	var manifest: PackedStringArray = ArtCatalog.wave1_manifest()
+	manifest.append_array(ArtCatalog.wave2_manifest())
+	for id in manifest:
 		var path := ArtCatalog.path_for(id)
 		if path.is_empty():
 			errs.append("art path empty for %s" % id)
@@ -399,8 +401,17 @@ func _test_art_catalog_paths() -> PackedStringArray:
 		else:
 			present += 1
 	if present == 0 and strict:
-		errs.append("STRICT_ART set but no wave1 textures loaded")
+		errs.append("STRICT_ART set but no wave textures loaded")
 	## Fallback contract: missing art must not crash catalog.
 	if ArtCatalog.texture_for("enemy.missing_placeholder_id") != null:
 		errs.append("missing art id should return null")
+	var sample := UpgradeDef.new()
+	sample.kind = "weapon"
+	sample.weapon_id = "weapon.guard_ring"
+	sample.tag = Tags.JIAN
+	if ArtCatalog.icon_id_for_upgrade(sample) != "icon_weapon_guard_ring":
+		errs.append("weapon upgrade icon mapping wrong")
+	sample.kind = "manual"
+	if ArtCatalog.icon_id_for_upgrade(sample) != "icon_manual_scroll":
+		errs.append("manual upgrade icon mapping wrong")
 	return errs

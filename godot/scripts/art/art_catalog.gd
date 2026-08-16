@@ -2,7 +2,7 @@ class_name ArtCatalog
 extends RefCounted
 
 ## Resolves content ids to optional textures under res://assets/art/.
-## Missing files return null so callers keep Polygon2D fallbacks.
+## Missing files return null so callers keep geometric / plain-UI fallbacks.
 
 const ROOT := "res://assets/art/"
 
@@ -27,6 +27,28 @@ static func wave1_manifest() -> PackedStringArray:
 	])
 
 
+static func wave2_manifest() -> PackedStringArray:
+	return PackedStringArray([
+		"hub_bg_mist_ravine",
+		"start_style.jian",
+		"start_style.qi",
+		"start_style.shen",
+		"start_style.yi",
+		"result_win",
+		"result_lose",
+		"icon_tag_jian",
+		"icon_tag_qi",
+		"icon_tag_shen",
+		"icon_tag_yi",
+		"icon_weapon_sword_qi",
+		"icon_weapon_guard_ring",
+		"icon_weapon_palm_wave",
+		"icon_weapon_nine_flash",
+		"icon_manual_scroll",
+		"icon_mutation",
+	])
+
+
 static func file_stem(content_id: String) -> String:
 	return content_id.replace(".", "_")
 
@@ -39,6 +61,10 @@ static func path_for(content_id: String) -> String:
 		return ROOT + "projectiles/" + stem + ".png"
 	if stem.begins_with("pickup_"):
 		return ROOT + "pickups/" + stem + ".png"
+	if stem.begins_with("icon_"):
+		return ROOT + "icons/" + stem + ".png"
+	if stem.begins_with("hub_") or stem.begins_with("start_style_") or stem.begins_with("result_"):
+		return ROOT + "ui/" + stem + ".png"
 	return ""
 
 
@@ -52,6 +78,18 @@ static func texture_for(content_id: String) -> Texture2D:
 	var tex := load(path) as Texture2D
 	_cache[content_id] = tex
 	return tex
+
+
+static func icon_id_for_upgrade(upgrade: UpgradeDef) -> String:
+	match upgrade.kind:
+		"weapon":
+			if upgrade.weapon_id != "":
+				return "icon_" + file_stem(upgrade.weapon_id)
+			return "icon_tag_%s" % upgrade.tag
+		"manual":
+			return "icon_manual_scroll"
+		_:
+			return "icon_tag_%s" % upgrade.tag
 
 
 static func apply(sprite: Sprite2D, poly: CanvasItem, content_id: String, px_height: float) -> bool:
@@ -72,6 +110,32 @@ static func apply(sprite: Sprite2D, poly: CanvasItem, content_id: String, px_hei
 	sprite.visible = true
 	if poly:
 		poly.visible = false
+	return true
+
+
+static func apply_texture_rect(rect: TextureRect, content_id: String) -> bool:
+	var tex := texture_for(content_id)
+	if rect == null:
+		return false
+	if tex == null:
+		rect.texture = null
+		rect.visible = false
+		return false
+	rect.texture = tex
+	rect.visible = true
+	return true
+
+
+static func apply_button_icon(button: Button, content_id: String, icon_size: Vector2 = Vector2(48, 48)) -> bool:
+	var tex := texture_for(content_id)
+	if button == null:
+		return false
+	if tex == null:
+		button.icon = null
+		return false
+	button.icon = tex
+	button.expand_icon = true
+	button.custom_minimum_size = Vector2(maxf(button.custom_minimum_size.x, icon_size.x + 24.0), maxf(button.custom_minimum_size.y, icon_size.y + 16.0))
 	return true
 
 

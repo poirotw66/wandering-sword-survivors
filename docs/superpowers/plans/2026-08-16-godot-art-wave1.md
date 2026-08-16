@@ -50,4 +50,4 @@
 ### Task 5: Verify + PR
 
 - [x] `npm run godot:test`
-- [ ] Commit, push, open PR
+- [x] Commit, push, open PR

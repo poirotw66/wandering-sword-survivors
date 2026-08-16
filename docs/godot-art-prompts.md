@@ -101,3 +101,44 @@ Small glowing jade spirit orb, soft green light, cultivation XP gem
 ### `pickup_heal.png`
 
 Small red-pink gourd vial of healing qi mist, warm recovery item
+
+---
+
+## Wave 2 — Hub / Icons / Results
+
+### Shared style (UI icons)
+
+```text
+2D mobile RPG skill icon, square format, ornate antique gold decorative frame with corner filigree, dark navy background inside frame, centered symbolic object, glowing magical aura, high detail digital painting, no text, no watermark, original wuxia cultivation icon style
+```
+
+### `hub_bg_mist_ravine.png`
+
+Misty mountain ravine landscape at dusk, Chinese ink-wash meets soft painted game background, teal fog between cliffs, distant waterfall, no characters, no UI, wide 16:9 composition, atmospheric wuxia wilderness
+
+### Start style portraits
+
+- `start_style_jian.png` — sword-path adept with glowing jian, cyan-cream accents
+- `start_style_qi.png` — breath-path martial artist with palm qi swirls, jade green
+- `start_style_shen.png` — body-path qinggong runner with wind trails, mint
+- `start_style_yi.png` — intent-path meditator with floating talismans, violet
+
+Chibi bust/half-body, transparent background, ornate but readable at button size.
+
+### Icons
+
+- `icon_tag_jian` — glowing jian blade symbol
+- `icon_tag_qi` — swirling inner-force orb
+- `icon_tag_shen` — wind footprint / crane step
+- `icon_tag_yi` — eye of intent / talisman
+- `icon_weapon_sword_qi` — crescent sword-qi
+- `icon_weapon_guard_ring` — orbiting sword ring
+- `icon_weapon_palm_wave` — palm shockwave
+- `icon_weapon_nine_flash` — nine pointed flash slash
+- `icon_manual_scroll` — jade cultivation scroll
+- `icon_mutation` — boss blessing seal with dual moons
+
+### Results
+
+- `result_win.png` — triumphant mist-ravine sunrise banner art, crane silhouette, no text
+- `result_lose.png` — somber foggy ravine dusk banner, fallen leaf motif, no text

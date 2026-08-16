@@ -96,11 +96,18 @@ func _label(parent: Control, pos: Vector2, text: String) -> Label:
 
 func _panel(parent: Control, title: String, button_count: int) -> Control:
 	var panel := PanelContainer.new()
-	panel.position = Vector2(280, 140)
-	panel.size = Vector2(720, 400)
+	panel.position = Vector2(280, 100)
+	panel.size = Vector2(720, 460)
 	panel.process_mode = Node.PROCESS_MODE_ALWAYS
 	var v := VBoxContainer.new()
 	panel.add_child(v)
+	var art := TextureRect.new()
+	art.name = "PanelArt"
+	art.custom_minimum_size = Vector2(0, 120)
+	art.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	art.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	art.visible = false
+	v.add_child(art)
 	var t := Label.new()
 	t.text = title
 	t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -108,7 +115,8 @@ func _panel(parent: Control, title: String, button_count: int) -> Control:
 	for i in range(button_count):
 		var b := Button.new()
 		b.text = "-"
-		b.custom_minimum_size = Vector2(0, 64)
+		b.custom_minimum_size = Vector2(0, 72)
+		b.expand_icon = true
 		var idx := i
 		b.pressed.connect(func(): _on_choice(panel, idx))
 		v.add_child(b)
@@ -150,39 +158,53 @@ func _refresh() -> void:
 func _show_upgrades(options: Array) -> void:
 	_upgrade_panel.visible = true
 	var v: VBoxContainer = _upgrade_panel.get_child(0)
+	var art: TextureRect = v.get_node("PanelArt")
+	art.visible = false
+	art.texture = null
 	for i in range(3):
-		var b: Button = v.get_child(i + 1)
+		var b: Button = v.get_child(i + 2)
 		if i < options.size():
 			var u: UpgradeDef = options[i]
 			b.text = "%s\n%s" % [LocaleService.t(u.name_key, u.id), LocaleService.t(u.desc_key, u.tag)]
+			ArtCatalog.apply_button_icon(b, ArtCatalog.icon_id_for_upgrade(u), Vector2(48, 48))
 			b.disabled = false
 			b.visible = true
 		else:
 			b.text = "-"
+			b.icon = null
 			b.disabled = true
 
 func _show_mutations(options: Array) -> void:
 	_mutation_panel.visible = true
 	var v: VBoxContainer = _mutation_panel.get_child(0)
-	var title: Label = v.get_child(0)
+	var art: TextureRect = v.get_node("PanelArt")
+	art.visible = false
+	art.texture = null
+	var title: Label = v.get_child(1)
 	title.text = LocaleService.t("ui.mutation_title", "Boss 變異賜福")
 	for i in range(2):
-		var b: Button = v.get_child(i + 1)
+		var b: Button = v.get_child(i + 2)
 		if i < options.size():
 			var m: MutationDef = options[i]
 			b.text = "%s\n%s" % [LocaleService.t(m.name_key, m.id), LocaleService.t(m.desc_key, "")]
+			ArtCatalog.apply_button_icon(b, "icon_mutation", Vector2(48, 48))
 			b.disabled = false
 			b.visible = true
 		else:
 			b.text = "-"
+			b.icon = null
 			b.disabled = true
 
 func show_result() -> void:
 	_result_panel.visible = true
 	var v: VBoxContainer = _result_panel.get_child(0)
-	var title: Label = v.get_child(0)
+	var art: TextureRect = v.get_node("PanelArt")
+	ArtCatalog.apply_texture_rect(art, "result_win" if GameState.won else "result_lose")
+	art.custom_minimum_size = Vector2(0, 140)
+	var title: Label = v.get_child(1)
 	title.text = LocaleService.t("ui.win", "闖關成功") if GameState.won else LocaleService.t("ui.lose", "身死道消")
-	var b: Button = v.get_child(1)
+	var b: Button = v.get_child(2)
+	b.icon = null
 	b.text = "%s\n%s %d · %s %d · %s %02d:%02d" % [
 		LocaleService.t("ui.back_hub", "返回江湖"),
 		LocaleService.t("ui.kills", "擊殺"), GameState.kills,
