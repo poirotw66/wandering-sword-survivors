@@ -49,6 +49,13 @@ static func wave2_manifest() -> PackedStringArray:
 	])
 
 
+static func env_manifest() -> PackedStringArray:
+	return PackedStringArray([
+		"run_bg_mist_ravine",
+		"run_ground_mist_ravine",
+	])
+
+
 static func file_stem(content_id: String) -> String:
 	return content_id.replace(".", "_")
 
@@ -63,6 +70,8 @@ static func path_for(content_id: String) -> String:
 		return ROOT + "pickups/" + stem + ".png"
 	if stem.begins_with("icon_"):
 		return ROOT + "icons/" + stem + ".png"
+	if stem.begins_with("run_"):
+		return ROOT + "env/" + stem + ".png"
 	if stem.begins_with("hub_") or stem.begins_with("start_style_") or stem.begins_with("result_"):
 		return ROOT + "ui/" + stem + ".png"
 	return ""

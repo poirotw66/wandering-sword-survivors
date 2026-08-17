@@ -387,14 +387,15 @@ func _test_art_catalog_paths() -> PackedStringArray:
 	var present := 0
 	var manifest: PackedStringArray = ArtCatalog.wave1_manifest()
 	manifest.append_array(ArtCatalog.wave2_manifest())
+	manifest.append_array(ArtCatalog.env_manifest())
 	for id in manifest:
 		var path := ArtCatalog.path_for(id)
 		if path.is_empty():
 			errs.append("art path empty for %s" % id)
 			continue
 		if not ResourceLoader.exists(path):
-			if strict:
-				errs.append("missing art (STRICT_ART): %s" % path)
+			if strict or str(id).begins_with("run_"):
+				errs.append("missing art%s: %s" % [" (STRICT_ART)" if strict else "", path])
 			continue
 		var tex := ArtCatalog.texture_for(id)
 		if tex == null:
@@ -403,6 +404,10 @@ func _test_art_catalog_paths() -> PackedStringArray:
 			present += 1
 	if present == 0 and strict:
 		errs.append("STRICT_ART set but no wave textures loaded")
+	if ArtCatalog.path_for("run_ground_mist_ravine") != "res://assets/art/env/run_ground_mist_ravine.png":
+		errs.append("run ground should resolve under env/")
+	if ArtCatalog.path_for("run_bg_mist_ravine") != "res://assets/art/env/run_bg_mist_ravine.png":
+		errs.append("run scenic bg should resolve under env/")
 	## Fallback contract: missing art must not crash catalog.
 	if ArtCatalog.texture_for("enemy.missing_placeholder_id") != null:
 		errs.append("missing art id should return null")

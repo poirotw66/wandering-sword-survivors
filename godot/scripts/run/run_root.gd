@@ -9,6 +9,7 @@ extends Node2D
 func _ready() -> void:
 	add_to_group("run_root")
 	world.add_to_group("run_world")
+	_setup_arena()
 	GameState.reset_run()
 	spawn_director.reset()
 	player.global_position = Vector2(640, 360)
@@ -19,6 +20,17 @@ func _ready() -> void:
 	PoolManager.warm("projectile", preload("res://scenes/run/projectile.tscn"), 40)
 	PoolManager.warm("pickup", preload("res://scenes/run/pickup.tscn"), 30)
 	PoolManager.warm("enemy_projectile", preload("res://scenes/run/enemy_projectile.tscn"), 20)
+
+func _setup_arena() -> void:
+	var old := world.get_node_or_null("Ground")
+	if old:
+		old.visible = false
+		old.queue_free()
+	var arena := ArenaMap.new()
+	arena.name = "ArenaMap"
+	world.add_child(arena)
+	world.move_child(arena, 0)
+	arena.setup(camera)
 
 func _process(delta: float) -> void:
 	if GameState.phase == GameState.Phase.RUN:
