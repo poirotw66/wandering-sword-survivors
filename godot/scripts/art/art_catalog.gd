@@ -80,11 +80,17 @@ static func texture_for(content_id: String) -> Texture2D:
 	return tex
 
 
+static func icon_id_for_weapon(weapon_id: String) -> String:
+	if weapon_id.is_empty():
+		return ""
+	return "icon_" + file_stem(weapon_id)
+
+
 static func icon_id_for_upgrade(upgrade: UpgradeDef) -> String:
 	match upgrade.kind:
 		"weapon":
 			if upgrade.weapon_id != "":
-				return "icon_" + file_stem(upgrade.weapon_id)
+				return icon_id_for_weapon(upgrade.weapon_id)
 			return "icon_tag_%s" % upgrade.tag
 		"manual":
 			return "icon_manual_scroll"

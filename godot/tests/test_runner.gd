@@ -415,6 +415,10 @@ func _test_art_catalog_paths() -> PackedStringArray:
 	sample.kind = "manual"
 	if ArtCatalog.icon_id_for_upgrade(sample) != "icon_manual_scroll":
 		errs.append("manual upgrade icon mapping wrong")
+	if ArtCatalog.icon_id_for_weapon("weapon.sword_qi") != "icon_weapon_sword_qi":
+		errs.append("weapon icon id mapping wrong")
+	if ArtCatalog.icon_id_for_weapon("") != "":
+		errs.append("empty weapon id should map to empty icon id")
 	return errs
 
 func _test_display_fit_helpers() -> PackedStringArray:
