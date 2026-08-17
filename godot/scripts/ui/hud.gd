@@ -148,11 +148,6 @@ func _build_resonance_chips() -> void:
 		var chip := HBoxContainer.new()
 		chip.add_theme_constant_override("separation", 4)
 		chip.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var bg := ColorRect.new()
-		bg.custom_minimum_size = Vector2(52, 28)
-		bg.color = Color(0.08, 0.1, 0.14, 0.7)
-		bg.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		## Chip layout: icon + count over a shared row (bg is visual only behind via modulate on icon).
 		var icon := TextureRect.new()
 		icon.custom_minimum_size = Vector2(24, 24)
 		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
@@ -377,6 +372,7 @@ func _make_skill_slot(weapon_id: String) -> Dictionary:
 	if ArtCatalog.apply_texture_rect(icon, icon_id):
 		root.add_child(icon)
 	else:
+		icon.free()
 		## Fallback: first glyph of localized weapon name.
 		var fallback := Label.new()
 		fallback.size = Vector2(SLOT, SLOT)
