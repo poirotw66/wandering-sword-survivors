@@ -263,3 +263,16 @@ func heal(amount: float) -> void:
 	var bonus := GameState.heal_pickup_bonus
 	GameState.player_stats["hp"] = minf(mx, float(GameState.player_stats["hp"]) + amount + bonus)
 	GameState.hud_dirty.emit()
+
+## Remaining cooldown as 0..1 (0 = ready). Used by HUD skill icons.
+func weapon_cooldown_ratio(weapon_id: String) -> float:
+	if not ContentDB.weapons.has(weapon_id):
+		return 0.0
+	var def: WeaponDef = ContentDB.weapons[weapon_id]
+	var total: float = def.cooldown_sec * float(GameState.player_stats.get("cooldown_mult", 1.0))
+	if total <= 0.001:
+		return 0.0
+	return clampf(float(_weapon_cds.get(weapon_id, 0.0)) / total, 0.0, 1.0)
+
+func rage_ratio() -> float:
+	return clampf(rage_meter / RAGE_COST_NEED, 0.0, 1.0)
