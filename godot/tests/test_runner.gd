@@ -374,7 +374,7 @@ func _test_cjk_theme_font() -> PackedStringArray:
 	if theme == null or theme.default_font == null:
 		errs.append("default theme / CJK font missing")
 		return errs
-	var samples := PackedStringArray(["雲鶴遊俠", "開局 · 霧峽十五刻", "遊俠雲鶴：以劍氣自立，縱步避劫。", "開局路數", "請橫向持機遊玩"])
+	var samples := PackedStringArray(["雲鶴遊俠", "開局 · 霧峽十五刻", "遊俠雲鶴：以劍氣自立，縱步避劫。", "開局路數", "請直向持機遊玩"])
 	for s in samples:
 		var sz: Vector2 = theme.default_font.get_string_size(s, HORIZONTAL_ALIGNMENT_LEFT, -1, 24)
 		if sz.x < float(s.length()) * 8.0:

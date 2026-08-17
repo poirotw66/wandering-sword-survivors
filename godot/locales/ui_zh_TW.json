@@ -20,6 +20,7 @@
   "ui.win": "闖關成功",
   "ui.lose": "身死道消",
   "ui.back_hub": "返回江湖",
+  "ui.rotate_portrait": "請直向持機遊玩\nRotate to portrait",
   "ui.rotate_landscape": "請橫向持機遊玩\nRotate to landscape",
   "tag.jian": "劍",
   "tag.qi": "氣",

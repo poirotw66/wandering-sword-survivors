@@ -13,6 +13,10 @@ static func is_portrait(viewport: Viewport) -> bool:
 	return s.y > s.x * 1.05
 
 
+static func is_landscape(viewport: Viewport) -> bool:
+	return not is_portrait(viewport)
+
+
 static func safe_margin(viewport: Viewport) -> Rect2:
 	## Returns a margin rect (position = inset top-left, size = usable area).
 	var visible := viewport.get_visible_rect()

@@ -1,7 +1,7 @@
 extends CanvasLayer
 
-## On phones, blocks play while held in portrait and asks for landscape.
-## Desktop / wide windows are not gated (narrow desktop windows stay playable).
+## On phones, blocks play while held in landscape and asks for portrait.
+## Desktop windows are not gated.
 
 var _root: Control
 var _label: Label
@@ -42,8 +42,9 @@ func _is_phone_like() -> bool:
 	return false
 
 func _refresh() -> void:
-	var enforce := _is_phone_like() and DisplayFit.is_portrait(get_viewport())
+	## Portrait-only on phones: gate when landscape.
+	var enforce := _is_phone_like() and not DisplayFit.is_portrait(get_viewport())
 	_root.visible = enforce
 	_root.mouse_filter = Control.MOUSE_FILTER_STOP if enforce else Control.MOUSE_FILTER_IGNORE
 	if enforce:
-		_label.text = LocaleService.t("ui.rotate_landscape", "請橫向持機遊玩\nRotate to landscape")
+		_label.text = LocaleService.t("ui.rotate_portrait", "請直向持機遊玩\nRotate to portrait")

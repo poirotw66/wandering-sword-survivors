@@ -76,19 +76,20 @@ func _build() -> void:
 		styles = [ContentDB.start_styles["start_style.jian"]]
 	_selected_style_id = str(styles[0].id)
 	GameState.select_start_style(_selected_style_id)
-	var row := HBoxContainer.new()
+	var row := GridContainer.new()
 	row.name = "StyleRow"
-	row.alignment = BoxContainer.ALIGNMENT_CENTER
-	row.add_theme_constant_override("separation", 16)
+	row.columns = 2
+	row.add_theme_constant_override("h_separation", 12)
+	row.add_theme_constant_override("v_separation", 12)
 	_content.add_child(row)
 	for s in styles:
 		var b := Button.new()
 		b.set_meta("style_id", s.id)
 		b.text = "%s\n%s" % [LocaleService.t(s.name_key, s.id), LocaleService.t(s.desc_key, s.preferred_tag)]
-		b.custom_minimum_size = Vector2(200, 96)
+		b.custom_minimum_size = Vector2(140, 88)
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 		b.expand_icon = true
-		ArtCatalog.apply_button_icon(b, s.id, Vector2(48, 48))
+		ArtCatalog.apply_button_icon(b, s.id, Vector2(44, 44))
 		var sid: String = s.id
 		b.pressed.connect(func(): _pick_style(sid))
 		row.add_child(b)
@@ -119,6 +120,7 @@ func _build() -> void:
 
 func _layout() -> void:
 	var safe := DisplayFit.safe_margin(get_viewport())
+	var portrait := DisplayFit.is_portrait(get_viewport())
 	_content.set_anchors_preset(Control.PRESET_TOP_LEFT)
 	_content.position = safe.position
 	_content.size = safe.size
@@ -130,32 +132,35 @@ func _layout() -> void:
 	y += 52
 	var sub: Label = _content.get_node("Sub")
 	sub.position = Vector2(0, y)
-	sub.size = Vector2(w, 32)
-	y += 36
+	sub.size = Vector2(w, 36)
+	y += 40
 	var hero_art: TextureRect = _content.get_node("HeroArt")
-	var art_h := minf(180.0, safe.size.y * 0.28)
+	var art_h := minf(200.0 if portrait else 160.0, safe.size.y * (0.22 if portrait else 0.26))
 	hero_art.position = Vector2((w - art_h) * 0.5, y)
 	hero_art.size = Vector2(art_h, art_h)
 	y += art_h + 8
 	var blurb: Label = _content.get_node("HeroBlurb")
 	blurb.position = Vector2(16, y)
-	blurb.size = Vector2(w - 32, 40)
-	y += 44
+	blurb.size = Vector2(w - 32, 48 if portrait else 40)
+	y += 52 if portrait else 44
 	var style_title: Label = _content.get_node("StyleTitle")
 	style_title.position = Vector2(16, y)
 	style_title.size = Vector2(w - 32, 28)
 	y += 32
-	var row: HBoxContainer = _content.get_node("StyleRow")
+	var row: GridContainer = _content.get_node("StyleRow")
+	row.columns = 2 if portrait or w < 900.0 else 4
+	var row_h := 200.0 if row.columns == 2 else 100.0
 	row.position = Vector2(8, y)
-	row.size = Vector2(w - 16, 100)
-	y += 112
+	row.size = Vector2(w - 16, row_h)
+	y += row_h + 12
+	var btn_w := minf(360.0, w - 32.0)
 	var start_btn: Button = _content.get_node("StartBtn")
-	start_btn.position = Vector2((w - 360) * 0.5, y)
-	start_btn.size = Vector2(360, 56)
+	start_btn.position = Vector2((w - btn_w) * 0.5, y)
+	start_btn.size = Vector2(btn_w, 56)
 	y += 64
 	var legacy: Button = _content.get_node("LegacyBtn")
-	legacy.position = Vector2((w - 360) * 0.5, y)
-	legacy.size = Vector2(360, 40)
+	legacy.position = Vector2((w - btn_w) * 0.5, y)
+	legacy.size = Vector2(btn_w, 40)
 	y += 48
 	var unlocks: Label = _content.get_node("Unlocks")
 	unlocks.position = Vector2(16, minf(y, safe.size.y - 48))
