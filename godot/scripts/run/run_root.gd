@@ -10,6 +10,8 @@ func _ready() -> void:
 	add_to_group("run_root")
 	world.add_to_group("run_world")
 	_setup_arena()
+	_apply_camera_fit()
+	get_viewport().size_changed.connect(_apply_camera_fit)
 	GameState.reset_run()
 	spawn_director.reset()
 	player.global_position = Vector2(640, 360)
@@ -31,6 +33,10 @@ func _setup_arena() -> void:
 	world.add_child(arena)
 	world.move_child(arena, 0)
 	arena.setup(camera)
+
+func _apply_camera_fit() -> void:
+	var z := DisplayFit.combat_camera_zoom(get_viewport())
+	camera.zoom = Vector2(z, z)
 
 func _process(delta: float) -> void:
 	if GameState.phase == GameState.Phase.RUN:

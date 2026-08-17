@@ -66,7 +66,8 @@ func activate(enemy_def: EnemyDef, pos: Vector2) -> void:
 	_poly.color = enemy_def.tint
 	var scale_v := 1.0 if not enemy_def.is_boss else 1.8
 	_poly.scale = Vector2(scale_v, scale_v)
-	var px_h := enemy_def.radius * (2.6 if not enemy_def.is_boss else 3.4)
+	var base_h := enemy_def.radius * (3.2 if not enemy_def.is_boss else 4.0)
+	var px_h := base_h * DisplayFit.combat_sprite_mult(get_viewport())
 	ArtCatalog.apply(_sprite, _poly, enemy_def.id, px_h)
 	var cs := get_node("CollisionShape2D") as CollisionShape2D
 	if cs:

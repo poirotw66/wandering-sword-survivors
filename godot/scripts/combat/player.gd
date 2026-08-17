@@ -32,7 +32,8 @@ func _ready() -> void:
 	_sprite.name = "BodySprite"
 	_sprite.z_index = 1
 	add_child(_sprite)
-	ArtCatalog.apply(_sprite, _body, "player_yunhe", 36.0)
+	_apply_body_art()
+	get_viewport().size_changed.connect(_apply_body_art)
 	var cs := CollisionShape2D.new()
 	var circle := CircleShape2D.new()
 	circle.radius = 12
@@ -50,6 +51,10 @@ func _ready() -> void:
 	add_child(_hurtbox)
 	_hurtbox.area_entered.connect(_on_hurt_area)
 	_hurtbox.body_entered.connect(_on_hurt_body)
+
+func _apply_body_art() -> void:
+	var h := 48.0 * DisplayFit.combat_sprite_mult(get_viewport())
+	ArtCatalog.apply(_sprite, _body, "player_yunhe", h)
 
 func set_touch_dir(dir: Vector2) -> void:
 	_touch_dir = dir
