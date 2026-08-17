@@ -116,6 +116,16 @@ Small red-pink gourd vial of healing qi mist, warm recovery item
 
 Misty mountain ravine landscape at dusk, Chinese ink-wash meets soft painted game background, teal fog between cliffs, distant waterfall, no characters, no UI, wide 16:9 composition, atmospheric wuxia wilderness
 
+### In-run arena (`godot/assets/art/env/`)
+
+### `run_bg_mist_ravine.png`
+
+Wide atmospheric misty mountain ravine plate used as a camera-locked scenic fill under the fight. Soft painted wuxia wilderness, teal fog, no characters, no UI.
+
+### `run_ground_mist_ravine.png`
+
+Top-down tileable ravine ground wash: mossy slate, faint dirt paths, muted jade/slate, mid contrast so combat sprites stay readable.
+
 ### Start style portraits
 
 - `start_style_jian.png` — sword-path adept with glowing jian, cyan-cream accents
