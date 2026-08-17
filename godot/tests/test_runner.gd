@@ -436,4 +436,10 @@ func _test_display_fit_helpers() -> PackedStringArray:
 	## Headless default window is landscape; portrait gate should stay off.
 	if DisplayFit.is_portrait(get_viewport()):
 		errs.append("headless test viewport should not report portrait")
+	if DisplayFit.combat_camera_zoom(get_viewport()) != 1.0:
+		errs.append("headless landscape should keep camera zoom 1")
+	if DisplayFit.combat_sprite_mult(get_viewport()) != 1.0:
+		errs.append("headless landscape should keep sprite mult 1")
+	if DisplayFit.PORTRAIT_PHONE_CAMERA_ZOOM < 1.2 or DisplayFit.PORTRAIT_PHONE_SPRITE_MULT < 1.1:
+		errs.append("portrait phone combat scale constants too small")
 	return errs

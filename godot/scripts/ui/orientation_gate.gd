@@ -31,15 +31,7 @@ func _ready() -> void:
 	_refresh()
 
 func _is_phone_like() -> bool:
-	if OS.has_feature("mobile"):
-		return true
-	if OS.has_feature("web_android") or OS.has_feature("web_ios"):
-		return true
-	## Touch + short edge heuristic for mobile web browsers.
-	if DisplayServer.is_touchscreen_available():
-		var s := get_viewport().get_visible_rect().size
-		return mini(s.x, s.y) <= 900.0
-	return false
+	return DisplayFit.is_phone_like(get_viewport())
 
 func _refresh() -> void:
 	## Portrait-only on phones: gate when landscape.
